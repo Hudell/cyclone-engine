@@ -1,0 +1,135 @@
+env:
+  browser: true
+  es6: true
+extends: 'eslint:recommended'
+parserOptions:
+  ecmaVersion: 2020
+  sourceType: 'module'
+globals:
+  require: false
+
+  Utils: false
+  Graphics: false
+  TouchInput: false
+  Input: false
+  Tilemap: false
+  Bitmap: false
+  JsonEx: false
+  Rectangle: false
+
+  PluginManager: false
+  ImageManager: false
+  DataManager: false
+  SceneManager: false
+  SoundManager: false
+
+  Scene_Map: false
+  Spriteset_Map: false
+  Sprite_Clickable: false
+
+  Game_Player: false
+  Game_Event: false
+  Game_Map: false
+  Game_Variables: false
+  Game_Interpreter: false
+
+  Window_Base: false
+  Window_Selectable: false
+  Window_Command: false
+
+  $gameMap: false
+  $gamePlayer: false
+  $gameTemp: false
+  $plugins: false
+  $gameMessage: false
+  $gameVariables: false
+  $gameSwitches: false
+
+  $dataCommonEvents: false
+  $dataMap: false
+
+  CycloneEngine: true
+  CyclonePlugin: true
+  CycloneUtils: true
+rules:
+  indent:
+    - warn
+    - 2
+    -
+      SwitchCase: 1
+  linebreak-style:
+    - off
+    # - error
+    # - windows
+  quotes:
+    - error
+    - single
+    - avoidEscape: true
+  semi:
+    - error
+    - always
+  no-control-regex:
+    - warn
+  no-unreachable:
+    - warn
+  no-undef:
+    - error
+  no-unused-vars:
+    - error
+    -
+      args: none
+  no-constant-condition:
+    - error
+    -
+      checkLoops: false
+  no-prototype-builtins:
+    - off
+  no-loss-of-precision:
+    - warn
+  block-scoped-var:
+    - warn
+  complexity:
+    - error
+    - 10
+  no-return-assign:
+    - warn
+  no-return-await:
+    - error
+  no-self-compare:
+    - error
+  no-throw-literal:
+    - error
+  no-sequences:
+    - error
+  camelcase:
+    - warn
+    - ignoreGlobals: true
+  max-depth:
+    - error
+  multiline-ternary:
+    - error
+    - never
+  no-inline-comments:
+    - error
+  no-multiple-empty-lines:
+    - error
+  no-multi-assign:
+    - error
+  no-new-object:
+    - error
+  no-tabs:
+    - error
+    - allowIndentationTabs: true
+  operator-linebreak:
+    - error
+    - none
+  arrow-spacing:
+    - error
+  no-var:
+    - error
+  prefer-arrow-callback:
+    - error
+  object-shorthand:
+    - error
+  rest-spread-spacing:
+    - error
