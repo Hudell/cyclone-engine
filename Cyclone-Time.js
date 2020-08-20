@@ -39,35 +39,23 @@
  * You may only send me direct messages when none of the above platforms are
  * appropiate for it, or when you want to share pictures of cute dogs.
  *
- * 3. Sending plugin related questions on channels related to any of my other
+ * 3. A special exception is created for patreon users who get access to my
+ * priority support discord server.
+ *
+ * 4. Sending plugin related questions on channels related to any of my other
  * projects (such as my game's Discord server) may result in an immediate ban
  * from such platforms and I may also choose to ignore your future requests.
  *
- * 4. This plugin may be used for free in any free or donation based game,
- * except those that may break your country's law.
+ * 5. This plugin is released under the Apache License 2.0 (Apache-2.0).
  *
- * 5. To use this plugin on commercial games, you must purchase a license
- * from Hudell's itch.io page.
- *
- * 6. When using any of my plugins, you can credit me as Hudell,
- * but doing so is optional.
- *
- * 7. You may modify the source code or commission someone to modify it for
- * you as long as you don't claim the source code belongs to you.
- *
- * 8. You can share your own modifications to this plugin, but the terms above
- * will still be applied. This means that anyone who uses your modifications
- * on commercial games must also purchase a license for this original plugin
- * from Hudell.
- *
- * 9. You can send me your own changes to this plugin if you wish to see them
+ * 6. You can send me your own changes to this plugin if you wish to see them
  * included in an update, by registering a Pull Request on the plugin's GitHub
  * repository.
  *
- * 10. This plugin is provided as is. While I'll often read feedback and offer
+ * 7. This plugin is provided as is. While I'll often read feedback and offer
  * updates to my plugins, I am in no obligation to do so.
  *
- * 11. I'm not responsible for anything created with this plugin.
+ * 8. I'm not responsible for anything created with this plugin.
  * ===========================================================================
  * Did you know?
  * The portuguese word "Tempo" can mean both "Time" and "Weather".
