@@ -2,7 +2,7 @@
  * @target MZ
  * @plugindesc Background extendable time system with automatic weather change
  * and custom common event callbacks
- * <hudell>
+ * <hudell><pluginName:CycloneTime>
  * @author Hudell
  * @url https://makerdevs.com/plugin/cyclone-time
  * @orderAfter Cyclone-Core
@@ -603,7 +603,7 @@ class CycloneTime extends CyclonePlugin {
       },
     });
 
-    super.register('Time', {
+    super.register('CycloneTime', {
       initialTime: {
         name: 'Initial Time',
         type: 'struct<CycloneTime>',
@@ -826,6 +826,8 @@ class CycloneTime extends CyclonePlugin {
       },
     });
 
+    this.time = 0;
+    this.recalculate();
     this.assignCallbacks();
   }
 
@@ -1213,6 +1215,10 @@ class CycloneTime extends CyclonePlugin {
   }
 
   static updateVariables() {
+    if (this.time === 0) {
+      return;
+    }
+
     const update = (variableId, value) => {
       if (variableId && $gameVariables) {
         $gameVariables._data[variableId] = value;
@@ -1387,6 +1393,7 @@ class CycloneTime extends CyclonePlugin {
   static onStartDay() {
     this.runEvent('startDay');
 
+    this.skipToNextWeather();
     this.maybeRunParamCommonEvent('onDayStart');
   }
 
@@ -1578,7 +1585,6 @@ class CycloneTime extends CyclonePlugin {
     const weatherIsPausedSwitchId = this.params.get('weatherIsPausedSwitchId');
     if (weatherIsPausedSwitchId) {
       $gameSwitches.setValue(weatherIsPausedSwitchId, this.weatherPaused);
-      console.log('updated switch: ', this.weatherPaused, $dataMap.tilesetId);
     }
   }
 
@@ -1587,7 +1593,6 @@ class CycloneTime extends CyclonePlugin {
     if (weatherIsPausedSwitchId) {
       $gameSwitches.setValue(weatherIsPausedSwitchId, this.weatherPaused);
     }
-    console.log('updated switch: ', this.weatherPaused, $dataMap.tilesetId);
 
     const beforeWeatherEvent = this.params.get('beforeWeatherEvent');
     if (beforeWeatherEvent) {
@@ -1637,32 +1642,32 @@ class CycloneTime extends CyclonePlugin {
 
 CycloneTime.register();
 
-CycloneTime.patchStaticClass(DataManager, $super => ({
-  makeSaveContents() {
+CycloneTime.patchClass(DataManager, $super => class {
+  static makeSaveContents() {
     const contents = $super.makeSaveContents.call(this);
     contents.cycloneTime = CycloneTime.getData();
 
     return contents;
-  },
+  }
 
-  extractSaveContents(contents) {
+  static extractSaveContents(contents) {
     $super.extractSaveContents.call(this, contents);
 
     if (contents.cycloneTime !== undefined) {
       CycloneTime.setData(contents.cycloneTime);
     }
-  },
+  }
 
-  setupNewGame() {
+  static setupNewGame() {
     $super.setupNewGame.call(this);
     CycloneTime.disableTime();
     CycloneTime.loadInitialTime();
     CycloneTime.enableTime();
   }
-}));
+});
 
 if (CycloneTime.usingVariables()) {
-  CycloneTime.patchClass(Game_Variables, $super => ({
+  CycloneTime.patchClass(Game_Variables, $super => class {
     setValue(variableId, value) {
       $super.setValue.call(this, variableId, value);
 
@@ -1681,23 +1686,23 @@ if (CycloneTime.usingVariables()) {
           return CycloneTime.setYear(value);
       }
     }
-  }));
+  });
 }
 
-CycloneTime.patchClass(Game_Player, $super => ({
+CycloneTime.patchClass(Game_Player, $super => class {
   performTransfer(...args) {
     $super.performTransfer.call(this, ...args);
     CycloneTime.updateWeather();
     CycloneTime.updateVariables();
   }
-}));
+});
 
-CycloneTime.patchClass(Game_Map, $super => ({
+CycloneTime.patchClass(Game_Map, $super => class {
   setup(...args) {
     $super.setup.call(this, ...args);
     CycloneTime.updateWeather();
     CycloneTime.updateVariables();
   }
-}));
+});
 
 const cycloneWeatherTypes = Object.freeze(['none', 'rain', 'storm', 'snow', 'custom1', 'custom2', 'custom3', 'custom4', 'custom5']);

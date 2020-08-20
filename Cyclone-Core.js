@@ -2,7 +2,7 @@
  * @target MZ
  * @plugindesc Auxiliary plugin that helps keep all other Cyclone plugins
  * smaller and better tested
- * <hudell>
+ * <pluginName:CycloneCore>
  * @author Hudell
  * @url https://makerdevs.com/plugin/cyclone-engine
  *
@@ -18,7 +18,7 @@
  *   `"Ybbd8"'     Y88'     `"Ybbd8"' 88  `"YbbdP"'  88       88  `"Ybbd8"'
  *                 d8'
  *                d8'
- * Core Engine 1.00.000                                              by Hudell
+ * Core Engine 1.01.000                                              by Hudell
  * ===========================================================================
  * Terms of Use
  * ===========================================================================
@@ -77,12 +77,13 @@
  * @desc The value of the custom parameter
  */
 
+const trueStrings = Object.freeze(['TRUE', 'ON', '1', 'YES', 'T', 'V' ]);
+
 class CycloneEngine {
   static registerPlugin(pluginClass, pluginName, paramMap = {}) {
-    const superClasses = {};
-    CycloneEngine.superClasses.set(pluginName, superClasses);
+    const superClasses = CycloneEngine.getSuperClasses(pluginName);
 
-    const params = CycloneEngine.loadParamMap(paramMap);
+    const params = CycloneEngine.loadParamMap(pluginName, paramMap);
 
     CycloneEngine.classes.set(pluginName, {
       pluginName,
@@ -100,24 +101,34 @@ class CycloneEngine {
         continue;
       }
 
-      if (!plugin?.description?.includes('<hudell>')) {
+      let pluginName;
+      if (plugin?.description?.includes('<pluginName:')) {
+        pluginName = this.getRegexMatch(plugin.description, /<pluginName:(.*)>/i, 1);
+        this.pluginFileNames.set(pluginName, plugin.name);
+      }
+
+      if (!pluginName) {
         continue;
       }
+
+      const pluginParams = new Map();
 
       for (const paramName in plugin.parameters) {
         if (!paramName || paramName.startsWith('-')) {
           continue;
         }
 
-        CycloneEngine.parameters.set(paramName, {
+        pluginParams.set(paramName, {
           value: plugin.parameters[paramName],
-          pluginName: plugin.name,
+          pluginName,
         });
       }
+
+      CycloneEngine.parameters.set(pluginName, pluginParams);
     }
   }
 
-  static loadParamMap(paramMap) {
+  static loadParamMap(pluginName, paramMap) {
     const params = new Map();
 
     for (const key in paramMap) {
@@ -126,7 +137,7 @@ class CycloneEngine {
       }
 
       try {
-        const parsedValue = CycloneUtils.parseParam(key, paramMap);
+        const parsedValue = this.parseParam(key, paramMap, pluginName);
         params.set(key, parsedValue);
       } catch(e) {
         console.error(`CycloneEngineCore crashed while trying to parse a parameter value (${ key }). Please report the following error to Hudell:`);
@@ -199,14 +210,6 @@ class CycloneEngine {
     }
   }
 
-  static patchClass(pluginName, baseClass, patchFn) {
-    return ThirdPartyPlugin.patchClass(pluginName, baseClass, patchFn);
-  }
-
-  static patchStaticClass(pluginName, baseClass, patchFn) {
-    return ThirdPartyPlugin.patchStaticClass(pluginName, baseClass, patchFn);
-  }
-
   static runCommonEvent(eventId) {
     const commonEvent = $dataCommonEvents[eventId];
     if (!commonEvent) {
@@ -242,17 +245,123 @@ class CycloneEngine {
       }
     }
   }
-}
 
-CycloneEngine.superClasses = new Map();
-CycloneEngine.classes = new Map();
-CycloneEngine.parameters = new Map();
-CycloneEngine.structs = new Map();
-CycloneEngine.eventListeners = new Map();
+  static getPluginFileName(pluginName) {
+    return this.pluginFileNames.get(`ThirdParty_${ pluginName }`) ?? pluginName;
+  }
 
-const trueStrings = Object.freeze(['TRUE', 'ON', '1', 'YES', 'T', 'V' ]);
+  static _descriptorIsProperty(descriptor) {
+    return descriptor.get || descriptor.set || !descriptor.value || typeof descriptor.value !== 'function';
+  }
 
-class CycloneUtils {
+  static _getAllClassDescriptors(classObj, usePrototype = false) {
+    if (classObj === Object) {
+      return {};
+    }
+
+    const descriptors = Object.getOwnPropertyDescriptors(usePrototype ? classObj.prototype : classObj);
+    let parentDescriptors = {};
+    if (classObj.prototype) {
+      const parentClass = Object.getPrototypeOf(classObj.prototype).constructor;
+      if (parentClass !== Object) {
+        parentDescriptors = this._getAllClassDescriptors(parentClass, usePrototype);
+      }
+    }
+
+    return Object.assign({}, parentDescriptors, descriptors);
+  }
+
+  static _assignDescriptor(receiver, giver, descriptor, descriptorName) {
+    if (this._descriptorIsProperty(descriptor)) {
+      if (descriptor.get || descriptor.set) {
+        Object.defineProperty(receiver, descriptorName, {
+          get: descriptor.get,
+          set: descriptor.set,
+          enumerable: descriptor.enumerable,
+          configurable: descriptor.configurable,
+        });
+      } else {
+        Object.defineProperty(receiver, descriptorName, {
+          value: descriptor.value,
+          enumerable: descriptor.enumerable,
+          configurable: descriptor.configurable,
+        });
+      }
+    } else {
+      receiver[descriptorName] = giver[descriptorName];
+    }
+  }
+
+  static _applyPatch(baseClass, patchClass, $super, ignoredNames, usePrototype = false) {
+    const baseMethods = this._getAllClassDescriptors(baseClass, usePrototype);
+
+    const baseClassOrPrototype = usePrototype ? baseClass.prototype : baseClass;
+    const patchClassOrPrototype = usePrototype ? patchClass.prototype : patchClass;
+    const descriptors = Object.getOwnPropertyDescriptors(patchClassOrPrototype);
+    let anyOverride = false;
+
+    for (const methodName in descriptors) {
+      if (ignoredNames.includes(methodName)) {
+        continue;
+      }
+
+      if (methodName in baseMethods) {
+        anyOverride = true;
+        const baseDescriptor = baseMethods[methodName];
+        this._assignDescriptor($super, baseClassOrPrototype, baseDescriptor, methodName);
+      }
+
+      const descriptor = descriptors[methodName];
+      this._assignDescriptor(baseClassOrPrototype, patchClassOrPrototype, descriptor, methodName);
+    }
+
+    return anyOverride;
+  }
+
+  static patchClass(baseClass, patchFn, pluginName) {
+    const $super = {};
+    const $prototype = {};
+    const $dynamicSuper = {};
+    const patchClass = patchFn($dynamicSuper, $prototype);
+
+    if (typeof patchClass !== 'function') {
+      throw new Error(`Invalid class patch for ${ baseClass.name }`);
+    }
+
+    const ignoredStaticNames = Object.getOwnPropertyNames(class {});
+    const ignoredNames = Object.getOwnPropertyNames((class {}).prototype);
+    const anyStaticOverride = this._applyPatch(baseClass, patchClass, $super, ignoredStaticNames);
+    const anyNonStaticOverride = this._applyPatch(baseClass, patchClass, $prototype, ignoredNames, true);
+
+    if (anyStaticOverride) {
+      const descriptors = Object.getOwnPropertyDescriptors($super);
+      for (const descriptorName in descriptors) {
+        this._assignDescriptor($dynamicSuper, $super, descriptors[descriptorName], descriptorName);
+      }
+
+      if (anyNonStaticOverride) {
+        $dynamicSuper.$prototype = $prototype;
+      }
+    } else  {
+      Object.assign($dynamicSuper, $prototype);
+    }
+
+    if (pluginName) {
+      const superClasses = this.getSuperClasses(pluginName);
+      superClasses[baseClass.name] = $dynamicSuper;
+    }
+  }
+
+  static getSuperClasses(pluginName) {
+    if (!this.superClasses.has(pluginName)) {
+      const superClasses = {};
+      this.superClasses.set(pluginName, superClasses);
+      return superClasses;
+    }
+
+    return this.superClasses.get(pluginName);
+  }
+
   static isTrue(value) {
     if (typeof value !== 'string') {
       return Boolean(value);
@@ -357,15 +466,24 @@ class CycloneUtils {
       case 'float':
         return this.getFloatParam({ value, pluginName, defaultValue });
       case 'boolean':
-        return this.isTrue(value.trim());
+        return (typeof value === 'boolean') ? value : this.isTrue(String(value).trim());
       default:
         return value;
     }
   }
 
-  static parseParam(key, paramMap) {
+  static getPluginParam(pluginName, paramName) {
+    const pluginParams = this.parameters.get(pluginName);
+    if (!pluginParams) {
+      return;
+    }
+
+    return pluginParams.get(paramName);
+  }
+
+  static parseParam(key, paramMap, pluginName) {
     const { name = key, type = 'string', defaultValue = '' } = paramMap[key];
-    const { value = defaultValue, pluginName = 'Missing' } = CycloneEngine.parameters.get(name) || {};
+    const { value = defaultValue } = this.getPluginParam(pluginName, name) || {};
 
     return this.getParam({
       value,
@@ -534,40 +652,6 @@ class CyclonePlugin { // eslint-disable-line no-unused-vars
     });
   }
 
-  static _patchClass(baseClassOrPrototype, baseClassName, patchFn) {
-    const $super = {};
-    const patchData = patchFn($super);
-
-    // Automatically keeps a reference to any method we override
-    for (const methodName in patchData) {
-      if (methodName in baseClassOrPrototype) {
-        $super[methodName] = baseClassOrPrototype[methodName];
-      }
-    }
-
-    const superClasses = CycloneEngine.superClasses.get(this.pluginName);
-    if (!superClasses) {
-      throw new Error('Unregistered Plugin');
-    }
-
-    const { properties = {} } = patchData;
-    delete patchData.properties;
-    for (const propName in properties) {
-      this._addProperty(baseClassOrPrototype, propName, properties[propName] === true ? {} : properties[propName]);
-    }
-
-    superClasses[baseClassName] = $super;
-    Object.assign(baseClassOrPrototype, patchData);
-  }
-
-  static patchStaticClass(baseClass, patchFn) {
-    return this._patchClass(baseClass, baseClass.name, patchFn);
-  }
-
-  static patchClass(baseClass, patchFn) {
-    return this._patchClass(baseClass.prototype, baseClass.name, patchFn);
-  }
-
   static registerEvent(eventName, callback) {
     CycloneEngine.registerEvent(`${ this.pluginName }:${ eventName }`, callback);
   }
@@ -575,26 +659,32 @@ class CyclonePlugin { // eslint-disable-line no-unused-vars
   static runEvent(eventName) {
     CycloneEngine.runEvent(`${ this.pluginName }:${ eventName }`);
   }
+
+  static getFileName() {
+    return CycloneEngine.pluginFileNames.get(this.pluginName) ?? this.pluginName;
+  }
+
+  static patchClass(baseClass, patchFn) {
+    return CycloneEngine.patchClass(baseClass, patchFn, this.pluginName);
+  }
+
+  static registerCommand(commandName, fn) {
+    const fileName = this.getFileName();
+    return PluginManager.registerCommand(fileName, commandName, fn);
+  }
 }
+
+
+CycloneEngine.superClasses = new Map();
+CycloneEngine.classes = new Map();
+CycloneEngine.parameters = new Map();
+CycloneEngine.structs = new Map();
+CycloneEngine.eventListeners = new Map();
+CycloneEngine.pluginFileNames = new Map();
+
+
 
 CycloneEngine.loadAllParams();
-
-/**
- * Extended class available for anyone wanting to use Cyclone Core to mange their own plugins
- */
-class ThirdPartyPlugin extends CyclonePlugin {
-  static patchClass(pluginName, baseClass, patchFn) {
-    this.pluginName = `ThirdParty_${ pluginName }`;
-    return super.patchClass(baseClass, patchFn);
-  }
-
-  static patchStaticClass(pluginName, baseClass, patchFn) {
-    this.pluginName = `ThirdParty_${ pluginName }`;
-    return super.patchStaticClass(baseClass, patchFn);
-  }
-}
-ThirdPartyPlugin.register('ThirdParty', {});
-
 CycloneEngine.structs.set('Dictionary', {
   name: {
     type: 'string',

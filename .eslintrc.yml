@@ -50,7 +50,6 @@ globals:
 
   CycloneEngine: true
   CyclonePlugin: true
-  CycloneUtils: true
 rules:
   indent:
     - warn
