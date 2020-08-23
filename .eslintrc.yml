@@ -1,6 +1,7 @@
 env:
   browser: true
   es6: true
+  node: true
 extends: 'eslint:recommended'
 parserOptions:
   ecmaVersion: 2020
@@ -8,6 +9,7 @@ parserOptions:
 globals:
   require: false
 
+  PIXI: false
   Utils: false
   Graphics: false
   TouchInput: false
@@ -16,26 +18,34 @@ globals:
   Bitmap: false
   JsonEx: false
   Rectangle: false
+  Sprite: false
+  TilingSprite: false
 
   PluginManager: false
   ImageManager: false
   DataManager: false
   SceneManager: false
   SoundManager: false
+  ColorManager: false
 
   Scene_Map: false
   Spriteset_Map: false
   Sprite_Clickable: false
+  Sprite_Balloon: false
+  Sprite_Animation: false
 
   Game_Player: false
   Game_Event: false
   Game_Map: false
   Game_Variables: false
   Game_Interpreter: false
+  Game_Party: false
 
   Window_Base: false
   Window_Selectable: false
   Window_Command: false
+  Window_Scrollable: false
+  Window_MapName: false
 
   $gameMap: false
   $gamePlayer: false
@@ -83,8 +93,6 @@ rules:
       checkLoops: false
   no-prototype-builtins:
     - off
-  no-loss-of-precision:
-    - warn
   block-scoped-var:
     - warn
   complexity:
@@ -108,8 +116,6 @@ rules:
   multiline-ternary:
     - error
     - never
-  no-inline-comments:
-    - error
   no-multiple-empty-lines:
     - error
   no-multi-assign:
@@ -118,7 +124,6 @@ rules:
     - error
   no-tabs:
     - error
-    - allowIndentationTabs: true
   operator-linebreak:
     - error
     - none

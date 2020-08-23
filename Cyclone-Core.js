@@ -18,7 +18,7 @@
  *   `"Ybbd8"'     Y88'     `"Ybbd8"' 88  `"YbbdP"'  88       88  `"Ybbd8"'
  *                 d8'
  *                d8'
- * Core Engine 1.01.000                                              by Hudell
+ * Core Engine 1.02.000                                              by Hudell
  * ===========================================================================
  * Terms of Use
  * ===========================================================================
@@ -69,17 +69,21 @@
  */
 /*~struct~Dictionary:
  * @param name
- * @type str
+ * @type string
  * @desc The name of the custom parameter
  *
  * @param value
- * @type str
+ * @type string
  * @desc The value of the custom parameter
  */
 
 const trueStrings = Object.freeze(['TRUE', 'ON', '1', 'YES', 'T', 'V' ]);
 
 class CycloneEngine {
+  static get versionNum() {
+    return 2;
+  }
+
   static registerPlugin(pluginClass, pluginName, paramMap = {}) {
     const superClasses = CycloneEngine.getSuperClasses(pluginName);
 
@@ -128,7 +132,7 @@ class CycloneEngine {
     }
   }
 
-  static loadParamMap(pluginName, paramMap) {
+  static loadParamMap(pluginName, paramMap, dataMap = undefined) {
     const params = new Map();
 
     for (const key in paramMap) {
@@ -137,7 +141,7 @@ class CycloneEngine {
       }
 
       try {
-        const parsedValue = this.parseParam(key, paramMap, pluginName);
+        const parsedValue = this.parseParam(key, paramMap, pluginName, dataMap);
         params.set(key, parsedValue);
       } catch(e) {
         console.error(`CycloneEngineCore crashed while trying to parse a parameter value (${ key }). Please report the following error to Hudell:`);
@@ -481,10 +485,34 @@ class CycloneEngine {
     return pluginParams.get(paramName);
   }
 
-  static parseParam(key, paramMap, pluginName) {
-    const { name = key, type = 'string', defaultValue = '' } = paramMap[key];
-    const { value = defaultValue } = this.getPluginParam(pluginName, name) || {};
+  static defaultValueForType(typeName) {
+    switch(typeName) {
+      case 'int':
+        return 0;
+      case 'boolean':
+        return false;
+    }
 
+    return '';
+  }
+
+  static parseParam(key, paramMap, pluginName, dataMap = undefined) {
+    let paramData = paramMap[key];
+    if (paramData && typeof paramData === 'string') {
+      paramData = {
+        type: paramData,
+        defaultValue: this.defaultValueForType(paramData)
+      };
+    }
+
+    const { name = key, type = 'string', defaultValue = '' } = paramData;
+    let value;
+    if (dataMap) {
+      value = dataMap.get(name) ?? defaultValue;
+    } else {
+      const data = this.getPluginParam(pluginName, name) || {};
+      value = data.value ?? defaultValue;
+    }
     return this.getParam({
       value,
       defaultValue,
@@ -546,7 +574,14 @@ class CycloneEngine {
         continue;
       }
 
-      const dataType = structType[key];
+      let dataType = structType[key];
+      if (typeof dataType === 'string') {
+        dataType = {
+          type: dataType,
+          defaultValue: this.defaultValueForType(dataType),
+        };
+      }
+
       data[key] = this.getParam({
         value: data[key],
         defaultValue: dataType.defaultValue,
@@ -618,6 +653,31 @@ class CycloneEngine {
 
     return value;
   }
+
+  static getValueMaybeVariable(rawValue) {
+    const value = rawValue.trim();
+
+    if (value.startsWith('$')) {
+      const variableId = parseInt(value.slice(1));
+      if (isNaN(variableId)) {
+        throw new Error(`Invalid Variable ID: ${ variableId }`);
+      }
+
+      if (variableId === 0) {
+        return 0;
+      }
+
+      return $gameVariables.value(variableId);
+    }
+
+    return value;
+  }
+
+  static requireVersion(versionNum, pluginName) {
+    if (versionNum > this.versionNum) {
+      throw new Error(`${ pluginName } requires a newer version of CycloneEngine Core.`);
+    }
+  }
 }
 
 class CyclonePlugin { // eslint-disable-line no-unused-vars
@@ -668,12 +728,38 @@ class CyclonePlugin { // eslint-disable-line no-unused-vars
     return CycloneEngine.patchClass(baseClass, patchFn, this.pluginName);
   }
 
-  static registerCommand(commandName, fn) {
+  static registerCommand(commandName, params, fn) {
     const fileName = this.getFileName();
-    return PluginManager.registerCommand(fileName, commandName, fn);
+
+    if (typeof params === 'function') {
+      return PluginManager.registerCommand(fileName, commandName, params);
+    }
+
+    return PluginManager.registerCommand(fileName, commandName, (receivedArgs) => {
+      const dataMap = new Map();
+      for (const key in receivedArgs) {
+        if (!receivedArgs.hasOwnProperty(key)) {
+          continue;
+        }
+        dataMap.set(key, receivedArgs[key]);
+      }
+      const parsedArgs = CycloneEngine.loadParamMap(this.pluginName, params, dataMap);
+      for (const [key, value] of parsedArgs) {
+        receivedArgs[key] = value;
+      }
+
+      return fn(receivedArgs);
+    });
+  }
+
+  static getParamList(paramNames) {
+    const list = {};
+    for (const [ key ] of this.params) {
+      list[key] = this.params.get(key);
+    }
+    return list;
   }
 }
-
 
 CycloneEngine.superClasses = new Map();
 CycloneEngine.classes = new Map();
@@ -681,8 +767,6 @@ CycloneEngine.parameters = new Map();
 CycloneEngine.structs = new Map();
 CycloneEngine.eventListeners = new Map();
 CycloneEngine.pluginFileNames = new Map();
-
-
 
 CycloneEngine.loadAllParams();
 CycloneEngine.structs.set('Dictionary', {

@@ -477,13 +477,15 @@
  */
 /*~struct~Dictionary:
  * @param name
- * @type str
+ * @type string
  * @desc The name of the custom parameter
  *
  * @param value
- * @type str
+ * @type string
  * @desc The value of the custom parameter
  */
+
+CycloneEngine.requireVersion(2, 'CycloneTime');
 
 class CycloneTime extends CyclonePlugin {
   static register() {
