@@ -8,6 +8,7 @@
  *
  * <pluginName:CycloneMaps>
  * @author Hudell
+ * @url https://makerdevs.com/plugin/cyclone-maps
  *
  * @help
  * ===========================================================================
@@ -92,9 +93,8 @@
  * <xMove:number> : Changes the horizontal speed of the fog
  * <yMove:number> : Changes the vertical speed of the fog
  *
- * You can use variable numbers on the notetags by adding a $ symbol
- * before the value
-
+ * Go to https://makerdevs.com/plugin/cyclone-maps for more instructions
+ *
  * @param Map Change Event Id
  * @desc Select a Common Event to be called every time the map changes
  * @type common_event
@@ -933,7 +933,7 @@ CycloneMaps.patchClass(Spriteset_Map, $super => class {
 
   loadOverlayBitmap(folderName, fileName) {
     if (CycloneMaps.params.get('organizedFolders')) {
-      return ImageManager.loadBitmap(`img/overlays/${ folderName }/${ fileName }`);
+      return ImageManager.loadBitmap(`img/overlays/${ folderName }/`, fileName);
     }
 
     return ImageManager.loadParallax(fileName);
