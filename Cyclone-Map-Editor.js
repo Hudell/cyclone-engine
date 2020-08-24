@@ -106,6 +106,21 @@ CycloneEngine.requireVersion(2, 'CycloneMapEditor');
   let messySelection = false;
   const canCollapseWindows = false;
 
+  const regionColors = [
+    '#e75858',
+    '#c0986f',
+    '#cbcf32',
+    '#8ab24c',
+    '#22aa47',
+    '#1cbf97',
+    '#7ec1df',
+    '#4da4dc',
+    '#4f36a9',
+    '#725fb9',
+    '#d48de4',
+    '#fa5e84'
+  ];
+
   const _ = '';
   const o = true;
   const x = false;
@@ -211,6 +226,10 @@ CycloneEngine.requireVersion(2, 'CycloneMapEditor');
 
     static validTabs() {
       return tabs.filter(tab => this.isTabValid(tab));
+    }
+
+    static areRegionsVisible() {
+      return layerVisibility[4];
     }
 
     static selectPreviousTab() {
@@ -1230,6 +1249,7 @@ CycloneEngine.requireVersion(2, 'CycloneMapEditor');
     toggleLayerVisibility(layerIndex) {
       layerVisibility[layerIndex] = !layerVisibility[layerIndex];
       this.refresh();
+      SceneManager._scene._mapEditorGrid.refresh();
     }
 
     getLayerIndex(y) {
@@ -1294,6 +1314,37 @@ CycloneEngine.requireVersion(2, 'CycloneMapEditor');
       super.createContents();
     }
 
+    drawCell(x, y) {
+      const padding = this.padding;
+
+      const context = this.contents.context;
+      context.save();
+      context.strokeStyle = '#000000';
+      context.beginPath();
+      context.moveTo(x - padding, y - padding);
+      context.lineTo(x - padding + tileWidth, y - padding);
+      context.stroke();
+      context.beginPath();
+      context.moveTo(x - padding, y - padding);
+      context.lineTo(x - padding, y - padding + tileHeight);
+      context.stroke();
+
+      if (!CycloneMapEditor.areRegionsVisible()) {
+        return;
+      }
+
+      const mapX = $gameMap.canvasToMapX(x);
+      const mapY = $gameMap.canvasToMapY(y);
+
+      const regionId = $gameMap.regionId(mapX, mapY);
+
+      if (regionId > 0) {
+        const color = regionColors[regionId % regionColors.length];
+        this.contents.fillRect(x, y, tileWidth, tileHeight, `${ color }66`);
+        this.drawText(regionId, x, y, tileWidth, 'center');
+      }
+    }
+
     refresh() {
       this.contents.clear();
 
@@ -1307,7 +1358,6 @@ CycloneEngine.requireVersion(2, 'CycloneMapEditor');
       const mapStartY = 0 - paddingY;
       const mapEndX = mapStartX + ($gameMap.width() * tileWidth);
       const mapEndY = mapStartY + ($gameMap.height() * tileHeight);
-      const padding = this.padding;
 
       const rightPos = Math.min(Graphics.width, mapEndX);
       let bottomPos = Math.min(Graphics.height, mapEndY);
@@ -1322,20 +1372,7 @@ CycloneEngine.requireVersion(2, 'CycloneMapEditor');
             continue;
           }
 
-          const drawWidth = x + tileWidth < mapEndX ? tileWidth : mapEndX - x;
-          const drawHeight = y + tileHeight < mapEndY ? tileHeight : mapEndY - y;
-
-          const context = this.contents.context;
-          context.save();
-          context.strokeStyle = '#000000';
-          context.beginPath();
-          context.moveTo(x - padding, y - padding);
-          context.lineTo(x - padding + drawWidth, y - padding);
-          context.stroke();
-          context.beginPath();
-          context.moveTo(x - padding, y - padding);
-          context.lineTo(x - padding, y - padding + drawHeight);
-          context.stroke();
+          this.drawCell(x, y);
         }
       }
     }
