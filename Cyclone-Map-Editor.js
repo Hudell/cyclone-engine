@@ -67,7 +67,24 @@
  * @default p
  * @desc What key should trigger the map editor when pressed?
  *
+ * @param regionIcons
+ * @text Region Icons
+ * @type struct<RegionIcon>[]
+ * @desc Configure certain regions to display an icon instead of the number
+ *
  **/
+
+/*~struct~RegionIcon:
+ * @param regionId
+ * @text Region Id
+ * @type number
+ * @desc The regionId to display an icon on
+ *
+ * @param icon
+ * @text Icon
+ * @type number
+ * @desc The number of the icon for this region
+ */
 
 CycloneEngine.requireVersion(2, 'CycloneMapEditor');
 
@@ -192,11 +209,20 @@ CycloneEngine.requireVersion(2, 'CycloneMapEditor');
     }
 
     static register() {
+      CycloneEngine.structs.set('CycloneRegionIcon', {
+        regionId: 'int',
+        icon: 'int',
+      });
+
       super.register('CycloneMapEditor', {
         mainKey: {
           name: 'Main Key',
           type: 'str',
           defaultValue: 'p',
+        },
+        regionIcons: {
+          type: 'struct<CycloneRegionIcon>[]',
+          defaultValue: '[]',
         },
       });
 
@@ -206,6 +232,16 @@ CycloneEngine.requireVersion(2, 'CycloneMapEditor');
       document.addEventListener('keypress', (...args) => {
         this.onKeyPress(...args);
       });
+
+      const regionIcons = this.params.get('regionIcons');
+      this.regionIcons = new Map();
+      if (regionIcons) {
+        for (const { regionId, icon } of regionIcons) {
+          if (regionId && icon) {
+            this.regionIcons.set(regionId, icon);
+          }
+        }
+      }
     }
 
     static isTabValid(tab) {
@@ -1341,7 +1377,18 @@ CycloneEngine.requireVersion(2, 'CycloneMapEditor');
       if (regionId > 0) {
         const color = regionColors[regionId % regionColors.length];
         this.contents.fillRect(x, y, tileWidth, tileHeight, `${ color }66`);
-        this.drawText(regionId, x, y, tileWidth, 'center');
+
+        let iconIndex = CycloneMapEditor.regionIcons.get(regionId) ?? 0;
+        if (iconIndex) {
+          const {iconWidth, iconHeight} = ImageManager;
+          const diffX = (tileWidth - iconWidth) / 2;
+          const diffY = (tileHeight - iconHeight) / 2;
+
+          this.drawIcon(iconIndex, x + diffX, y + diffY);
+        } else {
+          this.drawText(regionId, x, y, tileWidth, 'center');
+        }
+
       }
     }
 
