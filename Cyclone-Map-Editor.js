@@ -73,7 +73,7 @@ CycloneEngine.requireVersion(2, 'CycloneMapEditor');
 
 (() => {
   let windowWidth = 300;
-  const layerVisibility = [true, true, true, true, false, true, true, false];
+  const layerVisibility = [true, true, true, true, false, false, true, false];
   let editorActive = false;
 
   let currentLayer = 3;
@@ -86,6 +86,7 @@ CycloneEngine.requireVersion(2, 'CycloneMapEditor');
   let tileHeight = 48;
   let leftSidebar = false;
   let currentTool = 'pencil';
+  let lastDrawingTool = 'pencil';
   let wasPressing = false;
   let isRightButtonDown = false;
   let wasRightButtonDown = false;
@@ -102,6 +103,8 @@ CycloneEngine.requireVersion(2, 'CycloneMapEditor');
   let undoHistory = [];
   let currentChange = false;
   let previewChanges = {};
+  let messySelection = false;
+  const canCollapseWindows = false;
 
   const _ = '';
   const o = true;
@@ -301,17 +304,15 @@ CycloneEngine.requireVersion(2, 'CycloneMapEditor');
           this.pencilButton();
           return;
         case '2':
-          this.rectangleButton();
           return;
         case '3':
-          this.fillButton();
+          this.rectangleButton();
           return;
         case '4':
-          this.eraserButton();
-          // this.changeCurrentTab('D');
+          this.fillButton();
           return;
         case '5':
-          // this.changeCurrentTab('E');
+          this.eraserButton();
           return;
       }
     }
@@ -368,11 +369,13 @@ CycloneEngine.requireVersion(2, 'CycloneMapEditor');
 
     static pencilButton() {
       currentTool = 'pencil';
+      lastDrawingTool = 'pencil';
       SceneManager._scene._spriteset._mapEditorCursor.updateDrawing();
     }
 
     static rectangleButton() {
       currentTool = 'rectangle';
+      lastDrawingTool = 'rectangle';
       rectangleWidth = 0;
       rectangleHeight = 0;
       rectangleBackWidth = 0;
@@ -871,8 +874,23 @@ CycloneEngine.requireVersion(2, 'CycloneMapEditor');
         return;
       }
 
-      let selectionRow = 0;
-      let selectionCol = 0;
+      let initialRow = 0;
+      let initialCol = 0;
+      let rowIncrement = 1;
+      let colIncrement = 1;
+
+      if (rectangleBackWidth > 0) {
+        initialCol = width - 1;
+        colIncrement *= -1;
+      }
+
+      if (rectangleBackHeight > 0) {
+        initialRow = height - 1;
+        rowIncrement *= -1;
+      }
+
+      let selectionRow = initialRow;
+      let selectionCol = initialCol;
 
       if (previewOnly) {
         previewChanges = {};
@@ -881,12 +899,14 @@ CycloneEngine.requireVersion(2, 'CycloneMapEditor');
       }
 
       for (let tileY = startY; tileY < startY + height; tileY++) {
+        selectionCol = initialCol;
         for (let tileX = startX; tileX < startX + width; tileX++) {
           const tileId = this.getSelectedTileCell(selectionCol, selectionRow) ?? 0;
+
           this.setMapTile(tileX, tileY, currentLayer, tileId, true, previewOnly);
-          selectionCol++;
+          selectionCol += colIncrement;
         }
-        selectionRow++;
+        selectionRow += rowIncrement;
       }
 
       if (previewOnly) {
@@ -924,8 +944,23 @@ CycloneEngine.requireVersion(2, 'CycloneMapEditor');
 
       tileCols = width;
       tileRows = height;
+      messySelection = true;
+
+      if (currentTool == 'eraser') {
+        this.restoreLastDrawingTool();
+      }
 
       this.refreshTilemap();
+      SceneManager._scene._mapEditorWindow.redraw();
+      SceneManager._scene._mapEditorWindow.ensureSelectionVisible();
+    }
+
+    static restoreLastDrawingTool() {
+      if (lastDrawingTool === 'rectangle') {
+        this.rectangleButton();
+      } else {
+        this.pencilButton();
+      }
     }
 
     static collectFillAreaFrom(mapX, mapY) {
@@ -1042,10 +1077,10 @@ CycloneEngine.requireVersion(2, 'CycloneMapEditor');
       this.addCommand('Undo', 'undo');
       this.addCommand('Redo', 'redo');
 
-      this.addCommand('Pencil', 'pencil');
-      this.addCommand('Rectangle', 'rectangle');
+      this.addCommand('Pen', 'pencil');
+      this.addCommand('Rect', 'rectangle');
       this.addCommand('Fill', 'fill');
-      this.addCommand('Eraser', 'eraser');
+      this.addCommand('Erase', 'eraser');
 
       this.addCommand('Save', 'save');
       this.addCommand('Reload', 'reload');
@@ -1273,6 +1308,19 @@ CycloneEngine.requireVersion(2, 'CycloneMapEditor');
       }
     }
 
+    ensureSelectionVisible() {
+      if (this._selectionIndex < 0 || currentTileId === 0) {
+        return;
+      }
+
+      const row = Math.floor(this._selectionIndex / this.maxCols());
+      if (row < this.topRow()) {
+        this.setTopRow(Math.min(row, this.maxTopRow()));
+      } else if (row > this.topRow() + this.maxPageRows()) {
+        this.setTopRow(Math.min(row, this.maxTopRow()));
+      }
+    }
+
     redraw() {
       Window_Selectable.prototype.refresh.call(this);
 
@@ -1313,14 +1361,57 @@ CycloneEngine.requireVersion(2, 'CycloneMapEditor');
       this.drawSelection();
     }
 
-    drawSelection() {
-      const cols = this.maxCols();
+    drawMessySelection() {
+      this._selectionIndex = -1;
 
       for (let index = 0; index < this._list.length; index++) {
         const item = this._list[index];
-        if (item.name !== currentTileId) {
+        let isSelected = Tilemap.isSameKindTile(item.name, currentTileId);
+        if (isSelected) {
+          this._selectionIndex = index;
+        } else {
+          for (const tileId of selectedTileList) {
+            if (Tilemap.isSameKindTile(tileId, item.name)) {
+              isSelected = true;
+            }
+          }
+        }
+
+        if (!isSelected) {
           continue;
         }
+
+        const rect = this.itemRect(index);
+        const { x, y } = rect;
+
+        this.contents.fillRect(x, y, tileWidth, 4, '#000000');
+        this.contents.fillRect(x, y + tileHeight - 4, tileWidth, 4, '#000000');
+        this.contents.fillRect(x, y, 4, tileHeight, '#000000');
+        this.contents.fillRect(x + tileWidth - 4, y, 4, tileHeight, '#000000');
+
+        this.contents.fillRect(x + 2, y + 2, tileWidth - 4, 2, '#FFFFFF');
+        this.contents.fillRect(x + 2, y + tileHeight - 4, tileWidth - 4, 2, '#FFFFFF');
+        this.contents.fillRect(x + 2, y + 2, 2, tileHeight - 4, '#FFFFFF');
+        this.contents.fillRect(x + tileWidth - 4, y + 2, 2, tileHeight - 4, '#FFFFFF');
+      }
+    }
+
+    drawSelection() {
+      if (messySelection) {
+        this.drawMessySelection();
+        return;
+      }
+
+      const cols = this.maxCols();
+      this._selectionIndex = -1;
+
+      for (let index = 0; index < this._list.length; index++) {
+        const item = this._list[index];
+        if (!Tilemap.isSameKindTile(item.name, currentTileId)) {
+          continue;
+        }
+
+        this._selectionIndex = index;
 
         let col = index % cols;
         let row = Math.floor(index / cols);
@@ -1373,6 +1464,7 @@ CycloneEngine.requireVersion(2, 'CycloneMapEditor');
       currentTileId = tileId;
       tileCols = cols ?? 1;
       tileRows = rows ?? 1;
+      messySelection = false;
 
       const topIndex = this._list.findIndex((item) => item.name === tileId);
       if (topIndex < 0) {
@@ -1636,6 +1728,18 @@ CycloneEngine.requireVersion(2, 'CycloneMapEditor');
         this.bitmap.drawTile(tileId, x, y);
         column++;
       }
+
+      if (width > 8 && height > 8) {
+        this.bitmap.fillRect(0, 0, width, 4, '#000000');
+        this.bitmap.fillRect(0, height - 4, width, 4, '#000000');
+        this.bitmap.fillRect(0, 0, 4, height, '#000000');
+        this.bitmap.fillRect(width - 4, 0, 4, height, '#000000');
+
+        this.bitmap.fillRect(2, 2, width - 4, 2, '#FFFFFF');
+        this.bitmap.fillRect(2, height - 4, width - 4, 2, '#FFFFFF');
+        this.bitmap.fillRect(2, 2, 2, height - 4, '#FFFFFF');
+        this.bitmap.fillRect(width - 4, 2, 2, height - 4, '#FFFFFF');
+      }
     }
 
     getCursorTileX() {
@@ -1768,6 +1872,10 @@ CycloneEngine.requireVersion(2, 'CycloneMapEditor');
     }
 
     collapseMapEditorWindows() {
+      if (!canCollapseWindows) {
+        return;
+      }
+
       const x = leftSidebar ? (50 - windowWidth) : (Graphics.width - 50);
 
       this._mapEditorCommands.x = x;
@@ -1783,6 +1891,32 @@ CycloneEngine.requireVersion(2, 'CycloneMapEditor');
       this._mapEditorLayerListWindow.x = editorX;
     }
 
+    showOrMoveMapEditorWindows() {
+      const { x } = TouchInput;
+      if (x <= windowWidth && leftSidebar) {
+        if (TouchInput.isPressed() && wasPressing) {
+          leftSidebar = false;
+          this.collapseMapEditorWindows();
+          return;
+        }
+
+        this.showMapEditorWindows();
+        return;
+      }
+
+      if (x >= Graphics.width - windowWidth && !leftSidebar) {
+        if (TouchInput.isPressed() && wasPressing) {
+          leftSidebar = true;
+          this.collapseMapEditorWindows();
+          return;
+        }
+
+        this.showMapEditorWindows();
+        return;
+      }
+    }
+
+
     updateMapEditorMenuPosition() {
       const { x } = TouchInput;
       const editorX = this.editorX();
@@ -1795,11 +1929,7 @@ CycloneEngine.requireVersion(2, 'CycloneMapEditor');
           return;
         }
 
-        if (x <= 50) {
-          this.showMapEditorWindows();
-          return;
-        }
-
+        this.showOrMoveMapEditorWindows();
         return;
       }
 
@@ -1810,10 +1940,7 @@ CycloneEngine.requireVersion(2, 'CycloneMapEditor');
         return;
       }
 
-      if (x >= Graphics.width - 50) {
-        this.showMapEditorWindows();
-        return;
-      }
+      this.showOrMoveMapEditorWindows();
     }
 
     canUpdateMouse() {
