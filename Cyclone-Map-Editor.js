@@ -738,6 +738,10 @@ CycloneEngine.requireVersion(2, 'CycloneMapEditor');
     }
 
     static changeAutoTileShapeForPosition(x, y, z, tileId, skipPreview = true) {
+      if (Input.isPressed('shift')) {
+        return tileId;
+      }
+
       const shape = this.getAutoTileShapeForPosition(x, y, z, tileId, skipPreview);
       return Tilemap.TILE_ID_A1 + Math.floor((tileId - Tilemap.TILE_ID_A1) / 48) * 48 + shape;
     }
@@ -810,11 +814,7 @@ CycloneEngine.requireVersion(2, 'CycloneMapEditor');
     }
 
     static setMapTile(x, y, z, tileId, updateNeighbors = true, previewOnly = false) {
-      if (x < 0 || x >= $gameMap.width()) {
-        return;
-      }
-
-      if (y < 0 || y >= $gameMap.height()) {
+      if (!$gameMap.isValid(x, y)) {
         return;
       }
 
@@ -836,7 +836,7 @@ CycloneEngine.requireVersion(2, 'CycloneMapEditor');
         $dataMap.data[tileIndex] = effectiveTileId;
       }
 
-      if (updateNeighbors) {
+      if (updateNeighbors && !Input.isPressed('shift')) {
         this.resetTileShape(x -1, y -1, z, previewOnly);
         this.resetTileShape(x, y -1, z, previewOnly);
         this.resetTileShape(x +1, y -1, z, previewOnly);
