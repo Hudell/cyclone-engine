@@ -359,7 +359,6 @@ CycloneEngine.requireVersion(2, 'CycloneMapEditor');
       xhr.send();
     }
 
-
     static undoButton() {
       this.undoLastChange();
     }
@@ -737,8 +736,20 @@ CycloneEngine.requireVersion(2, 'CycloneMapEditor');
       return this.getShapeForConfiguration(config);
     }
 
-    static changeAutoTileShapeForPosition(x, y, z, tileId, skipPreview = true) {
+    static isShiftMapping() {
       if (Input.isPressed('shift')) {
+        return true;
+      }
+
+      if (SceneManager._scene._mapEditorWindow._manualTileSelected !== undefined) {
+        return true;
+      }
+
+      return false;
+    }
+
+    static changeAutoTileShapeForPosition(x, y, z, tileId, skipPreview = true) {
+      if (this.isShiftMapping()) {
         return tileId;
       }
 
@@ -836,7 +847,7 @@ CycloneEngine.requireVersion(2, 'CycloneMapEditor');
         $dataMap.data[tileIndex] = effectiveTileId;
       }
 
-      if (updateNeighbors && !Input.isPressed('shift')) {
+      if (updateNeighbors && !this.isShiftMapping()) {
         this.resetTileShape(x -1, y -1, z, previewOnly);
         this.resetTileShape(x, y -1, z, previewOnly);
         this.resetTileShape(x +1, y -1, z, previewOnly);
@@ -951,7 +962,8 @@ CycloneEngine.requireVersion(2, 'CycloneMapEditor');
       }
 
       this.refreshTilemap();
-      SceneManager._scene._mapEditorWindow.redraw();
+      SceneManager._scene._mapEditorWindow._manualTileSelected = undefined;
+      SceneManager._scene._mapEditorWindow.refresh();
       SceneManager._scene._mapEditorWindow.ensureSelectionVisible();
     }
 
@@ -1260,6 +1272,85 @@ CycloneEngine.requireVersion(2, 'CycloneMapEditor');
     }
   }
 
+  class WindowCycloneGrid extends Window_Base {
+    initialize() {
+      const width = Graphics.width;
+      const height = Graphics.height;
+      const rect = new Rectangle(0, 0, width, height);
+
+      super.initialize(rect);
+
+      this.padding = 0;
+      this.refresh();
+      this.opacity = 0;
+
+      this.backOpacity = 0;
+      this.hide();
+      this.deactivate();
+    }
+
+    createContents() {
+      this._padding = 0;
+      super.createContents();
+    }
+
+    refresh() {
+      this.contents.clear();
+
+      this._lastDisplayX = $gameMap._displayX;
+      this._lastDisplayY = $gameMap._displayY;
+
+      const paddingX = ($gameMap._displayX - Math.floor($gameMap._displayX)) * tileWidth;
+      const paddingY = ($gameMap._displayY - Math.floor($gameMap._displayY)) * tileHeight;
+
+      const mapStartX = 0 - paddingX;
+      const mapStartY = 0 - paddingY;
+      const mapEndX = mapStartX + ($gameMap.width() * tileWidth);
+      const mapEndY = mapStartY + ($gameMap.height() * tileHeight);
+      const padding = this.padding;
+
+      const rightPos = Math.min(Graphics.width, mapEndX);
+      let bottomPos = Math.min(Graphics.height, mapEndY);
+
+      for (let x = mapStartX; x < rightPos; x += tileWidth) {
+        if (x + tileWidth < 0) {
+          continue;
+        }
+
+        for (let y = mapStartY; y < bottomPos; y += tileHeight) {
+          if (y + tileHeight < 0) {
+            continue;
+          }
+
+          const drawWidth = x + tileWidth < mapEndX ? tileWidth : mapEndX - x;
+          const drawHeight = y + tileHeight < mapEndY ? tileHeight : mapEndY - y;
+
+          const context = this.contents.context;
+          context.save();
+          context.strokeStyle = '#000000';
+          context.beginPath();
+          context.moveTo(x - padding, y - padding);
+          context.lineTo(x - padding + drawWidth, y - padding);
+          context.stroke();
+          context.beginPath();
+          context.moveTo(x - padding, y - padding);
+          context.lineTo(x - padding, y - padding + drawHeight);
+          context.stroke();
+        }
+      }
+    }
+
+    update() {
+      if (!editorActive) {
+        return;
+      }
+
+      if (this._lastDisplayX !== $gameMap._displayX || this._lastDisplayY !== $gameMap._displayY) {
+        this.refresh();
+      }
+    }
+  }
+
   class WindowCycloneMapEditor extends Window_Command {
     constructor() {
       const x = Graphics.width - windowWidth;
@@ -1298,7 +1389,27 @@ CycloneEngine.requireVersion(2, 'CycloneMapEditor');
       this.addCommand(tileId, 'tile', true, tileId);
     }
 
+    makeManualTilesList() {
+      const tileId = this._manualTileSelected;
+      let maxShape = 46;
+
+      if (Tilemap.isWallSideTile(tileId) || Tilemap.isRoofTile(tileId)) {
+        maxShape = 16;
+      } else if (Tilemap.isWaterfallTile(tileId)) {
+        maxShape = 3;
+      }
+
+      for (let i = 0; i <= maxShape; i++) {
+        this.addCommand(tileId + i, 'tile', true, tileId + i);
+      }
+    }
+
     makeCommandList() {
+      if (this._manualTileSelected) {
+        this.makeManualTilesList();
+        return;
+      }
+
       for (let tileId = Tilemap.TILE_ID_A1; tileId < Tilemap.TILE_ID_MAX; tileId += 48) {
         this.addTile(tileId);
       }
@@ -1409,6 +1520,12 @@ CycloneEngine.requireVersion(2, 'CycloneMapEditor');
         const item = this._list[index];
         if (!Tilemap.isSameKindTile(item.name, currentTileId)) {
           continue;
+        }
+
+        if (this._manualTileSelected !== undefined) {
+          if (item.name !== currentTileId) {
+            continue;
+          }
         }
 
         this._selectionIndex = index;
@@ -1587,9 +1704,37 @@ CycloneEngine.requireVersion(2, 'CycloneMapEditor');
       this.redraw();
     }
 
+    activateManualTile() {
+      const index = this.hitIndex();
+      if (index < 0) {
+        return;
+      }
+
+      const tileId = this.commandName(index);
+      if (Tilemap.isAutotile(tileId)) {
+        this._manualTileSelected = tileId;
+        this._selectionIndex = -1;
+      }
+    }
+
+    toggleManualTiles() {
+      if (this._manualTileSelected === undefined) {
+        this.activateManualTile();
+      } else {
+        this._manualTileSelected = undefined;
+      }
+
+      this.refresh();
+      this._mouseDown = false;
+      wasRightButtonDown = isRightButtonDown;
+    }
+
     processTouchScroll() {
       if (TouchInput.isTriggered() && this.isTouchedInsideFrame()) {
         this.startSelectingTile();
+      } else if (isRightButtonDown && !wasRightButtonDown && !this._mouseDown) {
+        this.toggleManualTiles();
+        return;
       }
 
       if (this._mouseDown) {
@@ -1806,6 +1951,11 @@ CycloneEngine.requireVersion(2, 'CycloneMapEditor');
       tileHeight = $gameMap.tileHeight();
       windowWidth = tileWidth * 8 + 24;
 
+      this._mapEditorGrid = new WindowCycloneGrid();
+      this.addChild(this._mapEditorGrid);
+      this._mapEditorGrid.hide();
+      this._mapEditorGrid.deactivate();
+
       this._mapEditorCommands = new WindowCycloneMapEditorCommands();
       this.addChild(this._mapEditorCommands);
       this._mapEditorCommands.hide();
@@ -1823,6 +1973,7 @@ CycloneEngine.requireVersion(2, 'CycloneMapEditor');
     }
 
     refreshMapEditorWindows() {
+      this._mapEditorGrid.visible = editorActive;
       this._mapEditorCommands.visible = editorActive;
       this._mapEditorLayerListWindow.visible = editorActive;
       this._mapEditorWindow.visible = editorActive;
@@ -1834,6 +1985,7 @@ CycloneEngine.requireVersion(2, 'CycloneMapEditor');
       this._mapEditorCommands.refresh();
       this._mapEditorLayerListWindow.refresh();
       this._mapEditorWindow.refresh();
+      this._mapEditorGrid.refresh();
 
       if (editorActive) {
         this._spriteset._mapEditorCursor.updateDrawing();
