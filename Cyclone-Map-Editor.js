@@ -1027,6 +1027,7 @@ CycloneEngine.requireVersion(2, 'CycloneMapEditor');
 
       if (SceneManager._scene instanceof Scene_Map) {
         SceneManager._scene._mapEditorLayerListWindow.refresh();
+        SceneManager._scene._mapEditorWindow.refresh();
         SceneManager._scene._mapEditorStatus.refresh();
       }
     }
@@ -2069,10 +2070,13 @@ CycloneEngine.requireVersion(2, 'CycloneMapEditor');
     }
 
     makeShadowList() {
+      for (let i = 1; i <= 15; i++) {
+        this.addCommand(i, 'shadow', true, i);
+      }
     }
 
     makeRegionList() {
-      for (let i = 0; i <= 255; i++) {
+      for (let i = 1; i <= 255; i++) {
         this.addCommand(i, 'region', true, i);
       }
     }
@@ -2149,6 +2153,11 @@ CycloneEngine.requireVersion(2, 'CycloneMapEditor');
       this.contents.drawRegion(index, rect.x, rect.y, rect.width, rect.height);
     }
 
+    drawShadow(index) {
+      const rect = this.itemRect(index);
+      this.contents.drawShadow(index, rect.x, rect.y, rect.width, rect.height);
+    }
+
     drawItem(index) {
       this.resetTextColor();
       this.changePaintOpacity(this.isCommandEnabled(index));
@@ -2157,6 +2166,11 @@ CycloneEngine.requireVersion(2, 'CycloneMapEditor');
 
       if (symbol === 'region') {
         this.drawRegion(index);
+        return;
+      }
+
+      if (symbol === 'shadow') {
+        this.drawShadow(index);
         return;
       }
 
@@ -2586,6 +2600,8 @@ CycloneEngine.requireVersion(2, 'CycloneMapEditor');
 
         if (currentLayer === 5) {
           this.bitmap.drawRegion(tileId, x, y);
+        } else if (currentLayer === 4) {
+          this.bitmap.drawShadow(tileId, x, y);
         } else {
           this.bitmap.drawTile(tileId, x, y);
         }
@@ -3116,7 +3132,7 @@ CycloneEngine.requireVersion(2, 'CycloneMapEditor');
 
   CycloneMapEditor.patchClass(Tilemap, $super => class {
     _readMapData(x, y, z) {
-      if (z <= 3 && !layerVisibility[z]) {
+      if (z <= 4 && !layerVisibility[z]) {
         return 0;
       }
 
@@ -3404,6 +3420,27 @@ CycloneEngine.requireVersion(2, 'CycloneMapEditor');
         this.drawIcon(iconIndex, x + diffX, y + diffY);
       } else {
         this.drawText(regionId, x, y, realDrawWidth, realDrawHeight, 'center');
+      }
+    }
+
+    drawShadow(shadowId, x, y, drawWidth, drawHeight) {
+      const halfWidth = (drawWidth ?? tileWidth) / 2;
+      const halfHeight = (drawHeight ?? tileHeight) / 2;
+
+      if (shadowId <= 0 || shadowId > 15) {
+        return;
+      }
+
+      const table = shadowId.toString(2).padZero(4);
+      for (let i = 0; i < 4; i++) {
+        if (table[3 - i] !== '1') {
+          continue;
+        }
+
+        const drawX = x + (i % 2) * halfWidth;
+        const drawY = y + Math.floor(i / 2) * halfHeight;
+
+        this.fillRect(drawX, drawY, halfWidth, halfHeight, '#00000066');
       }
     }
   });
