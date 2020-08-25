@@ -518,6 +518,10 @@ CycloneEngine.requireVersion(2, 'CycloneMapEditor');
         clearTimeout(this.resizeTimeout);
       }
 
+      if (Graphics._isFullScreen()) {
+        return;
+      }
+
       this.resizeTimeout = setTimeout(() => {
         // Adds a second timeout to block the show/hide functionality for a little while
         this.resizeTimeout = setTimeout(() => {
@@ -1229,7 +1233,6 @@ CycloneEngine.requireVersion(2, 'CycloneMapEditor');
       const hasChanges = Object.keys(currentChange).length > 0;
 
       if (hasChanges) {
-        console.log('new change:', currentChange);
         changeHistory.push(currentChange);
         if (clearUndo) {
           undoHistory = [];
@@ -1306,6 +1309,7 @@ CycloneEngine.requireVersion(2, 'CycloneMapEditor');
         return;
       }
 
+      this.ensureLayerVisibility();
       let initialRow = 0;
       let initialCol = 0;
       let rowIncrement = 1;
@@ -1468,6 +1472,7 @@ CycloneEngine.requireVersion(2, 'CycloneMapEditor');
         return;
       }
 
+      this.ensureLayerVisibility();
       const affectedArea = this.collectFillAreaFrom(mapX, mapY);
       const height = $gameMap.height();
       const width = $gameMap.width();
@@ -1488,6 +1493,16 @@ CycloneEngine.requireVersion(2, 'CycloneMapEditor');
       this.refreshTilemap();
     }
 
+    static ensureLayerVisibility() {
+      if (!layerVisibility[currentLayer]) {
+        layerVisibility[currentLayer] = true;
+
+        if (SceneManager._scene instanceof Scene_Map) {
+          SceneManager._scene._mapEditorLayerListWindow.refresh();
+        }
+      }
+    }
+
     static applySelectedTiles(mapX, mapY) {
       if (!currentTileId) {
         return;
@@ -1497,6 +1512,7 @@ CycloneEngine.requireVersion(2, 'CycloneMapEditor');
         return;
       }
 
+      this.ensureLayerVisibility();
       let index = 0;
       for (let y = mapY; y < mapY + tileRows; y++) {
         if (y >= $gameMap.height()) {
@@ -1890,8 +1906,20 @@ CycloneEngine.requireVersion(2, 'CycloneMapEditor');
       this._lastDisplayX = $gameMap._displayX;
       this._lastDisplayY = $gameMap._displayY;
 
-      const paddingX = ($gameMap._displayX - Math.floor($gameMap._displayX)) * tileWidth;
-      const paddingY = ($gameMap._displayY - Math.floor($gameMap._displayY)) * tileHeight;
+      let paddingX;
+      let paddingY;
+
+      if ($gameMap._displayX < 0) {
+        paddingX = $gameMap._displayX * tileWidth;
+      } else {
+        paddingX = ($gameMap._displayX - Math.floor($gameMap._displayX)) * tileWidth;
+      }
+
+      if ($gameMap._displayY < 0) {
+        paddingY = $gameMap._displayY * tileHeight;
+      } else {
+        paddingY = ($gameMap._displayY - Math.floor($gameMap._displayY)) * tileHeight;
+      }
 
       const mapStartX = 0 - paddingX;
       const mapStartY = 0 - paddingY;
@@ -1990,13 +2018,13 @@ CycloneEngine.requireVersion(2, 'CycloneMapEditor');
     }
 
     makeShadowList() {
-      for (let i = 1; i <= 15; i++) {
+      for (let i = 0; i <= 15; i++) {
         this.addCommand(i, 'shadow', true, i);
       }
     }
 
     makeRegionList() {
-      for (let i = 1; i <= 255; i++) {
+      for (let i = 0; i <= 255; i++) {
         this.addCommand(i, 'region', true, i);
       }
     }
