@@ -85,6 +85,7 @@ CycloneEngine.requireVersion(2, 'CycloneMapEditor');
 
 (() => {
   let windowWidth = 408;
+  const statusHeight = 40;
   const layerVisibility = [true, true, true, true, false, true];
   let editorActive = true;
 
@@ -96,8 +97,6 @@ CycloneEngine.requireVersion(2, 'CycloneMapEditor');
   let selectedTileList = [];
   let tileWidth = 48;
   let tileHeight = 48;
-  let leftSidebar = false;
-  let pinSidebar = true;
   let currentTool = 'pencil';
   let lastDrawingTool = 'pencil';
   let wasPressing = false;
@@ -117,10 +116,17 @@ CycloneEngine.requireVersion(2, 'CycloneMapEditor');
   let currentChange = false;
   let previewChanges = {};
   let messySelection = false;
-  const canCollapseWindows = false;
   let showGrid = true;
   let lastDisplayX = 0;
   let lastDisplayY = 0;
+  let statusTileId = 0;
+  let statusMapX = 0;
+  let statusMapY = 0;
+  let statusTile1 = 0;
+  let statusTile2 = 0;
+  let statusTile3 = 0;
+  let statusTile4 = 0;
+  let statusRegion = 0;
 
   const pencilIcon = new Image();
   pencilIcon.src = 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABgAAAAYCAYAAADgdz34AAABhGlDQ1BJQ0MgcHJvZmlsZQAAKJF9kT1Iw0AcxV9bpUUqgmYo4pChdbIgKuIoVSyChdJWaNXB5NIvaGJIUlwcBdeCgx+LVQcXZ10dXAVB8APEydFJ0UVK/F9SaBHjwXE/3t173L0D/M0aU82ecUDVLCOTTIj5wooYfEUIEQgYRExipp7KLuTgOb7u4ePrXZxneZ/7c/QrRZMBPpF4lumGRbxOPL1p6Zz3iQVWkRTic+Ixgy5I/Mh12eU3zmWH/TxTMHKZOWKBWCx3sdzFrGKoxFPEUUXVKN+fd1nhvMVZrdVZ+578heGitpzlOs0RJLGIFNIQIaOOKmqwEKdVI8VEhvYTHv5hx58ml0yuKhg55rEBFZLjB/+D392apckJNymcAHpfbPsjBgR3gVbDtr+Pbbt1AgSegSut499oAjOfpDc6WvQIGNgGLq47mrwHXO4AkSddMiRHCtD0l0rA+xl9UwEYugX6Vt3e2vs4fQBy1NXSDXBwCIyWKXvN492h7t7+PdPu7weVs3K1THf6MgAAAAZiS0dEAP8A/wD/oL2nkwAAAAlwSFlzAAAuIwAALiMBeKU/dgAAAAd0SU1FB+QIGBQUOhdRws4AAAAZdEVYdENvbW1lbnQAQ3JlYXRlZCB3aXRoIEdJTVBXgQ4XAAABGElEQVRIx9XUIW/CQBiA4ZcFwRQhkEEysEdSNAoFPwKBmcXO4FBTwxB+Av8BDQo1PQi1sGSChKBGMsHUkR7XMnpfQ8KnWvO8vVzv4N4nJQV+Doejfn7MZCwvLcVbShnv55G0FB88P+E1agC0lLIiDyL8NUe5n2cx/wRg0m6eIs4BA6+WAIyInko2e4wdCMMBNqtvaP9akVh7cBEHytUSna8lU99HFYvxftOr8K6Jr/f71FUBCf5vQIpfDCSBRwaSwkMDSeLWOdB4/6VJb7gT45EHreDVGb336HSXItwIBL9ej16JKx66goJXB2C7+DhFXHFjk4N3u17F23gG4IxHBvRMfR/AGbd+0+A9HoRd8dBzoO9xKXyz+QMErgZJQZj0xAAAAABJRU5ErkJggg==';
@@ -536,14 +542,6 @@ CycloneEngine.requireVersion(2, 'CycloneMapEditor');
       this.refreshScreenSize();
     }
 
-    static isLeftSidebar() {
-      if (pinSidebar) {
-        return false;
-      }
-
-      return leftSidebar;
-    }
-
     static isTabValid(tab) {
       const tileset = $gameMap.tileset();
       if (!tileset) {
@@ -595,13 +593,7 @@ CycloneEngine.requireVersion(2, 'CycloneMapEditor');
       }
 
       if (event.keyCode === 8 || event.keyCode === 46) {
-        scene._mapEditorWindow.selectTileId(0);
-        scene.showMapEditorWindows();
-      }
-
-      if (event.keyCode === 32) {
-        leftSidebar = !leftSidebar;
-        scene.showMapEditorWindows();
+        this.eraserButton();
         return;
       }
 
@@ -758,6 +750,37 @@ CycloneEngine.requireVersion(2, 'CycloneMapEditor');
 
       if (undoHistory.length) {
         this.redoLastUndoneChange();
+      }
+    }
+
+    // eslint-disable-next-line complexity
+    static updateStatus({ tileId, mapX, mapY, tile1, tile2, tile3, tile4, region } = {}) {
+      const oldTileId = statusTileId;
+      const oldX = statusMapX;
+      const oldY = statusMapY;
+      const oldTile1 = statusTile1;
+      const oldTile2 = statusTile2;
+      const oldTile3 = statusTile3;
+      const oldTile4 = statusTile4;
+      const oldRegion = region;
+
+      statusTileId = tileId ?? statusTileId;
+      statusMapX = mapX ?? statusMapX;
+      statusMapY = mapY ?? statusMapY;
+      statusTile1 = tile1 ?? statusTile1;
+      statusTile2 = tile2 ?? statusTile2;
+      statusTile3 = tile3 ?? statusTile3;
+      statusTile4 = tile4 ?? statusTile4;
+      statusRegion = region ?? statusRegion;
+
+      const changedTile = oldTile1 !== statusTile1 || oldTile2 !== statusTile2 || oldTile3 !== statusTile3 || oldTile4 !== statusTile4;
+      const changed = changedTile || oldTileId !== statusTileId || oldX !== statusMapX || oldY !== statusMapY || oldRegion !== statusRegion;
+      if (!changed) {
+        return;
+      }
+
+      if (SceneManager._scene instanceof Scene_Map) {
+        SceneManager._scene._mapEditorStatus.refresh();
       }
     }
 
@@ -1002,6 +1025,7 @@ CycloneEngine.requireVersion(2, 'CycloneMapEditor');
 
       if (SceneManager._scene instanceof Scene_Map) {
         SceneManager._scene._mapEditorLayerListWindow.refresh();
+        SceneManager._scene._mapEditorStatus.refresh();
       }
     }
 
@@ -1817,6 +1841,42 @@ CycloneEngine.requireVersion(2, 'CycloneMapEditor');
     }
   }
 
+  class WindowCycloneMapEditorStatus extends Window_Base {
+    constructor() {
+      const h = statusHeight;
+      super(new Rectangle(0, Graphics.height - h, Graphics.width, h));
+      this.showBackgroundDimmer();
+    }
+
+    createContents() {
+      this._padding = 0;
+      super.createContents();
+    }
+
+    updateBackOpacity() {
+      this.backOpacity = 255;
+    }
+
+    refresh() {
+      this.drawContents();
+    }
+
+    lineHeight() {
+      return 16;
+    }
+
+    drawContents() {
+      this.contents.clear();
+      this.contents.fontSize = 16;
+
+      const line = `Map: ${ $gameMap._mapId }, Tileset: ${ $gameMap._tilesetId}, Pos: ${ statusMapX }, ${ statusMapY }, ${ currentLayer }`;
+      const tiles = `Tiles: (${ statusTile1 }, ${ statusTile2 }, ${ statusTile3 }, ${ statusTile4 }), Region: ${ statusRegion }`;
+
+      this.drawText(`${ line } - ${ tiles }`, 8, 12, this.width - 8, 'left');
+      this.drawText(`TileId: ${ statusTileId }`, 0, 12, this.width - 8, 'right');
+    }
+  }
+
   class WindowCycloneGrid extends Window_Base {
     initialize() {
       const width = Graphics.width;
@@ -1936,7 +1996,7 @@ CycloneEngine.requireVersion(2, 'CycloneMapEditor');
       const x = Graphics.width - windowWidth;
       const y = SceneManager._scene._mapEditorLayerListWindow.y + SceneManager._scene._mapEditorLayerListWindow.height;
       const w = windowWidth;
-      const h = Graphics.height - y;
+      const h = Graphics.height - y - SceneManager._scene._mapEditorStatus.height;
       super(new Rectangle(x, y, w, h));
       this.showBackgroundDimmer();
     }
@@ -2511,11 +2571,7 @@ CycloneEngine.requireVersion(2, 'CycloneMapEditor');
       }
 
       if (SceneManager._scene._mapEditorWindow) {
-        if (CycloneMapEditor.isLeftSidebar()) {
-          if (TouchInput.x <= SceneManager._scene._mapEditorWindow.x + SceneManager._scene._mapEditorWindow.width) {
-            return $gameMap.canvasToMapX(SceneManager._scene._mapEditorWindow.x + SceneManager._scene._mapEditorWindow.width + 1);
-          }
-        } else if (TouchInput.x >= SceneManager._scene._mapEditorWindow.x) {
+        if (TouchInput.x >= SceneManager._scene._mapEditorWindow.x) {
           return $gameMap.canvasToMapX(SceneManager._scene._mapEditorWindow.x);
         }
       }
@@ -2594,6 +2650,11 @@ CycloneEngine.requireVersion(2, 'CycloneMapEditor');
       this._mapEditorLayerListWindow.hide();
       this._mapEditorLayerListWindow.deactivate();
 
+      this._mapEditorStatus = new WindowCycloneMapEditorStatus();
+      this.addChild(this._mapEditorStatus);
+      this._mapEditorStatus.hide();
+      this._mapEditorStatus.deactivate();
+
       this._mapEditorWindow = new WindowCycloneMapEditor();
       this.addChild(this._mapEditorWindow);
       this._mapEditorWindow.hide();
@@ -2605,6 +2666,7 @@ CycloneEngine.requireVersion(2, 'CycloneMapEditor');
       this._mapEditorCommands.visible = editorActive;
       this._mapEditorLayerListWindow.visible = editorActive;
       this._mapEditorWindow.visible = editorActive;
+      this._mapEditorStatus.visible = editorActive;
 
       this._mapEditorCommands.active = editorActive;
       this._mapEditorLayerListWindow.active = editorActive;
@@ -2614,6 +2676,7 @@ CycloneEngine.requireVersion(2, 'CycloneMapEditor');
       this._mapEditorLayerListWindow.refresh();
       this._mapEditorWindow.refresh();
       this._mapEditorGrid.refresh();
+      this._mapEditorStatus.refresh();
 
       if (editorActive) {
         this._spriteset._mapEditorCursor.updateDrawing();
@@ -2645,74 +2708,7 @@ CycloneEngine.requireVersion(2, 'CycloneMapEditor');
     }
 
     editorX() {
-      if (CycloneMapEditor.isLeftSidebar()) {
-        return 0;
-      }
-
       return Graphics.width - windowWidth;
-    }
-
-    collapseMapEditorWindows() {
-      if (!canCollapseWindows) {
-        return;
-      }
-
-      const x = CycloneMapEditor.isLeftSidebar() ? (50 - windowWidth) : (Graphics.width - 50);
-
-      this._mapEditorCommands.x = x;
-      this._mapEditorWindow.x = x;
-      this._mapEditorLayerListWindow.x = x;
-    }
-
-    showMapEditorWindows() {
-      const editorX = this.editorX();
-
-      this._mapEditorCommands.x = editorX;
-      this._mapEditorWindow.x = editorX;
-      this._mapEditorLayerListWindow.x = editorX;
-    }
-
-    showOrMoveMapEditorWindows() {
-      const { x } = TouchInput;
-
-      const mouseOver = CycloneMapEditor.isLeftSidebar() ? (x <= windowWidth) : (x >= Graphics.width - windowWidth);
-      if (!mouseOver) {
-        return;
-      }
-
-      if (TouchInput.isPressed() && wasPressing && !pinSidebar) {
-        leftSidebar = x >= Graphics.width / 2;
-        this.collapseMapEditorWindows();
-        return;
-      }
-
-      this.showMapEditorWindows();
-    }
-
-    updateMapEditorMenuPosition() {
-      const { x } = TouchInput;
-      const editorX = this.editorX();
-
-      if (leftSidebar) {
-        if (x >= windowWidth + 50) {
-          if (currentTileId) {
-            this.collapseMapEditorWindows();
-          }
-          return;
-        }
-
-        this.showOrMoveMapEditorWindows();
-        return;
-      }
-
-      if (x < editorX - 50) {
-        if (currentTileId) {
-          this.collapseMapEditorWindows();
-        }
-        return;
-      }
-
-      this.showOrMoveMapEditorWindows();
     }
 
     canUpdateMouse() {
@@ -2780,6 +2776,21 @@ CycloneEngine.requireVersion(2, 'CycloneMapEditor');
       }
     }
 
+    getSelectionTileAt(x, y) {
+      if (x <= this._mapEditorWindow.x || x >= this._mapEditorWindow.x + this._mapEditorWindow.width) {
+        return currentTileId;
+      }
+
+      if (y >= this._mapEditorWindow.height + this._mapEditorWindow.y) {
+        return currentTileId;
+      }
+
+      const index = this._mapEditorWindow.hitIndex();
+      if (index >= 0) {
+        return this._mapEditorWindow.commandName(index);
+      }
+    }
+
     updateMouse() {
       if (!this.canUpdateMouse()) {
         wasPressing = false;
@@ -2790,20 +2801,36 @@ CycloneEngine.requireVersion(2, 'CycloneMapEditor');
       lastDisplayX = $gameMap._displayX;
       lastDisplayY = $gameMap._displayY;
 
-      this.updateMapEditorMenuPosition();
       const pressed = TouchInput.isPressed();
+      const { x, y } = TouchInput;
+      const mapX = $gameMap.canvasToMapX(x);
+      const mapY = $gameMap.canvasToMapY(y);
+
+      const tile1 = CycloneMapEditor.getCurrentTileAtPosition(mapX, mapY, 0, true);
+      const tile2 = CycloneMapEditor.getCurrentTileAtPosition(mapX, mapY, 1, true);
+      const tile3 = CycloneMapEditor.getCurrentTileAtPosition(mapX, mapY, 2, true);
+      const tile4 = CycloneMapEditor.getCurrentTileAtPosition(mapX, mapY, 3, true);
+      const region = $gameMap.regionId(mapX, mapY);
+      const tileId = this.getSelectionTileAt(x, y);
+
+      CycloneMapEditor.updateStatus({
+        mapX,
+        mapY,
+        tile1,
+        tile2,
+        tile3,
+        tile4,
+        tileId,
+        region,
+      });
 
       if (!pressed && !wasPressing) {
         return;
       }
 
-      const { x, y } = TouchInput;
       if (this.updateMenuTouch(x, y, pressed)) {
         return;
       }
-
-      const mapX = $gameMap.canvasToMapX(x);
-      const mapY = $gameMap.canvasToMapY(y);
 
       if (mapX >= 0 && mapY >= 0) {
         this.updateCurrentToolTouch(mapX, mapY);
@@ -3065,6 +3092,14 @@ CycloneEngine.requireVersion(2, 'CycloneMapEditor');
 
       return (Graphics.width - windowWidth) / tileWidth;
     }
+
+    screenTileY() {
+      if (!editorActive) {
+        return $super.screenTileY.call(this);
+      }
+
+      return (Graphics.height - statusHeight) / this.tileHeight();
+    }
   });
 
   CycloneMapEditor.patchClass(Game_Player, $super => class {
@@ -3074,6 +3109,14 @@ CycloneEngine.requireVersion(2, 'CycloneMapEditor');
       }
 
       return ((Graphics.width - windowWidth) / tileWidth - 1) / 2.0;
+    }
+
+    centerY() {
+      if (!editorActive) {
+        return $super.centerY.call(this);
+      }
+
+      return ((Graphics.height - statusHeight) / $gameMap.tileHeight() - 1) / 2.0;
     }
 
     reserveTransfer(mapId, ...args) {
