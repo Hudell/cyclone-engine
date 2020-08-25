@@ -8,6 +8,7 @@ parserOptions:
   sourceType: 'module'
 globals:
   require: false
+  nw: false
 
   PIXI: false
   Utils: false
