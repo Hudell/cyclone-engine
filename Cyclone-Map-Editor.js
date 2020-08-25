@@ -337,6 +337,8 @@ CycloneEngine.requireVersion(2, 'CycloneMapEditor');
         label: 'Show Grid',
         type: 'checkbox',
         checked: showGrid,
+        key: 'g',
+        modifiers: 'ctrl',
         click: () => {
           CycloneMapEditor.showGridButton();
         }
@@ -443,7 +445,7 @@ CycloneEngine.requireVersion(2, 'CycloneMapEditor');
         label: 'Shadows',
         type: 'checkbox',
         checked: currentLayer === 4,
-        key: '6',
+        key: '5',
         click: () => {
           CycloneMapEditor.changeCurrentLayer(4);
         }
@@ -453,7 +455,7 @@ CycloneEngine.requireVersion(2, 'CycloneMapEditor');
         label: 'Regions',
         type: 'checkbox',
         checked: currentLayer === 5,
-        key: '5',
+        key: '6',
         click: () => {
           CycloneMapEditor.changeCurrentLayer(5);
         }
@@ -466,9 +468,13 @@ CycloneEngine.requireVersion(2, 'CycloneMapEditor');
       }));
 
       const helpMenu = new nw.Menu();
-      helpMenu.append(new nw.MenuItem( {label: 'Plugin Page', click: () => {
-        require('nw.gui').Shell.openExternal('https://makerdevs.com/plugin/cyclone-map-editor');
-      }}));
+      helpMenu.append(new nw.MenuItem( {
+        label: 'Plugin Page',
+        key: 'F1',
+        click: () => {
+          require('nw.gui').Shell.openExternal('https://makerdevs.com/plugin/cyclone-map-editor');
+        },
+      }));
 
       menu.append(new nw.MenuItem({
         label: 'Help',
@@ -610,26 +616,6 @@ CycloneEngine.requireVersion(2, 'CycloneMapEditor');
       }
     }
 
-    static checkTabKeys(key) {
-      // switch(key) {
-      //   case '1':
-      //     this.changeCurrentTab('A');
-      //     return;
-      //   case '2':
-      //     this.changeCurrentTab('B');
-      //     return;
-      //   case '3':
-      //     this.changeCurrentTab('C');
-      //     return;
-      //   case '4':
-      //     this.changeCurrentTab('D');
-      //     return;
-      //   case '5':
-      //     this.changeCurrentTab('E');
-      //     return;
-      // }
-    }
-
     static checkScrollKeys(key) {
       switch(key) {
         case 'w':
@@ -643,63 +629,6 @@ CycloneEngine.requireVersion(2, 'CycloneMapEditor');
           break;
         case 'd':
           $gameMap.scrollRight(3);
-          break;
-      }
-    }
-
-    static checkLayerKeys(key) {
-      switch(key) {
-        case '1':
-          this.changeCurrentLayer(0);
-          return;
-        case '2':
-          this.changeCurrentLayer(1);
-          return;
-        case '3':
-          this.changeCurrentLayer(2);
-          return;
-        case '4':
-          this.changeCurrentLayer(3);
-          return;
-        case '5':
-          this.changeCurrentLayer(4);
-          return;
-        case '6':
-          this.changeCurrentLayer(5);
-          return;
-      }
-    }
-
-    static checkToolKeys(key) {
-      switch(key) {
-        case 'f':
-          this.fillButton();
-          return;
-        case 'e':
-          this.eraserButton();
-          return;
-        case 'r':
-          this.rectangleButton();
-          return;
-        case 'p':
-          this.pencilButton();
-          return;
-      }
-    }
-
-    static checkControlKeys(code) {
-      switch(code) {
-        case 'KeyZ':
-          this.undoLastChange();
-          break;
-        case 'KeyY':
-          this.redoLastUndoneChange();
-          break;
-        case 'KeyS':
-          this.saveButton();
-          break;
-        case 'KeyR':
-          this.reloadButton();
           break;
       }
     }
@@ -923,16 +852,6 @@ CycloneEngine.requireVersion(2, 'CycloneMapEditor');
       if (event.key === 'h') {
         this.toggleMapEditor();
         return;
-      }
-
-      if (editorActive) {
-        if (event.ctrlKey) {
-          this.checkControlKeys(event.code);
-        } else {
-          this.checkTabKeys(event.key);
-          this.checkLayerKeys(event.key);
-          this.checkToolKeys(event.key);
-        }
       }
     }
 
@@ -1310,6 +1229,7 @@ CycloneEngine.requireVersion(2, 'CycloneMapEditor');
       const hasChanges = Object.keys(currentChange).length > 0;
 
       if (hasChanges) {
+        console.log('new change:', currentChange);
         changeHistory.push(currentChange);
         if (clearUndo) {
           undoHistory = [];
@@ -2303,6 +2223,10 @@ CycloneEngine.requireVersion(2, 'CycloneMapEditor');
     }
 
     selectTileId(tileId, cols = 1, rows = 1) {
+      if (currentTool === 'eraser') {
+        CycloneMapEditor.restoreLastDrawingTool();
+      }
+
       currentTileId = tileId;
       tileCols = cols ?? 1;
       tileRows = rows ?? 1;
