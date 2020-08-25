@@ -86,10 +86,10 @@ CycloneEngine.requireVersion(2, 'CycloneMapEditor');
 (() => {
   let windowWidth = 408;
   const statusHeight = 40;
-  const layerVisibility = [true, true, true, true, false, true];
+  const layerVisibility = [true, true, true, true, true, false];
   let editorActive = true;
 
-  let currentLayer = 3;
+  let currentLayer = 0;
   let currentTab = 'A';
   let currentTileId = 0;
   let tileCols = 1;
@@ -127,6 +127,8 @@ CycloneEngine.requireVersion(2, 'CycloneMapEditor');
   let statusTile3 = 0;
   let statusTile4 = 0;
   let statusRegion = 0;
+  let gridPreviewBlockHandler = false;
+  let gridNeedsRefresh = false;
 
   const pencilIcon = new Image();
   pencilIcon.src = 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABgAAAAYCAYAAADgdz34AAABhGlDQ1BJQ0MgcHJvZmlsZQAAKJF9kT1Iw0AcxV9bpUUqgmYo4pChdbIgKuIoVSyChdJWaNXB5NIvaGJIUlwcBdeCgx+LVQcXZ10dXAVB8APEydFJ0UVK/F9SaBHjwXE/3t173L0D/M0aU82ecUDVLCOTTIj5wooYfEUIEQgYRExipp7KLuTgOb7u4ePrXZxneZ/7c/QrRZMBPpF4lumGRbxOPL1p6Zz3iQVWkRTic+Ixgy5I/Mh12eU3zmWH/TxTMHKZOWKBWCx3sdzFrGKoxFPEUUXVKN+fd1nhvMVZrdVZ+578heGitpzlOs0RJLGIFNIQIaOOKmqwEKdVI8VEhvYTHv5hx58ml0yuKhg55rEBFZLjB/+D392apckJNymcAHpfbPsjBgR3gVbDtr+Pbbt1AgSegSut499oAjOfpDc6WvQIGNgGLq47mrwHXO4AkSddMiRHCtD0l0rA+xl9UwEYugX6Vt3e2vs4fQBy1NXSDXBwCIyWKXvN492h7t7+PdPu7weVs3K1THf6MgAAAAZiS0dEAP8A/wD/oL2nkwAAAAlwSFlzAAAuIwAALiMBeKU/dgAAAAd0SU1FB+QIGBQUOhdRws4AAAAZdEVYdENvbW1lbnQAQ3JlYXRlZCB3aXRoIEdJTVBXgQ4XAAABGElEQVRIx9XUIW/CQBiA4ZcFwRQhkEEysEdSNAoFPwKBmcXO4FBTwxB+Av8BDQo1PQi1sGSChKBGMsHUkR7XMnpfQ8KnWvO8vVzv4N4nJQV+Doejfn7MZCwvLcVbShnv55G0FB88P+E1agC0lLIiDyL8NUe5n2cx/wRg0m6eIs4BA6+WAIyInko2e4wdCMMBNqtvaP9akVh7cBEHytUSna8lU99HFYvxftOr8K6Jr/f71FUBCf5vQIpfDCSBRwaSwkMDSeLWOdB4/6VJb7gT45EHreDVGb336HSXItwIBL9ej16JKx66goJXB2C7+DhFXHFjk4N3u17F23gG4IxHBvRMfR/AGbd+0+A9HoRd8dBzoO9xKXyz+QMErgZJQZj0xAAAAABJRU5ErkJggg==';
@@ -437,26 +439,26 @@ CycloneEngine.requireVersion(2, 'CycloneMapEditor');
       layerMenu.append(this.layer4Button);
 
       layerMenu.append(new nw.MenuItem( {type: 'separator'}));
-      this.regionsButton = new nw.MenuItem( {
-        label: 'Regions',
+      this.shadowsButton = new nw.MenuItem( {
+        label: 'Shadows',
         type: 'checkbox',
         checked: currentLayer === 4,
-        key: '5',
+        key: '6',
         click: () => {
           CycloneMapEditor.changeCurrentLayer(4);
         }
       });
-      layerMenu.append(this.regionsButton);
-      this.shadowsButton = new nw.MenuItem( {
-        label: 'Shadows',
+      layerMenu.append(this.shadowsButton);
+      this.regionsButton = new nw.MenuItem( {
+        label: 'Regions',
         type: 'checkbox',
         checked: currentLayer === 5,
-        key: '6',
+        key: '5',
         click: () => {
           CycloneMapEditor.changeCurrentLayer(5);
         }
       });
-      layerMenu.append(this.shadowsButton);
+      layerMenu.append(this.regionsButton);
 
       menu.append(new nw.MenuItem({
         label: 'Layer',
@@ -563,7 +565,7 @@ CycloneEngine.requireVersion(2, 'CycloneMapEditor');
     }
 
     static areRegionsVisible() {
-      return layerVisibility[4];
+      return layerVisibility[5];
     }
 
     static selectPreviousTab() {
@@ -1020,8 +1022,8 @@ CycloneEngine.requireVersion(2, 'CycloneMapEditor');
       this.layer2Button.checked = newIndex === 1;
       this.layer3Button.checked = newIndex === 2;
       this.layer4Button.checked = newIndex === 3;
-      this.regionsButton.checked = newIndex === 4;
-      this.shadowsButton.checked = newIndex === 5;
+      this.shadowsButton.checked = newIndex === 4;
+      this.regionsButton.checked = newIndex === 5;
 
       if (SceneManager._scene instanceof Scene_Map) {
         SceneManager._scene._mapEditorLayerListWindow.refresh();
@@ -1284,6 +1286,7 @@ CycloneEngine.requireVersion(2, 'CycloneMapEditor');
       undoHistory.push(currentChange);
       currentChange = false;
       SceneManager._scene._mapEditorCommands.redraw();
+      SceneManager._scene._mapEditorGrid.refresh();
     }
 
     static redoLastUndoneChange() {
@@ -1318,6 +1321,7 @@ CycloneEngine.requireVersion(2, 'CycloneMapEditor');
       }
 
       SceneManager._scene._mapEditorCommands.redraw();
+      SceneManager._scene._mapEditorGrid.refresh();
     }
 
     static setMapTile(x, y, z, tileId, updateNeighbors = true, previewOnly = false) {
@@ -1418,15 +1422,40 @@ CycloneEngine.requireVersion(2, 'CycloneMapEditor');
 
       if (previewOnly) {
         SceneManager._scene._spriteset._tilemap.refresh();
+        this.maybeRefreshGrid();
       } else {
         this.logChange();
         this.refreshTilemap();
       }
     }
 
+    static maybeRefreshGrid() {
+      if (currentLayer !== 5) {
+        return;
+      }
+
+      // Grid refresh is a heavy operation, so let's limit how often we do it
+      if (!gridPreviewBlockHandler) {
+        gridPreviewBlockHandler = setTimeout(() => {
+          gridPreviewBlockHandler = false;
+          if (gridNeedsRefresh) {
+            setTimeout(() => {
+              this.maybeRefreshGrid();
+            }, 50);
+          }
+        }, 50);
+
+        SceneManager._scene._mapEditorGrid.refresh();
+        return;
+      }
+
+      gridNeedsRefresh = true;
+    }
+
     static refreshTilemap() {
       previewChanges = {};
       SceneManager._scene._spriteset._tilemap.refresh();
+      SceneManager._scene._mapEditorGrid.refresh();
     }
 
     static copyRectangle(startX, startY, width, height) {
@@ -1769,8 +1798,8 @@ CycloneEngine.requireVersion(2, 'CycloneMapEditor');
         'Layer 2',
         'Layer 3',
         'Layer 4',
-        'Regions',
         'Shadows',
+        'Regions',
       ];
 
       ctx.imageSmoothingEnabled = false;
@@ -1929,22 +1958,8 @@ CycloneEngine.requireVersion(2, 'CycloneMapEditor');
       const mapY = $gameMap.canvasToMapY(y);
 
       const regionId = $gameMap.regionId(mapX, mapY);
-
       if (regionId > 0) {
-        const color = regionColors[regionId % regionColors.length];
-        this.contents.fillRect(x, y, tileWidth, tileHeight, `${ color }66`);
-
-        let iconIndex = CycloneMapEditor.regionIcons.get(regionId) ?? 0;
-        if (iconIndex) {
-          const {iconWidth, iconHeight} = ImageManager;
-          const diffX = (tileWidth - iconWidth) / 2;
-          const diffY = (tileHeight - iconHeight) / 2;
-
-          this.drawIcon(iconIndex, x + diffX, y + diffY);
-        } else {
-          this.drawText(regionId, x, y, tileWidth, 'center');
-        }
-
+        this.contents.drawRegion(regionId, x, y);
       }
     }
 
@@ -2053,9 +2068,28 @@ CycloneEngine.requireVersion(2, 'CycloneMapEditor');
       }
     }
 
+    makeShadowList() {
+    }
+
+    makeRegionList() {
+      for (let i = 0; i <= 255; i++) {
+        this.addCommand(i, 'region', true, i);
+      }
+    }
+
     makeCommandList() {
       if (this._manualTileSelected) {
         this.makeManualTilesList();
+        return;
+      }
+
+      if (currentLayer === 4) {
+        this.makeShadowList();
+        return;
+      }
+
+      if (currentLayer === 5) {
+        this.makeRegionList();
         return;
       }
 
@@ -2110,11 +2144,23 @@ CycloneEngine.requireVersion(2, 'CycloneMapEditor');
       // return tileHeight;
     }
 
-    drawItem(index) {
+    drawRegion(index) {
       const rect = this.itemRect(index);
+      this.contents.drawRegion(index, rect.x, rect.y, rect.width, rect.height);
+    }
+
+    drawItem(index) {
       this.resetTextColor();
       this.changePaintOpacity(this.isCommandEnabled(index));
 
+      const symbol = this.commandSymbol(index);
+
+      if (symbol === 'region') {
+        this.drawRegion(index);
+        return;
+      }
+
+      const rect = this.itemRect(index);
       const bitmap = this.contents.drawTile(this._list[index].ext, rect.x, rect.y, this.itemWidth(), this.itemHeight());
       if (!bitmap) {
         return;
@@ -2475,6 +2521,10 @@ CycloneEngine.requireVersion(2, 'CycloneMapEditor');
 
       const fillColor = isRightButtonDown ? '#00000033' : '#00FF0033';
 
+      if (currentLayer === 5) {
+        this.drawTiles();
+      }
+
       if (width > 8 && height > 8) {
         this.bitmap.fillRect(0, 0, width, 4, '#000000');
         this.bitmap.fillRect(0, height - 4, width, 4, '#000000');
@@ -2519,20 +2569,11 @@ CycloneEngine.requireVersion(2, 'CycloneMapEditor');
       }
     }
 
-    updateTiles() {
+    drawTiles() {
       let x = 0;
       let y = 0;
       let column = 0;
       let row = 0;
-
-      const width = tileWidth * tileCols;
-      const height = tileHeight * tileRows;
-
-      if (width !== this.bitmap.width || height !== this.bitmap.height) {
-        this.bitmap = new Bitmap(width, height);
-      } else {
-        this.bitmap.clear();
-      }
 
       for (const tileId of selectedTileList) {
         if (column >= tileCols) {
@@ -2543,9 +2584,26 @@ CycloneEngine.requireVersion(2, 'CycloneMapEditor');
         x = column * tileWidth;
         y = row * tileHeight;
 
-        this.bitmap.drawTile(tileId, x, y);
+        if (currentLayer === 5) {
+          this.bitmap.drawRegion(tileId, x, y);
+        } else {
+          this.bitmap.drawTile(tileId, x, y);
+        }
         column++;
       }
+    }
+
+    updateTiles() {
+      const width = tileWidth * tileCols;
+      const height = tileHeight * tileRows;
+
+      if (width !== this.bitmap.width || height !== this.bitmap.height) {
+        this.bitmap = new Bitmap(width, height);
+      } else {
+        this.bitmap.clear();
+      }
+
+      this.drawTiles();
 
       if (width > 8 && height > 8) {
         this.bitmap.fillRect(0, 0, width, 4, '#000000');
@@ -3100,6 +3158,14 @@ CycloneEngine.requireVersion(2, 'CycloneMapEditor');
 
       return (Graphics.height - statusHeight) / this.tileHeight();
     }
+
+    regionId(x, y) {
+      if (editorActive) {
+        return CycloneMapEditor.getCurrentTileAtPosition(x, y, 5, false);
+      }
+
+      return $super.regionId.call(this, x, y);
+    }
   });
 
   CycloneMapEditor.patchClass(Game_Player, $super => class {
@@ -3309,6 +3375,36 @@ CycloneEngine.requireVersion(2, 'CycloneMapEditor');
       }
 
       return this.drawNormalTile(tileId, x, y, drawWidth, drawHeight);
+    }
+
+    drawIcon(iconIndex, x, y) {
+      const bitmap = ImageManager.loadSystem('IconSet');
+      const pw = ImageManager.iconWidth;
+      const ph = ImageManager.iconHeight;
+      const sx = (iconIndex % 16) * pw;
+      const sy = Math.floor(iconIndex / 16) * ph;
+      this.blt(bitmap, sx, sy, pw, ph, x, y);
+    }
+
+    drawRegion(regionId, x, y, drawWidth, drawHeight) {
+      const realDrawWidth = drawWidth ?? tileWidth;
+      const realDrawHeight = drawHeight ?? tileHeight;
+
+      if (regionId > 0) {
+        const color = regionColors[regionId % regionColors.length];
+        this.fillRect(x, y, realDrawWidth, realDrawHeight, `${ color}66`);
+      }
+
+      let iconIndex = CycloneMapEditor.regionIcons.get(regionId) ?? 0;
+      if (iconIndex) {
+        const {iconWidth, iconHeight} = ImageManager;
+        const diffX = (realDrawWidth - iconWidth) / 2;
+        const diffY = (realDrawHeight - iconHeight) / 2;
+
+        this.drawIcon(iconIndex, x + diffX, y + diffY);
+      } else {
+        this.drawText(regionId, x, y, realDrawWidth, realDrawHeight, 'center');
+      }
     }
   });
 
