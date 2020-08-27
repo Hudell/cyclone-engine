@@ -9,6 +9,7 @@ parserOptions:
 globals:
   require: false
   nw: false
+  globalThis: false
 
   PIXI: false
   Utils: false
@@ -29,6 +30,7 @@ globals:
   SoundManager: false
   ColorManager: false
 
+  Scene_Base: false
   Scene_Map: false
   Spriteset_Map: false
   Sprite_Clickable: false
@@ -59,8 +61,8 @@ globals:
   $dataCommonEvents: false
   $dataMap: false
 
-  CycloneEngine: true
   CyclonePlugin: true
+  CycloneMapEditor: true
 rules:
   indent:
     - warn

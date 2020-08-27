@@ -1,0 +1,9 @@
+import './plugin';
+import './Bitmap';
+import './Game_Map';
+import './Game_Player';
+import './Scene_Map';
+import './SceneManager';
+import './Spriteset_Map';
+import './Tilemap';
+import './TouchInput';

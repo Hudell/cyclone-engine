@@ -1,120 +1,41 @@
-/*:
- * @target MZ
- * @plugindesc Auxiliary plugin that helps keep all other Cyclone plugins
- * smaller and better tested
- * <pluginName:CycloneCore>
- * @author Hudell
- * @url https://makerdevs.com/plugin/cyclone-engine
- *
- * @help
- * ===========================================================================
- *                                    88
- *                                    88
- *                                    88
- *   ,adPPYba, 8b       d8  ,adPPYba, 88  ,adPPYba,  8b,dPPYba,   ,adPPYba,
- *  a8"     "" `8b     d8' a8"     "" 88 a8"     "8a 88P'   `"8a a8P_____88
- *  8b          `8b   d8'  8b         88 8b       d8 88       88 8PP"""""""
- *  "8a,   ,aa   `8b,d8'   "8a,   ,aa 88 "8a,   ,a8" 88       88 "8b,   ,aa
- *   `"Ybbd8"'     Y88'     `"Ybbd8"' 88  `"YbbdP"'  88       88  `"Ybbd8"'
- *                 d8'
- *                d8'
- * Core Engine 1.02.000                                              by Hudell
- * ===========================================================================
- * Terms of Use
- * ===========================================================================
- * 1. For support, feature requests or bug reports, you may contact me through
- *  any of the following channels (in order of preference):
- *
- *   1.a. Opening an issue on the plugin's GitHub repository:
- *      https://github.com/Hudell/cyclone-engine
- *   1.b. Tagging me on threads on Rpg Maker related Forums, such as:
- *      rpgmakerweb.com (English)
- *      centrorpg.com (Portuguese)
- *      condadobraveheart.com (Portuguese)
- *   1.c. Opening threads on the plugin's itch.io page
- *   1.d. Tagging my user on Rpg Maker related sub-reddits, such as r/rpgmaker
- *
- * 2. Do not send me Direct Messages asking for support or bug reports.
- * You may only send me direct messages when none of the above platforms are
- * appropiate for it, or when you want to share pictures of cute dogs.
- *
- * 3. A special exception is created for patreon users who get access to my
- * priority support discord server.
- *
- * 4. Sending plugin related questions on channels related to any of my other
- * projects (such as my game's Discord server) may result in an immediate ban
- * from such platforms and I may also choose to ignore your future requests.
- *
- * 5. This plugin is released under the Apache License 2.0 (Apache-2.0).
- *
- * 6. You can send me your own changes to this plugin if you wish to see them
- * included in an update, by registering a Pull Request on the plugin's GitHub
- * repository.
- *
- * 7. This plugin is provided as is. While I'll often read feedback and offer
- * updates to my plugins, I am in no obligation to do so.
- *
- * 8. I'm not responsible for anything created with this plugin.
- * ===========================================================================
- * Did you know?
- * The Earth's inner core spins slightly faster than the rest of the planet.
- * ===========================================================================
- *
- * By itself this plugin does nothing and changes nothing on the core code
- * So it's impossible to have any incompatibilities with other plugins
- *
- *
- * List of Cyclone plugins available on
- * https://makerdevs.com/plugin/cyclone-engine
- */
-/*~struct~Dictionary:
- * @param name
- * @type string
- * @desc The name of the custom parameter
- *
- * @param value
- * @type string
- * @desc The value of the custom parameter
- */
-
 const trueStrings = Object.freeze(['TRUE', 'ON', '1', 'YES', 'T', 'V' ]);
 
-class CycloneEngine {
-  static get versionNum() {
-    return 2;
+class CyclonePlugin {
+  static initialize(pluginName) {
+    this.pluginName = pluginName;
+    this.fileName = undefined;
+    this.superClasses = new Map();
+    this.params = {};
+    this.structs = new Map();
+    this.eventListeners = new Map();
+
+    this.structs.set('Dictionary', {
+      name: {
+        type: 'string',
+        defaultValue: '',
+      },
+      value: {
+        type: 'string',
+        defaultValue: '',
+      },
+    });
   }
 
-  static registerPlugin(pluginClass, pluginName, paramMap = {}) {
-    const superClasses = CycloneEngine.getSuperClasses(pluginName);
-
-    const params = CycloneEngine.loadParamMap(pluginName, paramMap);
-
-    CycloneEngine.classes.set(pluginName, {
-      pluginName,
-      pluginClass,
-      superClasses,
-      params,
-    });
-
-    pluginClass.params = params;
+  static register(paramMap = {}) {
+    const dataMap = this.loadAllParams();
+    this.loadParamMap(paramMap, dataMap);
   }
 
   static loadAllParams() {
-    for (const plugin of $plugins) {
+    for (const plugin of globalThis.$plugins) {
       if (!plugin?.status) {
         continue;
       }
-
-      let pluginName;
-      if (plugin?.description?.includes('<pluginName:')) {
-        pluginName = this.getRegexMatch(plugin.description, /<pluginName:(.*)>/i, 1);
-        this.pluginFileNames.set(pluginName, plugin.name);
-      }
-
-      if (!pluginName) {
+      if (!plugin?.description?.includes(`<pluginName:${ this.pluginName }`)) {
         continue;
       }
 
+      this.fileName = plugin.name;
       const pluginParams = new Map();
 
       for (const paramName in plugin.parameters) {
@@ -122,18 +43,15 @@ class CycloneEngine {
           continue;
         }
 
-        pluginParams.set(paramName, {
-          value: plugin.parameters[paramName],
-          pluginName,
-        });
+        pluginParams.set(paramName, plugin.parameters[paramName]);
       }
 
-      CycloneEngine.parameters.set(pluginName, pluginParams);
+      return pluginParams;
     }
   }
 
-  static loadParamMap(pluginName, paramMap, dataMap = undefined) {
-    const params = new Map();
+  static loadParamMap(paramMap, dataMap = undefined) {
+    const params = {};
 
     for (const key in paramMap) {
       if (!paramMap.hasOwnProperty(key)) {
@@ -141,10 +59,9 @@ class CycloneEngine {
       }
 
       try {
-        const parsedValue = this.parseParam(key, paramMap, pluginName, dataMap);
-        params.set(key, parsedValue);
+        params[key] = this.parseParam(key, paramMap, dataMap);
       } catch(e) {
-        console.error(`CycloneEngineCore crashed while trying to parse a parameter value (${ key }). Please report the following error to Hudell:`);
+        console.error(`CycloneEngine crashed while trying to parse a parameter value (${ key }). Please report the following error to Hudell:`);
         console.log(e);
       }
     }
@@ -152,25 +69,21 @@ class CycloneEngine {
     return params;
   }
 
-  static getSuperClass(baseClassName, pluginName) {
-    return this.superClasses.get(pluginName)?.[baseClassName];
-  }
-
   static registerEvent(eventName, callback) {
-    if (!CycloneEngine.eventListeners.has(eventName)) {
-      CycloneEngine.eventListeners.set(eventName, new Set());
+    if (!this.eventListeners.has(eventName)) {
+      this.eventListeners.set(eventName, new Set());
     }
 
-    const listeners = CycloneEngine.eventListeners.get(eventName);
+    const listeners = this.eventListeners.get(eventName);
     listeners.add(callback);
   }
 
   static removeEventListener(eventName, callback) {
-    if (!CycloneEngine.eventListeners.has(eventName)) {
+    if (!this.eventListeners.has(eventName)) {
       return;
     }
 
-    const listeners = CycloneEngine.eventListeners.get(eventName);
+    const listeners = this.eventListeners.get(eventName);
     listeners.delete(callback);
   }
 
@@ -191,14 +104,14 @@ class CycloneEngine {
   }
 
   static runEvent(eventName, { abortOnTrue = false, abortOnFalse = false, returnOnValue = false } = {}, ...args) {
-    if (!CycloneEngine.eventListeners.has(eventName)) {
+    if (!this.eventListeners.has(eventName)) {
       return;
     }
 
-    const listeners = CycloneEngine.eventListeners.get(eventName);
+    const listeners = this.eventListeners.get(eventName);
     for (const callback of listeners) {
       if (typeof callback === 'number') {
-        CycloneEngine.runCommonEvent(callback);
+        this.runCommonEvent(callback);
         continue;
       }
       if (typeof callback !== 'function') {
@@ -215,7 +128,7 @@ class CycloneEngine {
   }
 
   static runCommonEvent(eventId) {
-    const commonEvent = $dataCommonEvents[eventId];
+    const commonEvent = globalThis.$dataCommonEvents[eventId];
     if (!commonEvent) {
       return;
     }
@@ -227,9 +140,9 @@ class CycloneEngine {
       this._interpreters = new Set();
       // Tap into rpg maker core so we can update our interpreters in sync with the engine
       const oldUpdateMain = SceneManager.updateMain;
-      SceneManager.updateMain = function() {
+      SceneManager.updateMain = () => {
         oldUpdateMain.call(this);
-        CycloneEngine.update();
+        this.update();
       };
     }
 
@@ -250,8 +163,8 @@ class CycloneEngine {
     }
   }
 
-  static getPluginFileName(pluginName) {
-    return this.pluginFileNames.get(`ThirdParty_${ pluginName }`) ?? pluginName;
+  static getPluginFileName() {
+    return this.fileName ?? this.pluginName;
   }
 
   static _descriptorIsProperty(descriptor) {
@@ -322,7 +235,7 @@ class CycloneEngine {
     return anyOverride;
   }
 
-  static patchClass(baseClass, patchFn, pluginName) {
+  static patchClass(baseClass, patchFn) {
     const $super = {};
     const $prototype = {};
     const $dynamicSuper = {};
@@ -350,20 +263,7 @@ class CycloneEngine {
       Object.assign($dynamicSuper, $prototype);
     }
 
-    if (pluginName) {
-      const superClasses = this.getSuperClasses(pluginName);
-      superClasses[baseClass.name] = $dynamicSuper;
-    }
-  }
-
-  static getSuperClasses(pluginName) {
-    if (!this.superClasses.has(pluginName)) {
-      const superClasses = {};
-      this.superClasses.set(pluginName, superClasses);
-      return superClasses;
-    }
-
-    return this.superClasses.get(pluginName);
+    this.superClasses[baseClass.name] = $dynamicSuper;
   }
 
   static isTrue(value) {
@@ -378,7 +278,7 @@ class CycloneEngine {
     return !this.isTrue(value);
   }
 
-  static getIntParam({ value, defaultValue, pluginName }) {
+  static getIntParam({ value, defaultValue }) {
     try {
       const result = parseInt(value);
 
@@ -389,13 +289,13 @@ class CycloneEngine {
       return result;
     } catch(e) {
       if (value !== '') {
-        console.error(`Cyclone Engine plugin ${ pluginName }: Param is expected to be an integer number, but the received value was '${ value }'.`);
+        console.error(`Cyclone Engine plugin ${ this.pluginName }: Param is expected to be an integer number, but the received value was '${ value }'.`);
       }
       return defaultValue;
     }
   }
 
-  static getFloatParam({ value, defaultValue, pluginName }) {
+  static getFloatParam({ value, defaultValue }) {
     try {
       const result = parseFloat(value.replace(',', '.'));
 
@@ -406,30 +306,30 @@ class CycloneEngine {
       return result;
     } catch(e) {
       if (value !== '') {
-        console.error(`Cyclone Engine plugin ${ pluginName }: Param is expected to be a number, but the received value was '${ value }'.`);
+        console.error(`Cyclone Engine plugin ${ this.pluginName }: Param is expected to be a number, but the received value was '${ value }'.`);
       }
 
       return defaultValue;
     }
   }
 
-  static getIntListParam({ value, pluginName }) {
+  static getIntListParam({ value }) {
     return this.parseArray((value ?? '').trim(), item => {
       try {
         return parseInt(item.trim());
       } catch(e) {
         if (item !== '') {
-          console.error(`Cyclone Engine plugin ${ pluginName }: Param is expected to be a list of integer numbers, but one of the items was '${ item }'.`);
+          console.error(`Cyclone Engine plugin ${ this.pluginName }: Param is expected to be a list of integer numbers, but one of the items was '${ item }'.`);
         }
         return 0;
       }
     });
   }
 
-  static parseStructArrayParam({ data, pluginName, type }) {
+  static parseStructArrayParam({ data, type }) {
     const newData = [];
     for (const json of data) {
-      const itemData = this.parseStructParam({ value: json, defaultValue: '', pluginName, type });
+      const itemData = this.parseStructParam({ value: json, defaultValue: '', type });
       if (itemData) {
         newData.push(itemData);
       }
@@ -438,26 +338,26 @@ class CycloneEngine {
     return newData;
   }
 
-  static getFloatListParam({ value, pluginName }) {
+  static getFloatListParam({ value }) {
     return this.parseArray((value || '').trim(), item => {
       try {
         return parseFloat(item.trim());
       } catch(e) {
         if (item !== '') {
-          console.error(`Cyclone Engine plugin ${ pluginName }: Param ${ name } is expected to be a list of numbers, but one of the items was '${ item }'.`);
+          console.error(`Cyclone Engine plugin ${ this.pluginName }: Param ${ name } is expected to be a list of numbers, but one of the items was '${ item }'.`);
         }
         return 0;
       }
     });
   }
 
-  static getParam({ value, defaultValue, pluginName, type }) {
+  static getParam({ value, defaultValue, type }) {
     if (type.endsWith('[]')) {
-      return this.parseArrayParam({ value, defaultValue, pluginName, type });
+      return this.parseArrayParam({ value, type });
     }
 
     if (type.startsWith('struct<')) {
-      return this.parseStructParam({ value, defaultValue, pluginName, type });
+      return this.parseStructParam({ value, defaultValue, type });
     }
 
     if (value === undefined) {
@@ -466,9 +366,9 @@ class CycloneEngine {
 
     switch(type) {
       case 'int':
-        return this.getIntParam({value, pluginName, defaultValue });
+        return this.getIntParam({value, defaultValue });
       case 'float':
-        return this.getFloatParam({ value, pluginName, defaultValue });
+        return this.getFloatParam({ value, defaultValue });
       case 'boolean':
         return (typeof value === 'boolean') ? value : this.isTrue(String(value).trim());
       default:
@@ -476,13 +376,8 @@ class CycloneEngine {
     }
   }
 
-  static getPluginParam(pluginName, paramName) {
-    const pluginParams = this.parameters.get(pluginName);
-    if (!pluginParams) {
-      return;
-    }
-
-    return pluginParams.get(paramName);
+  static getPluginParam(paramName) {
+    return this.params.get(paramName);
   }
 
   static defaultValueForType(typeName) {
@@ -496,7 +391,7 @@ class CycloneEngine {
     return '';
   }
 
-  static parseParam(key, paramMap, pluginName, dataMap = undefined) {
+  static parseParam(key, paramMap, dataMap = undefined) {
     let paramData = paramMap[key];
     if (paramData && typeof paramData === 'string') {
       paramData = {
@@ -510,18 +405,17 @@ class CycloneEngine {
     if (dataMap) {
       value = dataMap.get(name) ?? defaultValue;
     } else {
-      const data = this.getPluginParam(pluginName, name) || {};
+      const data = this.getPluginParam(name) || {};
       value = data.value ?? defaultValue;
     }
     return this.getParam({
       value,
       defaultValue,
-      pluginName,
       type
     });
   }
 
-  static parseArrayParam({ value, pluginName, type }) {
+  static parseArrayParam({ value, type }) {
     const data = this.parseArray(value);
     if (!data || !data.length) {
       return data;
@@ -531,7 +425,8 @@ class CycloneEngine {
 
     const newData = [];
     for (const value of data) {
-      newData.push(this.getParam({ value, pluginName, type: itemType }));
+      const defaultValue = this.defaultValueForType(itemType);
+      newData.push(this.getParam({ value, type: itemType, defaultValue }));
     }
 
     return newData;
@@ -542,7 +437,7 @@ class CycloneEngine {
     return matches?.[matchIndex];
   }
 
-  static parseStructParam({ value, defaultValue, pluginName, type }) {
+  static parseStructParam({ value, defaultValue, type }) {
     let data;
     if (value) {
       try {
@@ -563,7 +458,7 @@ class CycloneEngine {
       return data;
     }
 
-    const structType = CycloneEngine.structs.get(structTypeName);
+    const structType = this.structs.get(structTypeName);
     if (!structType) {
       console.error(`Unknown param structure type: ${ structTypeName }`);
       return data;
@@ -585,7 +480,6 @@ class CycloneEngine {
       data[key] = this.getParam({
         value: data[key],
         defaultValue: dataType.defaultValue,
-        pluginName,
         type: dataType.type,
       });
     }
@@ -673,12 +567,6 @@ class CycloneEngine {
     return value;
   }
 
-  static requireVersion(versionNum, pluginName) {
-    if (versionNum > this.versionNum) {
-      throw new Error(`${ pluginName } requires a newer version of CycloneEngine Core.`);
-    }
-  }
-
   static debounce(fn, delay) {
     let clearTimer;
     return function(...args) {
@@ -686,18 +574,6 @@ class CycloneEngine {
       clearTimeout(clearTimer);
       clearTimer = setTimeout(() => fn.call(context, ...args), delay);
     };
-  }
-}
-
-// eslint-disable-next-line no-unused-vars
-class CyclonePlugin {
-  static register(pluginName, paramMap = {}) {
-    if (!pluginName) {
-      throw new Error('Invalid Cyclone Plugin.');
-    }
-
-    this.pluginName = pluginName;
-    CycloneEngine.registerPlugin(this, pluginName, paramMap);
   }
 
   static _addProperty(classObj, propName, { getter: getterFn, setter: setterFn, lazy = false })  {
@@ -722,30 +598,12 @@ class CyclonePlugin {
     });
   }
 
-  static registerEvent(eventName, callback) {
-    CycloneEngine.registerEvent(`${ this.pluginName }:${ eventName }`, callback);
-  }
-
-  static runEvent(eventName) {
-    CycloneEngine.runEvent(`${ this.pluginName }:${ eventName }`);
-  }
-
-  static getFileName() {
-    return CycloneEngine.pluginFileNames.get(this.pluginName) ?? this.pluginName;
-  }
-
-  static patchClass(baseClass, patchFn) {
-    return CycloneEngine.patchClass(baseClass, patchFn, this.pluginName);
-  }
-
   static registerCommand(commandName, params, fn) {
-    const fileName = this.getFileName();
-
     if (typeof params === 'function') {
-      return PluginManager.registerCommand(fileName, commandName, params);
+      return PluginManager.registerCommand(this.getPluginFileName(), commandName, params);
     }
 
-    return PluginManager.registerCommand(fileName, commandName, (receivedArgs) => {
+    return PluginManager.registerCommand(this.getPluginFileName(), commandName, (receivedArgs) => {
       const dataMap = new Map();
       for (const key in receivedArgs) {
         if (!receivedArgs.hasOwnProperty(key)) {
@@ -753,39 +611,14 @@ class CyclonePlugin {
         }
         dataMap.set(key, receivedArgs[key]);
       }
-      const parsedArgs = CycloneEngine.loadParamMap(this.pluginName, params, dataMap);
-      for (const [key, value] of parsedArgs) {
-        receivedArgs[key] = value;
-      }
+      const parsedArgs = this.loadParamMap(params, dataMap);
+      Object.assign(receivedArgs, parsedArgs);
 
       return fn(receivedArgs);
     });
   }
-
-  static getParamList(paramNames) {
-    const list = {};
-    for (const [ key ] of this.params) {
-      list[key] = this.params.get(key);
-    }
-    return list;
-  }
 }
 
-CycloneEngine.superClasses = new Map();
-CycloneEngine.classes = new Map();
-CycloneEngine.parameters = new Map();
-CycloneEngine.structs = new Map();
-CycloneEngine.eventListeners = new Map();
-CycloneEngine.pluginFileNames = new Map();
-
-CycloneEngine.loadAllParams();
-CycloneEngine.structs.set('Dictionary', {
-  name: {
-    type: 'string',
-    defaultValue: '',
-  },
-  value: {
-    type: 'string',
-    defaultValue: '',
-  },
-});
+export {
+  CyclonePlugin,
+};
