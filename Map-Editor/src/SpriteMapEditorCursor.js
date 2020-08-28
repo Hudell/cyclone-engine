@@ -1,3 +1,5 @@
+import { Layers } from './constants';
+
 class SpriteMapEditorCursor extends Sprite {
   initialize() {
     super.initialize(new Bitmap(CycloneMapEditor.tileWidth, CycloneMapEditor.tileHeight));
@@ -104,9 +106,32 @@ class SpriteMapEditorCursor extends Sprite {
     }
   }
 
+  drawMultiLayerTiles() {
+    for (let z = 0; z < CycloneMapEditor.multiLayerSelection.length; z++) {
+      let column = 0;
+      let row = 0;
+
+      for (const tileId of CycloneMapEditor.multiLayerSelection[z]) {
+        if (column >= CycloneMapEditor.tileCols) {
+          column = 0;
+          row++;
+        }
+
+        const x = column * CycloneMapEditor.tileWidth;
+        const y = row * CycloneMapEditor.tileHeight;
+
+        this.bitmap.drawTile(tileId, x, y);
+        column++;
+      }
+    }
+  }
+
   drawTiles() {
-    let x = 0;
-    let y = 0;
+    if (CycloneMapEditor.currentLayer === Layers.auto && CycloneMapEditor.multiLayerSelection.length) {
+      this.drawMultiLayerTiles();
+      return;
+    }
+
     let column = 0;
     let row = 0;
 
@@ -116,8 +141,8 @@ class SpriteMapEditorCursor extends Sprite {
         row++;
       }
 
-      x = column * CycloneMapEditor.tileWidth;
-      y = row * CycloneMapEditor.tileHeight;
+      const x = column * CycloneMapEditor.tileWidth;
+      const y = row * CycloneMapEditor.tileHeight;
 
       if (CycloneMapEditor.currentLayer === 5) {
         this.bitmap.drawRegion(tileId, x, y);
