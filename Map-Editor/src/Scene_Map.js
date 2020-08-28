@@ -17,6 +17,12 @@ CycloneMapEditor.patchClass(Scene_Map, $super => class {
   }
 
   toggleMapEditor() {
+    if (CycloneMapEditor.active && CycloneMapEditor.changeHistory.length > 0) {
+      if (confirm("Do you want to save your map before hiding the map editor? (If you don't, you'll lose your changes if you open the menu).")) {
+        CycloneMapEditor._doSave();
+      }
+    }
+
     CycloneMapEditor.tileWidth = $gameMap.tileWidth();
     CycloneMapEditor.tileHeight = $gameMap.tileHeight();
     CycloneMapEditor.active = !CycloneMapEditor.active;
