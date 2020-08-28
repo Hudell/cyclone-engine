@@ -22,14 +22,75 @@ class WindowCycloneMapEditorStatus extends Window_Base {
     return 16;
   }
 
+  // eslint-disable-next-line complexity
   drawContents() {
     this.contents.clear();
     this.contents.fontSize = 16;
 
-    const line = `Map: ${ $gameMap._mapId }, Tileset: ${ $gameMap._tilesetId}, Pos: ${ CycloneMapEditor.statusMapX }, ${ CycloneMapEditor.statusMapY }, ${ CycloneMapEditor.currentLayer }`;
-    const tiles = `Tiles: (${ CycloneMapEditor.statusTile1 }, ${ CycloneMapEditor.statusTile2 }, ${ CycloneMapEditor.statusTile3 }, ${ CycloneMapEditor.statusTile4 }), Region: ${ CycloneMapEditor.statusRegion }`;
+    let line = '';
+    let splitter = '';
 
-    this.drawText(`${ line } - ${ tiles }`, 8, 12, this.width - 8, 'left');
+    if (CycloneMapEditor.params.showMapId) {
+      line += `${ splitter }Map: ${ $gameMap._mapId }`;
+      splitter = ', ';
+    }
+
+    if (CycloneMapEditor.params.showTilesetId) {
+      line += `${ splitter }Tileset: ${ $gameMap._tilesetId }`;
+      splitter = ', ';
+    }
+
+    if (CycloneMapEditor.params.showPosition) {
+      line += `${ splitter }Pos: ${ CycloneMapEditor.statusMapX }, ${ CycloneMapEditor.statusMapY }`;
+      splitter = ', ';
+    }
+
+    if (CycloneMapEditor.params.showCellTiles) {
+      const { statusTile1, statusTile2, statusTile3, statusTile4 } = CycloneMapEditor;
+      if (line) {
+        line += ' - ';
+      }
+
+      line += `Tiles: (${ statusTile1 }, ${ statusTile2 }, ${ statusTile3 }, ${ statusTile4 })`;
+      splitter = ', ';
+    }
+
+    if (CycloneMapEditor.params.showRegionId) {
+      line += `${ splitter }Region: ${ CycloneMapEditor.statusRegion }`;
+      splitter = ', ';
+    }
+
+    if (CycloneMapEditor.params.showTag) {
+      line += `${ splitter }Tag: ${ CycloneMapEditor.statusTag }`;
+      splitter = ', ';
+    }
+
+    if (CycloneMapEditor.params.showCollision) {
+      line += `${ splitter }Collision: ${ CycloneMapEditor.statusCollision }`;
+      splitter = ', ';
+    }
+
+    if (CycloneMapEditor.params.showLadder && CycloneMapEditor.statusLadder) {
+      line += `${ splitter } Ladder`;
+      splitter = ', ';
+    }
+
+    if (CycloneMapEditor.params.showBush && CycloneMapEditor.statusBush) {
+      line += `${ splitter } Bush`;
+      splitter = ', ';
+    }
+
+    if (CycloneMapEditor.params.showCounter && CycloneMapEditor.statusCounter) {
+      line += `${ splitter } Counter`;
+      splitter = ', ';
+    }
+
+    if (CycloneMapEditor.params.showDamageFloor && CycloneMapEditor.statusDamage) {
+      line += `${ splitter } Damage`;
+      splitter = ', ';
+    }
+
+    this.drawText(`${ line }`, 8, 12, this.width - 8, 'left');
     this.drawText(`TileId: ${ CycloneMapEditor.statusTileId }`, 0, 12, this.width - 8, 'right');
   }
 }

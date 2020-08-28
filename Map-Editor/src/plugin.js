@@ -41,6 +41,12 @@ let statusTile2 = 0;
 let statusTile3 = 0;
 let statusTile4 = 0;
 let statusRegion = 0;
+let statusTag = 0;
+let statusCollision = 0;
+let statusBush = false;
+let statusCounter = false;
+let statusDamage = false;
+let statusLadder = false;
 let gridPreviewBlockHandler = false;
 let gridNeedsRefresh = false;
 let currentZoom = 1;
@@ -235,7 +241,12 @@ class CycloneMapEditor extends CyclonePlugin {
   static get statusTile4() { return statusTile4; }
   static set statusTile4(value) { statusTile4 = value; }
   static get statusRegion() { return statusRegion; }
-  static set statusRegion(value) { statusRegion = value; }
+  static get statusTag() { return statusTag; }
+  static get statusCollision() { return statusCollision; }
+  static get statusBush() { return statusBush; }
+  static get statusCounter() { return statusCounter; }
+  static get statusDamage() { return statusDamage; }
+  static get statusLadder() { return statusLadder; }
 
   static get currentZoom() { return currentZoom; }
   static set currentZoom(value) {
@@ -261,6 +272,50 @@ class CycloneMapEditor extends CyclonePlugin {
       regionIcons: {
         type: 'struct<CycloneRegionIcon>[]',
         defaultValue: '[]',
+      },
+      showMapId: {
+        type: 'boolean',
+        defaultValue: true,
+      },
+      showTilesetId: {
+        type: 'boolean',
+        defaultValue: true,
+      },
+      showPosition: {
+        type: 'boolean',
+        defaultValue: true,
+      },
+      showCellTiles: {
+        type: 'boolean',
+        defaultValue: true,
+      },
+      showRegionId: {
+        type: 'boolean',
+        defaultValue: true,
+      },
+      showTag: {
+        type: 'boolean',
+        defaultValue: true,
+      },
+      showCollision: {
+        type: 'boolean',
+        defaultValue: true,
+      },
+      showLadder: {
+        type: 'boolean',
+        defaultValue: true,
+      },
+      showBush: {
+        type: 'boolean',
+        defaultValue: true,
+      },
+      showCounter: {
+        type: 'boolean',
+        defaultValue: true,
+      },
+      showDamageFloor: {
+        type: 'boolean',
+        defaultValue: true,
       },
     });
 
@@ -805,7 +860,48 @@ class CycloneMapEditor extends CyclonePlugin {
   }
 
   // eslint-disable-next-line complexity
-  static updateStatus({ tileId, mapX, mapY, tile1, tile2, tile3, tile4, region } = {}) {
+  static getCollisionSymbol(x, y) {
+    const downCollision = !$gameMap.isPassable(x, y, 2);
+    const leftCollision = !$gameMap.isPassable(x, y, 4);
+    const rightCollision = !$gameMap.isPassable(x, y, 6);
+    const upCollision = !$gameMap.isPassable(x, y, 8);
+
+    if (downCollision && leftCollision && rightCollision && upCollision) {
+      return 'X';
+    }
+
+    if (!downCollision && !leftCollision && !rightCollision && !downCollision) {
+      return 'O';
+    }
+
+    let collisions = '';
+    if (downCollision) {
+      collisions += 'd:X ';
+    } else {
+      collisions += 'd:O ';
+    }
+
+    if (leftCollision) {
+      collisions += 'l:X ';
+    } else {
+      collisions += 'l:O ';
+    }
+    if (rightCollision) {
+      collisions += 'r:X ';
+    } else {
+      collisions += 'r:O ';
+    }
+    if (upCollision) {
+      collisions += 'u:X ';
+    } else {
+      collisions += 'u:O ';
+    }
+
+    return collisions;
+  }
+
+  // eslint-disable-next-line complexity
+  static updateStatus({ tileId, mapX, mapY, tile1, tile2, tile3, tile4 } = {}) {
     const oldTileId = statusTileId;
     const oldX = statusMapX;
     const oldY = statusMapY;
@@ -813,7 +909,6 @@ class CycloneMapEditor extends CyclonePlugin {
     const oldTile2 = statusTile2;
     const oldTile3 = statusTile3;
     const oldTile4 = statusTile4;
-    const oldRegion = region;
 
     statusTileId = tileId ?? statusTileId;
     statusMapX = mapX ?? statusMapX;
@@ -822,10 +917,21 @@ class CycloneMapEditor extends CyclonePlugin {
     statusTile2 = tile2 ?? statusTile2;
     statusTile3 = tile3 ?? statusTile3;
     statusTile4 = tile4 ?? statusTile4;
-    statusRegion = region ?? statusRegion;
+
+
+    const changedPos = oldX !== statusMapX || oldY !== statusMapY;
+    if (changedPos) {
+      statusRegion = $gameMap.regionId(statusMapX, statusMapY);
+      statusTag = $gameMap.terrainTag(statusMapX, statusMapY);
+      statusBush = $gameMap.isBush(statusMapX, statusMapY);
+      statusCounter = $gameMap.isCounter(statusMapX, statusMapY);
+      statusDamage = $gameMap.isDamageFloor(statusMapX, statusMapY);
+      statusLadder = $gameMap.isLadder(statusMapX, statusMapY);
+      statusCollision = this.getCollisionSymbol(statusMapX, statusMapY);
+    }
 
     const changedTile = oldTile1 !== statusTile1 || oldTile2 !== statusTile2 || oldTile3 !== statusTile3 || oldTile4 !== statusTile4;
-    const changed = changedTile || oldTileId !== statusTileId || oldX !== statusMapX || oldY !== statusMapY || oldRegion !== statusRegion;
+    const changed = changedTile || oldTileId !== statusTileId || changedPos;
     if (!changed) {
       return;
     }

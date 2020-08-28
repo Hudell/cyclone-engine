@@ -51,7 +51,7 @@ class CyclonePlugin {
   }
 
   static loadParamMap(paramMap, dataMap = undefined) {
-    const params = {};
+    this.params = {};
 
     for (const key in paramMap) {
       if (!paramMap.hasOwnProperty(key)) {
@@ -59,14 +59,14 @@ class CyclonePlugin {
       }
 
       try {
-        params[key] = this.parseParam(key, paramMap, dataMap);
+        this.params[key] = this.parseParam(key, paramMap, dataMap);
       } catch(e) {
         console.error(`CycloneEngine crashed while trying to parse a parameter value (${ key }). Please report the following error to Hudell:`);
         console.log(e);
       }
     }
 
-    return params;
+    return this.params;
   }
 
   static registerEvent(eventName, callback) {

@@ -67,6 +67,86 @@
  * @type struct<RegionIcon>[]
  * @desc Configure certain regions to display an icon instead of the number
  *
+ * @param Status Bar
+ *
+ * @param showMapId
+ * @text Show Map Id
+ * @parent Status Bar
+ * @type boolean
+ * @default true
+ * @desc Should the Map Id be visible in the status bar?
+ *
+ * @param showTilesetId
+ * @text Show Tileset Id
+ * @parent Status Bar
+ * @type boolean
+ * @default true
+ * @desc Should the Tileset Id be visible in the status bar?
+ *
+ * @param showPosition
+ * @text Show Position
+ * @parent Status Bar
+ * @type boolean
+ * @default true
+ * @desc Should the X and Y position in the status bar?
+ *
+ * @param showCellTiles
+ * @text Show Cell Tiles
+ * @parent Status Bar
+ * @type boolean
+ * @default true
+ * @desc Should the id of the current position tiles be displayed in the status bar?
+ *
+ * @param showRegionId
+ * @text Show Region Id
+ * @parent Status Bar
+ * @type boolean
+ * @default true
+ * @desc Should the region id of the current position be displayed in the status bar?
+ *
+ * @param showTag
+ * @text Show Terrain Tag
+ * @parent Status Bar
+ * @type boolean
+ * @default true
+ * @desc Should the terrain tag of the current position be displayed in the status bar?
+ *
+ * @param showCollision
+ * @text Show Collision
+ * @parent Status Bar
+ * @type boolean
+ * @default true
+ * @desc Should the collision of the current position be displayed in the status bar?
+ *
+ * @param showLadder
+ * @text Show Ladder
+ * @parent Status Bar
+ * @type boolean
+ * @default true
+ * @desc Should status bar indicate if the current position is a ladder?
+ *
+ * @param showBush
+ * @text Show Bush
+ * @parent Status Bar
+ * @type boolean
+ * @default true
+ * @desc Should the status bar indicate if the current position is a bush?
+ *
+ * @param showCounter
+ * @text Show Counter
+ * @parent Status Bar
+ * @type boolean
+ * @default true
+ * @desc Should the status bar indicate if the current position is a counter?
+ *
+ * @param showDamageFloor
+ * @text Show Damage Floor
+ * @parent Status Bar
+ * @type boolean
+ * @default true
+ * @desc Should the status bar indicate if the current position is a damage floor tile?
+ *
+ *
  **/
 
 /*~struct~RegionIcon:

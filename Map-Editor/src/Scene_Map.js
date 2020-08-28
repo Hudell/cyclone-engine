@@ -221,7 +221,6 @@ CycloneMapEditor.patchClass(Scene_Map, $super => class {
     const tile2 = CycloneMapEditor.getCurrentTileAtPosition(mapX, mapY, 1, true);
     const tile3 = CycloneMapEditor.getCurrentTileAtPosition(mapX, mapY, 2, true);
     const tile4 = CycloneMapEditor.getCurrentTileAtPosition(mapX, mapY, 3, true);
-    const region = $gameMap.regionId(mapX, mapY);
     const tileId = this.getSelectionTileAt(x, y);
 
     CycloneMapEditor.updateStatus({
@@ -232,7 +231,6 @@ CycloneMapEditor.patchClass(Scene_Map, $super => class {
       tile3,
       tile4,
       tileId,
-      region,
     });
 
     if (!pressed && !CycloneMapEditor.wasPressing) {
