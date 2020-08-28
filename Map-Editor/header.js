@@ -5,7 +5,6 @@
  * <pluginName:CycloneMapEditor>
  * @author Hudell
  * @url https://makerdevs.com/plugin/cyclone-map-editor
- * @orderAfter Cyclone-Core
  *
  * @help
  * ===========================================================================
