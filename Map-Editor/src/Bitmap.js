@@ -15,6 +15,10 @@ const regionColors = [
 
 CycloneMapEditor.patchClass(Bitmap, $super => class {
   drawNormalTile(tileId, x, y, drawWidth, drawHeight) {
+    if (tileId === undefined) {
+      return;
+    }
+
     const bitmap =  CycloneMapEditor.loadTilesetBitmap(tileId);
 
     const sourceX = ((Math.floor(tileId / 128) % 2) * 8 + (tileId % 8)) * CycloneMapEditor.tileWidth;

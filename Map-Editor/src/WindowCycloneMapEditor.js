@@ -98,7 +98,7 @@ class WindowCycloneMapEditor extends Window_Command {
   }
 
   ensureSelectionVisible() {
-    if (this._selectionIndex < 0 || CycloneMapEditor.currentTileId === 0) {
+    if (this._selectionIndex < 0 || CycloneMapEditor.currentTileId === undefined) {
       return;
     }
 
@@ -306,7 +306,7 @@ class WindowCycloneMapEditor extends Window_Command {
 
     const topIndex = this._list.findIndex((item) => item.name === tileId);
     if (topIndex < 0) {
-      CycloneMapEditor.currentTileId = 0;
+      CycloneMapEditor.currentTileId = undefined;
       CycloneMapEditor.selectedTileList = [];
       this.redraw();
       return;

@@ -1,4 +1,5 @@
 import { CyclonePlugin } from '../../Core/main';
+import { Layers } from './constants';
 
 const layerVisibility = [true, true, true, true, true, false, false, false, false, false];
 let editorActive = true;
@@ -6,7 +7,7 @@ let windowWidth = 408;
 
 let currentLayer = 7;
 let currentTab = 'A';
-let currentTileId = 0;
+let currentTileId = undefined;
 let tileCols = 1;
 let tileRows = 1;
 let selectedTileList = [];
@@ -666,7 +667,7 @@ class CycloneMapEditor extends CyclonePlugin {
   }
 
   static clearSelection() {
-    currentTileId = 0;
+    currentTileId = undefined;
     tileCols = 1;
     tileRows = 1;
     selectedTileList = [];
@@ -1619,7 +1620,7 @@ class CycloneMapEditor extends CyclonePlugin {
     if (layerId === 3) {
       // If there's already something on the fourth layer, then move it to the third and place the new tile on the 4th
       const currentTile = this.getCurrentTileAtPosition(x, y, 3, skipPreview);
-      if (currentTile === tileId) {
+      if (currentTile === tileId && tileId !== 0) {
         return [];
       }
 
@@ -1655,7 +1656,59 @@ class CycloneMapEditor extends CyclonePlugin {
     return items;
   }
 
+  static canEraseLayer(layerIndex) {
+    if (currentTool === 'eraser') {
+      return true;
+    }
+
+    if (layerIndex >= 2) {
+      return true;
+    }
+
+    if (multiLayerSelection.length) {
+      return true;
+    }
+
+    if (currentLayer !== Layers.auto) {
+      return true;
+    }
+
+    // The lower layers can only be erased with the pen in auto mode when there are multiple layers selected
+    return false;
+  }
+
+  static _eraseSingleMapTile(x, y, z, updateNeighbors = true, previewOnly = false) {
+    for (let newZ = 0; newZ <= 3; newZ++) {
+      if (newZ !== z && z !== Layers.auto) {
+        continue;
+      }
+
+      if (!this.canEraseLayer(newZ)) {
+        continue;
+      }
+
+      const tileIndex = this.tileIndex(x, y, newZ);
+      if (previewOnly) {
+        previewChanges[tileIndex] = 0;
+      } else {
+        const oldTile = $dataMap.data[tileIndex];
+        if (currentChange[tileIndex] === undefined && oldTile !== 0) {
+          currentChange[tileIndex] = oldTile;
+        }
+
+        $dataMap.data[tileIndex] = 0;
+      }
+
+      this.maybeUpdateTileNeighbors(x, y, z, updateNeighbors, previewOnly);
+    }
+  }
+
   static _applySingleMapTile(x, y, z, tileId, updateNeighbors = true, previewOnly = false) {
+    if (!tileId) {
+      this._eraseSingleMapTile(x, y, z, updateNeighbors, previewOnly);
+      return;
+    }
+
     const itemsToChange = this.getItemsToChange(x, y, z, tileId, !previewOnly, updateNeighbors);
     for (const {x, y, z, tileId} of itemsToChange) {
       if (z > 5) {
@@ -1686,6 +1739,15 @@ class CycloneMapEditor extends CyclonePlugin {
     if (!$gameMap.isValid(x, y)) {
       return;
     }
+    if (currentTool !== 'eraser') {
+      if (tileId === undefined ) {
+        return;
+      }
+
+      if (tileId === 0 && !this.canEraseLayer(z)) {
+        return;
+      }
+    }
 
     this._applySingleMapTile(x, y, z, tileId, updateNeighbors, previewOnly);
   }
@@ -1695,7 +1757,7 @@ class CycloneMapEditor extends CyclonePlugin {
       return;
     }
 
-    if (!currentTileId) {
+    if (currentTileId === undefined) {
       return;
     }
 
@@ -1730,7 +1792,7 @@ class CycloneMapEditor extends CyclonePlugin {
   }
 
   static applyRectangle(startX, startY, width, height, previewOnly = false) {
-    if (!currentTileId && currentTool !== 'eraser') {
+    if (currentTileId === undefined && currentTool !== 'eraser') {
       return;
     }
 
@@ -1818,7 +1880,7 @@ class CycloneMapEditor extends CyclonePlugin {
           const tileIndex = this.tileIndex(tileX, tileY, z);
           multiLayerSelection[z][index] = $dataMap.data[tileIndex] || 0;
           selectedTileList[index] = $dataMap.data[tileIndex] || selectedTileList[index] || 0;
-          if (!currentTileId) {
+          if (currentTileId === undefined) {
             currentTileId = selectedTileList[index];
           }
         }
@@ -1827,20 +1889,73 @@ class CycloneMapEditor extends CyclonePlugin {
     }
   }
 
-  static copyHigherRectangle(startX, startY, width, height) {
-    let index = 0;
+  static _selectTileIfNoneSelectedYet(tileId) {
+    if (currentTileId === undefined) {
+      currentTileId = tileId;
+    }
+  }
 
-    for (let tileY = startY; tileY < startY + height; tileY++) {
-      for (let tileX = startX; tileX < startX + width; tileX++) {
-        for (let z = 3; z >= 0; z--) {
+  static _shouldSkipRemainingLayersCopy(foundAny, z) {
+    if (!foundAny) {
+      return false;
+    }
+
+    if (Input.isPressed('control')) {
+      return z !== 3;
+    }
+
+    return true;
+  }
+
+  static copyHigherAutoRectangle(startX, startY, width, height) {
+    for (let z = 0; z <= 3; z++) {
+      multiLayerSelection[z] = Array(width * height);
+    }
+
+    let foundAny = false;
+    for (let z = 3; z >= 0; z--) {
+      let index = 0;
+      for (let tileY = startY; tileY < startY + height; tileY++) {
+        for (let tileX = startX; tileX < startX + width; tileX++) {
+          const tileIndex = this.tileIndex(tileX, tileY, z);
+          multiLayerSelection[z][index] = $dataMap.data[tileIndex] || 0;
+          selectedTileList[index] = $dataMap.data[tileIndex] || selectedTileList[index] || 0;
+          this._selectTileIfNoneSelectedYet(selectedTileList[index]);
+          if ($dataMap.data[tileIndex]) {
+            foundAny = true;
+          }
+
+          index++;
+        }
+      }
+
+      if (this._shouldSkipRemainingLayersCopy(foundAny, z)) {
+        return;
+      }
+    }
+  }
+
+  static copyHigherRectangle(startX, startY, width, height) {
+    let foundAny = false;
+
+    for (let z = 3; z >= 0; z--) {
+      let index = 0;
+
+      for (let tileY = startY; tileY < startY + height; tileY++) {
+        for (let tileX = startX; tileX < startX + width; tileX++) {
           const tileIndex = this.tileIndex(tileX, tileY, z);
           selectedTileList[index] = selectedTileList[index] || $dataMap.data[tileIndex] || 0;
-          if (!currentTileId) {
-            currentTileId = selectedTileList[index];
+          this._selectTileIfNoneSelectedYet(selectedTileList[index]);
+          if ($dataMap.data[tileIndex]) {
+            foundAny = true;
           }
-        }
 
-        index++;
+          index++;
+        }
+      }
+
+      if (this._shouldSkipRemainingLayersCopy(foundAny, z)) {
+        return;
       }
     }
   }
@@ -1852,9 +1967,7 @@ class CycloneMapEditor extends CyclonePlugin {
       for (let tileX = startX; tileX < startX + width; tileX++) {
         const tileIndex = this.tileIndex(tileX, tileY, currentLayer);
         selectedTileList[index] = $dataMap.data[tileIndex] || 0;
-        if (!currentTileId) {
-          currentTileId = selectedTileList[index];
-        }
+        this._selectTileIfNoneSelectedYet(selectedTileList[index]);
         index++;
       }
     }
@@ -1867,12 +1980,16 @@ class CycloneMapEditor extends CyclonePlugin {
 
     multiLayerSelection = [];
     selectedTileList = Array(width * height);
-    currentTileId = 0;
+    currentTileId = undefined;
 
-    if (Input.isPressed('shift')) {
+    if (currentLayer === 7) {
+      if (Input.isPressed('shift')) {
+        this.copyHigherAutoRectangle(startX, startY, width, height);
+      } else {
+        this.copyAutoRectangle(startX, startY, width, height);
+      }
+    } else if (Input.isPressed('shift')) {
       this.copyHigherRectangle(startX, startY, width, height);
-    } else if (currentLayer === 7) {
-      this.copyAutoRectangle(startX, startY, width, height);
     } else {
       this.copyManualRectangle(startX, startY, width, height);
     }
@@ -1976,7 +2093,7 @@ class CycloneMapEditor extends CyclonePlugin {
   }
 
   static applyFillArea(mapX, mapY) {
-    if (!currentTileId) {
+    if (currentTileId === undefined) {
       return;
     }
 
@@ -2012,7 +2129,7 @@ class CycloneMapEditor extends CyclonePlugin {
   }
 
   static applySelectedTiles(mapX, mapY) {
-    if (!currentTileId) {
+    if (currentTileId === undefined) {
       return;
     }
 
