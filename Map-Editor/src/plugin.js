@@ -1,15 +1,16 @@
 import { CyclonePlugin } from '../../Core/main';
 
-const layerVisibility = [true, true, true, true, true, false];
+const layerVisibility = [true, true, true, true, true, false, false, false];
 let editorActive = true;
 let windowWidth = 408;
 
-let currentLayer = 0;
+let currentLayer = 7;
 let currentTab = 'A';
 let currentTileId = 0;
 let tileCols = 1;
 let tileRows = 1;
 let selectedTileList = [];
+let multiLayerSelection = [];
 let tileWidth = 48;
 let tileHeight = 48;
 let currentTool = 'pencil';
@@ -42,6 +43,7 @@ let statusTile4 = 0;
 let statusRegion = 0;
 let gridPreviewBlockHandler = false;
 let gridNeedsRefresh = false;
+let currentZoom = 1;
 
 const _ = '';
 const o = true;
@@ -97,6 +99,28 @@ const autoTileShapeTable = [
   [_, o, _, x, x, _, x, _], //44
   [_, x, _, o, x, _, x, _], //45
   [_, x, _, x, x, _, x, _]  //46
+];
+
+const highLayerAutotiles = [
+  1,
+  2,
+  3,
+  21,
+  22,
+  23,
+  24,
+  29,
+  30,
+  31,
+  32,
+  37,
+  38,
+  39,
+  40,
+  45,
+  46,
+  47,
+  48,
 ];
 
 class CycloneMapEditor extends CyclonePlugin {
@@ -193,6 +217,8 @@ class CycloneMapEditor extends CyclonePlugin {
   static set currentTileId(value) { currentTileId = value; }
   static get selectedTileList() { return selectedTileList; }
   static set selectedTileList(value) { selectedTileList = value; }
+  static get multiLayerSelection() { return multiLayerSelection; }
+  static set multiLayerSelection(value) { multiLayerSelection = value; }
 
   static get statusTileId() { return statusTileId; }
   static set statusTileId(value) { statusTileId = value; }
@@ -210,6 +236,19 @@ class CycloneMapEditor extends CyclonePlugin {
   static set statusTile4(value) { statusTile4 = value; }
   static get statusRegion() { return statusRegion; }
   static set statusRegion(value) { statusRegion = value; }
+
+  static get currentZoom() { return currentZoom; }
+  static set currentZoom(value) {
+    currentZoom = value;
+    $gameScreen._zoomScale = value;
+
+    if (SceneManager._scene instanceof Scene_Map) {
+      $gameMap.zoom = new Point(value, value);
+      SceneManager._scene._mapEditorGrid.refresh();
+      SceneManager._scene._spriteset.updatePosition();
+    }
+  }
+
   static register() {
     super.initialize('CycloneMapEditor');
 
@@ -309,6 +348,83 @@ class CycloneMapEditor extends CyclonePlugin {
     });
     editMenu.append(this.showGridMenu);
 
+    // const zoomMenu = new nw.Menu();
+    // this.zoom30Menu = new nw.MenuItem({
+    //   label: '30%',
+    //   type: 'checkbox',
+    //   checked: currentZoom === 0.3,
+    //   click: () => {
+    //     this.currentZoom = 0.3;
+
+    //   },
+    // });
+    // zoomMenu.append(this.zoom30Menu);
+    // this.zoom50Menu = new nw.MenuItem({
+    //   label: '50%',
+    //   type: 'checkbox',
+    //   checked: currentZoom === 0.5,
+    //   click: () => {
+    //     this.currentZoom = 0.5;
+
+    //   },
+    // });
+    // zoomMenu.append(this.zoom50Menu);
+    // this.zoom67Menu = new nw.MenuItem({
+    //   label: '67%',
+    //   type: 'checkbox',
+    //   checked: currentZoom === 0.67,
+    //   click: () => {
+    //     this.currentZoom = 0.67;
+
+    //   },
+    // });
+    // zoomMenu.append(this.zoom67Menu);
+    // this.zoom75Menu = new nw.MenuItem({
+    //   label: '75%',
+    //   type: 'checkbox',
+    //   checked: currentZoom === 0.75,
+    //   click: () => {
+    //     this.currentZoom = 0.75;
+
+    //   },
+    // });
+    // zoomMenu.append(this.zoom75Menu);
+    // this.zoom90Menu = new nw.MenuItem({
+    //   label: '90%',
+    //   type: 'checkbox',
+    //   checked: currentZoom === 0.9,
+    //   click: () => {
+    //     this.currentZoom = 0.9;
+
+    //   },
+    // });
+    // zoomMenu.append(this.zoom90Menu);
+    // this.zoom100Menu = new nw.MenuItem({
+    //   label: '100%',
+    //   type: 'checkbox',
+    //   checked: currentZoom === 1,
+    //   click: () => {
+    //     this.currentZoom = 1;
+
+    //   },
+    // });
+    // zoomMenu.append(this.zoom100Menu);
+    // this.zoom150Menu = new nw.MenuItem({
+    //   label: '150%',
+    //   type: 'checkbox',
+    //   checked: currentZoom === 1.5,
+    //   click: () => {
+    //     this.currentZoom = 1.5;
+
+    //   },
+    // });
+    // zoomMenu.append(this.zoom150Menu);
+
+    // editMenu.append(new nw.MenuItem({
+    //   label: 'Zoom',
+    //   submenu: zoomMenu,
+    // }));
+
     menu.append(new nw.MenuItem({
       label: 'Edit',
       submenu: editMenu,
@@ -363,6 +479,15 @@ class CycloneMapEditor extends CyclonePlugin {
     }));
 
     const layerMenu = new nw.Menu();
+    this.autoLayerButton = new nw.MenuItem( {
+      label: 'Automatic',
+      type: 'checkbox',
+      checked: currentLayer === 7,
+      key: '0',
+      click: () => {
+        CycloneMapEditor.changeCurrentLayer(7);
+      }
+    });
     this.layer1Button = new nw.MenuItem( {
       label: 'Layer 1',
       type: 'checkbox',
@@ -399,6 +524,7 @@ class CycloneMapEditor extends CyclonePlugin {
         CycloneMapEditor.changeCurrentLayer(3);
       }
     });
+    layerMenu.append(this.autoLayerButton);
     layerMenu.append(this.layer1Button);
     layerMenu.append(this.layer2Button);
     layerMenu.append(this.layer3Button);
@@ -581,6 +707,32 @@ class CycloneMapEditor extends CyclonePlugin {
     if (event.keyCode === 34) {
       this.selectNextTab();
       return;
+    }
+  }
+
+  static checkNumKeys(code) {
+    switch(code) {
+      case 'Numpad0':
+        this.changeCurrentLayer(7);
+        break;
+      case 'Numpad1':
+        this.changeCurrentLayer(0);
+        break;
+      case 'Numpad2':
+        this.changeCurrentLayer(1);
+        break;
+      case 'Numpad3':
+        this.changeCurrentLayer(2);
+        break;
+      case 'Numpad4':
+        this.changeCurrentLayer(3);
+        break;
+      case 'Numpad5':
+        this.changeCurrentLayer(4);
+        break;
+      case 'Numpad6':
+        this.changeCurrentLayer(5);
+        break;
     }
   }
 
@@ -821,6 +973,8 @@ class CycloneMapEditor extends CyclonePlugin {
       this.toggleMapEditor();
       return;
     }
+
+    this.checkNumKeys(event.code);
   }
 
   static toggleMapEditor() {
@@ -911,6 +1065,7 @@ class CycloneMapEditor extends CyclonePlugin {
     this.layer4Button.checked = newIndex === 3;
     this.shadowsButton.checked = newIndex === 4;
     this.regionsButton.checked = newIndex === 5;
+    this.autoLayerButton.checked = newIndex === 7;
 
     if (SceneManager._scene instanceof Scene_Map) {
       SceneManager._scene._mapEditorLayerListWindow.refresh();
@@ -1095,6 +1250,31 @@ class CycloneMapEditor extends CyclonePlugin {
     return 46;
   }
 
+
+  static isAutotileMatch(tileId, x, y, z, skipPreview = true) {
+    if (!$gameMap.isValid(x, y)) {
+      return true;
+    }
+
+    const otherTileId = this.getCurrentTileAtPosition(x, y, z, skipPreview);
+
+    if (Tilemap.isSameKindTile(tileId, otherTileId)) {
+      return true;
+    }
+
+    const specialTiles = [5, 7, 13];
+    const leftKind = Tilemap.getAutotileKind(tileId);
+    const rightKind = Tilemap.getAutotileKind(otherTileId);
+
+    const leftSpecial = specialTiles.includes(leftKind);
+    const rightSpecial = specialTiles.includes(rightKind);
+    if (leftSpecial !== rightSpecial) {
+      return true;
+    }
+
+    return false;
+  }
+
   static getAutoTileShapeForPosition(x, y, z, tileId, skipPreview = true) {
     if (Tilemap.isWallSideTile(tileId) || Tilemap.isRoofTile(tileId)) {
       return this.getWallShapeForPosition(x, y, z, tileId, skipPreview);
@@ -1104,16 +1284,16 @@ class CycloneMapEditor extends CyclonePlugin {
       return this.getWaterfallShapeForPosition(x, y, z, tileId, skipPreview);
     }
 
-    const a = this.isSameKindTile(tileId, x -1, y -1, z, skipPreview);
-    const b = this.isSameKindTile(tileId, x, y -1, z, skipPreview);
-    const c = this.isSameKindTile(tileId, x +1, y -1, z, skipPreview);
+    const a = this.isAutotileMatch(tileId, x -1, y -1, z, skipPreview);
+    const b = this.isAutotileMatch(tileId, x, y -1, z, skipPreview);
+    const c = this.isAutotileMatch(tileId, x +1, y -1, z, skipPreview);
 
-    const d = this.isSameKindTile(tileId, x -1, y, z, skipPreview);
-    const e = this.isSameKindTile(tileId, x +1, y, z, skipPreview);
+    const d = this.isAutotileMatch(tileId, x -1, y, z, skipPreview);
+    const e = this.isAutotileMatch(tileId, x +1, y, z, skipPreview);
 
-    const f = this.isSameKindTile(tileId, x -1, y +1, z, skipPreview);
-    const g = this.isSameKindTile(tileId, x, y +1, z, skipPreview);
-    const h = this.isSameKindTile(tileId, x +1, y +1, z, skipPreview);
+    const f = this.isAutotileMatch(tileId, x -1, y +1, z, skipPreview);
+    const g = this.isAutotileMatch(tileId, x, y +1, z, skipPreview);
+    const h = this.isAutotileMatch(tileId, x +1, y +1, z, skipPreview);
 
     const config = [a, b, c, d, e, f, g, h];
     return this.getShapeForConfiguration(config);
@@ -1212,46 +1392,141 @@ class CycloneMapEditor extends CyclonePlugin {
     SceneManager._scene._mapEditorGrid.refresh();
   }
 
+  static maybeUpdateTileNeighbors(x, y, z, expectedUpdate = true, previewOnly = false) {
+    if (this.isShiftMapping()) {
+      return;
+    }
+
+    if (!expectedUpdate) {
+      return;
+    }
+
+    this.resetTileShape(x -1, y -1, z, previewOnly);
+    this.resetTileShape(x, y -1, z, previewOnly);
+    this.resetTileShape(x +1, y -1, z, previewOnly);
+
+    this.resetTileShape(x -1, y, z, previewOnly);
+    this.resetTileShape(x +1, y, z, previewOnly);
+
+    this.resetTileShape(x -1, y +1, z, previewOnly);
+    this.resetTileShape(x, y + 1, z, previewOnly);
+    this.resetTileShape(x +1, y +1, z, previewOnly);
+  }
+
+  static getDefaultLayerForTileId(tileId) {
+    if (!Tilemap.isAutotile(tileId)) {
+      return 3;
+    }
+
+    if (tileId >= Tilemap.TILE_ID_A3) {
+      return 0;
+    }
+
+    const kind = Tilemap.getAutotileKind(tileId);
+    if (highLayerAutotiles.includes(kind)) {
+      return 1;
+    }
+
+    return 0;
+  }
+
+  static getItemsToChange(x, y, z, tileId, skipPreview = true, updateHigherLayers = true) {
+    if (z !== 7) {
+      return [{
+        x,
+        y,
+        z,
+        tileId,
+      }];
+    }
+
+    // When using automatic mode, we may need to change more than one layer at the same time
+    const items = [];
+    let layerId = this.getDefaultLayerForTileId(tileId);
+
+    if (layerId === 1 && Tilemap.isTileA1(tileId)) {
+      items.push({
+        x,
+        y,
+        z: 0,
+        tileId: Tilemap.TILE_ID_A1,
+      });
+    }
+
+    if (layerId === 3) {
+      // If there's already something on the fourth layer, then move it to the third and place the new tile on the 4th
+      const currentTile = this.getCurrentTileAtPosition(x, y, 3, skipPreview);
+      if (currentTile === tileId) {
+        return [];
+      }
+
+      if (currentTile) {
+        items.push({
+          x,
+          y,
+          z: 2,
+          tileId: currentTile,
+        });
+      }
+    }
+
+    items.push({
+      x,
+      y,
+      z: layerId,
+      tileId,
+    });
+
+    // Remove anything above the new tile
+    if (updateHigherLayers) {
+      for (let i = layerId + 1; i <= 3; i++) {
+        items.push({
+          x,
+          y,
+          z: i,
+          tileId: 0,
+        });
+      }
+    }
+
+    return items;
+  }
+
+  static _applySingleMapTile(x, y, z, tileId, updateNeighbors = true, previewOnly = false) {
+    const itemsToChange = this.getItemsToChange(x, y, z, tileId, !previewOnly, updateNeighbors);
+    for (const {x, y, z, tileId} of itemsToChange) {
+      const tileIndex = this.tileIndex(x, y, z);
+      let effectiveTileId = tileId;
+      if (Tilemap.isAutotile(tileId)) {
+        effectiveTileId = this.changeAutoTileShapeForPosition(x, y, z, tileId, false);
+      }
+
+      if (previewOnly) {
+        previewChanges[tileIndex] = effectiveTileId;
+      } else {
+        const oldTile = $dataMap.data[tileIndex];
+        if (currentChange[tileIndex] === undefined && oldTile !== effectiveTileId) {
+          currentChange[tileIndex] = oldTile;
+        }
+
+        $dataMap.data[tileIndex] = effectiveTileId;
+      }
+
+      this.maybeUpdateTileNeighbors(x, y, z, updateNeighbors, previewOnly);
+    }
+  }
+
   static setMapTile(x, y, z, tileId, updateNeighbors = true, previewOnly = false) {
     if (!$gameMap.isValid(x, y)) {
       return;
     }
 
-    const tileIndex = this.tileIndex(x, y, z);
-    let effectiveTileId = tileId;
-
-    if (Tilemap.isAutotile(tileId)) {
-      effectiveTileId = this.changeAutoTileShapeForPosition(x, y, z, tileId, false);
-    }
-
-    if (previewOnly) {
-      previewChanges[tileIndex] = effectiveTileId;
-    } else {
-      const oldTile = $dataMap.data[tileIndex];
-      if (currentChange[tileIndex] === undefined && oldTile !== effectiveTileId) {
-        currentChange[tileIndex] = oldTile;
-      }
-
-      $dataMap.data[tileIndex] = effectiveTileId;
-    }
-
-    if (updateNeighbors && !this.isShiftMapping()) {
-      this.resetTileShape(x -1, y -1, z, previewOnly);
-      this.resetTileShape(x, y -1, z, previewOnly);
-      this.resetTileShape(x +1, y -1, z, previewOnly);
-
-      this.resetTileShape(x -1, y, z, previewOnly);
-      this.resetTileShape(x +1, y, z, previewOnly);
-
-      this.resetTileShape(x -1, y +1, z, previewOnly);
-      this.resetTileShape(x, y + 1, z, previewOnly);
-      this.resetTileShape(x +1, y +1, z, previewOnly);
-    }
+    this._applySingleMapTile(x, y, z, tileId, updateNeighbors, previewOnly);
   }
 
-  static getSelectedTileCell(col, row) {
+  static getSelectedTileIndex(col, row) {
     if (currentTool === 'eraser') {
-      return 0;
+      return;
     }
 
     if (!currentTileId) {
@@ -1264,8 +1539,28 @@ class CycloneMapEditor extends CyclonePlugin {
 
     const realCol = col % tileCols;
     const realRow = row % tileRows;
-    const index = realRow * tileCols + realCol;
-    return selectedTileList[index];
+    return realRow * tileCols + realCol;
+  }
+
+  static getSelectedTileCell(col, row) {
+    const index = this.getSelectedTileIndex(col, row);
+    if (index || index === 0) {
+      return selectedTileList[index];
+    }
+  }
+
+  static setSelectionTileMaybeMultiLayer(tileX, tileY, selectionCol, selectionRow, previewOnly = false) {
+    const index = this.getSelectedTileIndex(selectionCol, selectionRow);
+
+    if (currentLayer === 7 && multiLayerSelection.length) {
+      for (let z = 0; z <= 3; z++) {
+        const tileId = multiLayerSelection[z][index] ?? 0;
+        this.setMapTile(tileX, tileY, z, tileId, true, previewOnly);
+      }
+    } else {
+      const tileId = selectedTileList[index] ?? 0;
+      this.setMapTile(tileX, tileY, currentLayer, tileId, true, previewOnly);
+    }
   }
 
   static applyRectangle(startX, startY, width, height, previewOnly = false) {
@@ -1301,9 +1596,7 @@ class CycloneMapEditor extends CyclonePlugin {
     for (let tileY = startY; tileY < startY + height; tileY++) {
       selectionCol = initialCol;
       for (let tileX = startX; tileX < startX + width; tileX++) {
-        const tileId = this.getSelectedTileCell(selectionCol, selectionRow) ?? 0;
-
-        this.setMapTile(tileX, tileY, currentLayer, tileId, true, previewOnly);
+        this.setSelectionTileMaybeMultiLayer(tileX, tileY, selectionCol, selectionRow, previewOnly);
         selectionCol += colIncrement;
       }
       selectionRow += rowIncrement;
@@ -1347,14 +1640,29 @@ class CycloneMapEditor extends CyclonePlugin {
     SceneManager._scene._mapEditorGrid.refresh();
   }
 
-  static copyRectangle(startX, startY, width, height) {
-    if (!wasRightButtonDown) {
-      return;
+  static copyAutoRectangle(startX, startY, width, height) {
+    let index = 0;
+    for (let z = 0; z <= 3; z++) {
+      multiLayerSelection[z] = Array(width * height);
     }
 
+    for (let tileY = startY; tileY < startY + height; tileY++) {
+      for (let tileX = startX; tileX < startX + width; tileX++) {
+        for (let z = 0; z <= 3; z++) {
+          const tileIndex = this.tileIndex(tileX, tileY, z);
+          multiLayerSelection[z][index] = $dataMap.data[tileIndex] || 0;
+          selectedTileList[index] = $dataMap.data[tileIndex] || selectedTileList[index] || 0;
+          if (!currentTileId) {
+            currentTileId = selectedTileList[index];
+          }
+        }
+        index++;
+      }
+    }
+  }
+
+  static copyManualRectangle(startX, startY, width, height) {
     let index = 0;
-    selectedTileList = Array(width * height);
-    currentTileId = 0;
 
     for (let tileY = startY; tileY < startY + height; tileY++) {
       for (let tileX = startX; tileX < startX + width; tileX++) {
@@ -1365,6 +1673,21 @@ class CycloneMapEditor extends CyclonePlugin {
         }
         index++;
       }
+    }
+  }
+
+  static copyRectangle(startX, startY, width, height) {
+    if (!wasRightButtonDown) {
+      return;
+    }
+
+    multiLayerSelection = [];
+    selectedTileList = Array(width * height);
+    currentTileId = 0;
+
+    this.copyManualRectangle(startX, startY, width, height);
+    if (currentLayer === 7) {
+      this.copyAutoRectangle(startX, startY, width, height);
     }
 
     tileCols = width;
@@ -1389,43 +1712,77 @@ class CycloneMapEditor extends CyclonePlugin {
     }
   }
 
-  static collectFillAreaFrom(mapX, mapY) {
-    const area = {};
-    const tileIndex = this.tileIndex(mapX, mapY, currentLayer);
-    const initialTileId = $dataMap.data[tileIndex];
+  static isSameKindTileCurrentLayer(layers, index) {
+    const size = $gameMap.width() * $gameMap.height();
 
-    const list = [tileIndex];
+    if (currentLayer > 3) {
+      for (let z = 0; z <= 3; z++) {
+        const tileId = $dataMap.data[index + z * size];
+        if (!Tilemap.isSameKindTile(tileId, layers[z])) {
+          return false;
+        }
+      }
+
+      return true;
+    }
+
+    const tileId = $dataMap.data[index];
+    return Tilemap.isSameKindTile(layers[currentLayer], tileId);
+  }
+
+  static _maybeValidateTileIndexForCollectionList(list, index, area, initialTileIds) {
+    if (area[index] !== undefined) {
+      return;
+    }
 
     const height = $gameMap.height();
     const width = $gameMap.width();
 
-    const maybeAddToList = (index) => {
+    area[index] = this.isSameKindTileCurrentLayer(initialTileIds, index);
+
+    if (!area[index]) {
+      return;
+    }
+
+    const workLayer = currentLayer <= 3 ? currentLayer : 0;
+
+    const y = this.indexPositionY(index, workLayer);
+    const x = index - this.tileIndex(0, y, workLayer);
+
+    const leftIndex = x > 0 ? this.tileIndex(x - 1, y, workLayer) : -1;
+    const rightIndex = x < width -1 ? this.tileIndex(x + 1, y, workLayer) : -1;
+    const upIndex = y > 0 ? this.tileIndex(x, y - 1, workLayer) : -1;
+    const downIndex = y < height - 1 ? this.tileIndex(x, y + 1, workLayer) : -1;
+
+    const maybeAddIndex = (index) => {
       if (index >= 0 && !list.includes(index)) {
         list.push(index);
       }
     };
 
+    maybeAddIndex(leftIndex);
+    maybeAddIndex(rightIndex);
+    maybeAddIndex(upIndex);
+    maybeAddIndex(downIndex);
+  }
+
+  static collectFillAreaFrom(mapX, mapY) {
+    const list = [];
+    const initialTileIds = [];
+
+    const area = {};
+    for (let z = 0; z <= 3; z++) {
+      const tileIndex = this.tileIndex(mapX, mapY, z);
+
+      initialTileIds[z] = $dataMap.data[tileIndex];
+      if (z === currentLayer || (currentLayer === 7 && z === 0)) {
+        list.push(tileIndex);
+      }
+    }
+
     for (let i = 0; i < list.length; i++) {
       const index = list[i];
-      if (area[index] === undefined) {
-        const tileId = $dataMap.data[index];
-        area[index] = Tilemap.isSameKindTile(tileId, initialTileId);
-
-        if (area[index]) {
-          const y = this.indexPositionY(index, currentLayer);
-          const x = index - this.tileIndex(0, y, currentLayer);
-
-          const leftIndex = x > 0 ? this.tileIndex(x - 1, y, currentLayer) : -1;
-          const rightIndex = x < width -1 ? this.tileIndex(x + 1, y, currentLayer) : -1;
-          const upIndex = y > 0 ? this.tileIndex(x, y - 1, currentLayer) : -1;
-          const downIndex = y < height - 1 ? this.tileIndex(x, y + 1, currentLayer) : -1;
-
-          maybeAddToList(leftIndex);
-          maybeAddToList(rightIndex);
-          maybeAddToList(upIndex);
-          maybeAddToList(downIndex);
-        }
-      }
+      this._maybeValidateTileIndexForCollectionList(list, index, area, initialTileIds);
     }
 
     return Object.keys(area).filter(key => area[key]);
@@ -1440,17 +1797,17 @@ class CycloneMapEditor extends CyclonePlugin {
     const affectedArea = this.collectFillAreaFrom(mapX, mapY);
     const height = $gameMap.height();
     const width = $gameMap.width();
+    const workLayer = currentLayer <= 3 ? currentLayer : 0;
 
     currentChange = {};
     for (const tileIndex of affectedArea) {
-      const y = this.indexPositionY(tileIndex, currentLayer);
-      const x = tileIndex - this.tileIndex(0, y, currentLayer);
+      const y = this.indexPositionY(tileIndex, workLayer);
+      const x = tileIndex - this.tileIndex(0, y, workLayer);
 
       const xDiff = (x + width - mapX) % tileCols;
       const yDiff = (y + height - mapY) % tileRows;
 
-      const tileId = this.getSelectedTileCell(xDiff, yDiff) ?? 0;
-      this.setMapTile(x, y, currentLayer, tileId);
+      this.setSelectionTileMaybeMultiLayer(x, y, xDiff, yDiff, false);
     }
 
     this.logChange();
@@ -1479,15 +1836,19 @@ class CycloneMapEditor extends CyclonePlugin {
     this.ensureLayerVisibility();
     let index = 0;
     for (let y = mapY; y < mapY + tileRows; y++) {
-      if (y >= $gameMap.height()) {
-        continue;
-      }
-
       for (let x = mapX; x < mapX + tileCols; x++) {
-        if (x >= $gameMap.width()) {
+        if (!$gameMap.isValid(x, y)) {
           continue;
         }
-        this.setMapTile(x, y, currentLayer, selectedTileList[index]);
+
+        if (currentLayer === 7 && multiLayerSelection.length) {
+          for (let z = 0; z <= 3; z++) {
+            this.setMapTile(x, y, z, multiLayerSelection[z][index]);
+          }
+        } else {
+          this.setMapTile(x, y, currentLayer, selectedTileList[index]);
+        }
+
         index++;
       }
     }

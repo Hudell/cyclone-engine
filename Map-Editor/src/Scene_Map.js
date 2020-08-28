@@ -23,6 +23,7 @@ CycloneMapEditor.patchClass(Scene_Map, $super => class {
 
     this.refreshMapEditorWindows();
     this._spriteset._mapEditorCursor.updateDrawing();
+    this._spriteset.updatePosition();
   }
 
   createMapEditorWindows() {

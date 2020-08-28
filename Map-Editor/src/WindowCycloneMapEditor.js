@@ -302,6 +302,7 @@ class WindowCycloneMapEditor extends Window_Command {
     CycloneMapEditor.tileCols = cols ?? 1;
     CycloneMapEditor.tileRows = rows ?? 1;
     CycloneMapEditor.messySelection = false;
+    CycloneMapEditor.multiLayerSelection = [];
 
     const topIndex = this._list.findIndex((item) => item.name === tileId);
     if (topIndex < 0) {

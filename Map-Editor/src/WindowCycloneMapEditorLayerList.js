@@ -38,6 +38,8 @@ class WindowCycloneMapEditorLayerList extends Window_Base {
       'Layer 4',
       'Shadows',
       'Regions',
+      false,
+      'Auto Layer'
     ];
 
     ctx.imageSmoothingEnabled = false;
@@ -49,10 +51,17 @@ class WindowCycloneMapEditorLayerList extends Window_Base {
       this.drawText(names[i], 40, i * 30, CycloneMapEditor.windowWidth / 2 - 40, 'left');
 
       if (names[i + 4]) {
-        ctx.drawImage(CycloneMapEditor.layerVisibility[i + 4] ? visibleIcon : hiddenIcon, CycloneMapEditor.windowWidth / 2 - 4, 30 * i - 4, 48, 48);
+        let x = CycloneMapEditor.windowWidth / 2;
+
+        if (i !== 3) {
+          ctx.drawImage(CycloneMapEditor.layerVisibility[i + 4] ? visibleIcon : hiddenIcon, x - 4, 30 * i - 4, 48, 48);
+          x += 40;
+        } else {
+          x += 10;
+        }
         this.contents.fontBold = CycloneMapEditor.currentLayer === (i + 4);
         this.changeTextColor(CycloneMapEditor.currentLayer === (i + 4) ? ColorManager.powerUpColor() : ColorManager.normalColor());
-        this.drawText(names[i + 4], CycloneMapEditor.windowWidth / 2 + 40, i * 30, CycloneMapEditor.windowWidth / 2 - 40, 'left');
+        this.drawText(names[i + 4], x, i * 30, CycloneMapEditor.windowWidth / 2 - 40, 'left');
       }
     }
   }
