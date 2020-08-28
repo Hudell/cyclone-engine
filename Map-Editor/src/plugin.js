@@ -845,6 +845,18 @@ class CycloneMapEditor extends CyclonePlugin {
     SceneManager._scene._mapEditorGrid.refresh();
   }
 
+  static selectHigherLayer(x, y) {
+    for (let z = 3; z >= 0; z--) {
+      const tileIndex = this.tileIndex(x, y, z);
+      const tileId = $dataMap.data[tileIndex];
+
+      if (tileId) {
+        this.changeCurrentLayer(z);
+        return;
+      }
+    }
+  }
+
   static updateCurrentTool() {
     rectangleWidth = 0;
     rectangleHeight = 0;

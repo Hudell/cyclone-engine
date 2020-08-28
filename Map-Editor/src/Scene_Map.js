@@ -238,7 +238,11 @@ CycloneMapEditor.patchClass(Scene_Map, $super => class {
     }
 
     if (mapX >= 0 && mapY >= 0) {
-      CycloneMapEditor.updateCurrentToolTouch(mapX, mapY);
+      if (Input.isPressed('control')) {
+        CycloneMapEditor.selectHigherLayer(mapX, mapY);
+      } else {
+        CycloneMapEditor.updateCurrentToolTouch(mapX, mapY);
+      }
     }
 
     CycloneMapEditor.wasPressing = pressed;
