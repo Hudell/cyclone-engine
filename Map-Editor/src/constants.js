@@ -1,0 +1,7 @@
+export const Layers = {
+  shadows: 4,
+  regions: 5,
+  auto: 7,
+  collisions: 8,
+  tags: 9,
+};

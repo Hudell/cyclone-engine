@@ -1,3 +1,5 @@
+import { Layers } from './constants';
+
 class WindowCycloneGrid extends Window_Base {
   initialize() {
     const width = Graphics.width;
@@ -42,10 +44,12 @@ class WindowCycloneGrid extends Window_Base {
     context.stroke();
   }
 
-  drawCell(x, y) {
-    this.drawCellGrid(x, y);
+  maybeDrawRegions(x, y) {
+    if (!CycloneMapEditor.isLayerVisible(Layers.regions)) {
+      return;
+    }
 
-    if (!CycloneMapEditor.areRegionsVisible()) {
+    if (CycloneMapEditor.isLayerVisible(Layers.tags)) {
       return;
     }
 
@@ -56,6 +60,70 @@ class WindowCycloneGrid extends Window_Base {
     if (regionId > 0) {
       this.contents.drawRegion(regionId, x, y);
     }
+  }
+
+  maybeDrawCollisions(x, y) {
+    if (!CycloneMapEditor.isLayerVisible(Layers.collisions)) {
+      return;
+    }
+
+    const mapX = $gameMap.canvasToMapX(x);
+    const mapY = $gameMap.canvasToMapY(y);
+    const drawWidth = CycloneMapEditor.tileWidth;
+    const drawHeight = CycloneMapEditor.tileHeight;
+
+    const downBlocked = !$gameMap.isPassable(mapX, mapY, 2);
+    const upBlocked = !$gameMap.isPassable(mapX, mapY, 8);
+    const leftBlocked = !$gameMap.isPassable(mapX, mapY, 4);
+    const rightBlocked = !$gameMap.isPassable(mapX, mapY, 6);
+
+    if (downBlocked && upBlocked && leftBlocked && rightBlocked) {
+      this.contents.fillRect(x, y, drawWidth, drawHeight, '#FF000066');
+      return;
+    }
+
+    const pieceHeight = Math.floor(drawHeight / 4);
+    const pieceWidth = Math.floor(drawWidth / 4);
+
+    if (downBlocked) {
+      this.contents.fillRect(x, y + drawHeight - pieceHeight, drawWidth, pieceHeight, '#FF0000AA');
+    }
+    if (upBlocked) {
+      this.contents.fillRect(x, y, drawWidth, pieceHeight, '#FF0000AA');
+    }
+    if (leftBlocked) {
+      this.contents.fillRect(x, y, pieceWidth, drawHeight, '#FF0000AA');
+    }
+    if (rightBlocked) {
+      this.contents.fillRect(x + drawWidth - pieceWidth, y, pieceWidth, drawHeight, '#FF0000AA');
+    }
+  }
+
+  maybeDrawTags(x, y) {
+    if (!CycloneMapEditor.isLayerVisible(Layers.tags)) {
+      return;
+    }
+
+    const mapX = $gameMap.canvasToMapX(x);
+    const mapY = $gameMap.canvasToMapY(y);
+
+    const terrainTag = $gameMap.terrainTag(mapX, mapY);
+    if (terrainTag === 0) {
+      return;
+    }
+
+    const drawWidth = CycloneMapEditor.tileWidth;
+    const drawHeight = CycloneMapEditor.tileHeight;
+
+    this.contents.drawText(terrainTag, x, y, drawWidth, drawHeight, 'center');
+  }
+
+  drawCell(x, y) {
+    this.drawCellGrid(x, y);
+
+    this.maybeDrawRegions(x, y);
+    this.maybeDrawCollisions(x, y);
+    this.maybeDrawTags(x, y);
   }
 
   refresh() {

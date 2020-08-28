@@ -1,6 +1,6 @@
 import { CyclonePlugin } from '../../Core/main';
 
-const layerVisibility = [true, true, true, true, true, false, false, false];
+const layerVisibility = [true, true, true, true, true, false, false, false, false, false];
 let editorActive = true;
 let windowWidth = 408;
 
@@ -606,6 +606,27 @@ class CycloneMapEditor extends CyclonePlugin {
       }
     });
     layerMenu.append(this.regionsButton);
+    layerMenu.append(new nw.MenuItem( {type: 'separator'}));
+    this.collisionsButton = new nw.MenuItem( {
+      label: 'Collisions',
+      type: 'checkbox',
+      checked: currentLayer === 8,
+      key: '8',
+      click: () => {
+        CycloneMapEditor.changeCurrentLayer(8);
+      }
+    });
+    layerMenu.append(this.collisionsButton);
+    this.tagsButton = new nw.MenuItem( {
+      label: 'Tags',
+      type: 'checkbox',
+      checked: currentLayer === 9,
+      key: '9',
+      click: () => {
+        CycloneMapEditor.changeCurrentLayer(9);
+      }
+    });
+    layerMenu.append(this.tagsButton);
 
     menu.append(new nw.MenuItem({
       label: 'Layer',
@@ -729,6 +750,18 @@ class CycloneMapEditor extends CyclonePlugin {
     return layerVisibility[5];
   }
 
+  static isLayerVisible(index) {
+    if (index === 8 || index === 9) {
+      return currentLayer === index;
+    }
+
+    if (index === 7) {
+      return true;
+    }
+
+    return layerVisibility[index];
+  }
+
   static selectPreviousTab() {
     const validTabs = this.validTabs();
     const oldIndex = validTabs.indexOf(currentTab).clamp(0, validTabs.length - 1);
@@ -793,6 +826,12 @@ class CycloneMapEditor extends CyclonePlugin {
         break;
       case 'Numpad6':
         this.changeCurrentLayer(5);
+        break;
+      case 'Numpad8':
+        this.changeCurrentLayer(8);
+        break;
+      case 'Numpad9':
+        this.changeCurrentLayer(9);
         break;
     }
   }
@@ -1186,11 +1225,14 @@ class CycloneMapEditor extends CyclonePlugin {
     this.shadowsButton.checked = newIndex === 4;
     this.regionsButton.checked = newIndex === 5;
     this.autoLayerButton.checked = newIndex === 7;
+    this.collisionsButton.checked = newIndex === 8;
+    this.tagsButton.checked = newIndex === 9;
 
     if (SceneManager._scene instanceof Scene_Map) {
       SceneManager._scene._mapEditorLayerListWindow.refresh();
       SceneManager._scene._mapEditorWindow.refresh();
       SceneManager._scene._mapEditorStatus.refresh();
+      SceneManager._scene._mapEditorGrid.refresh();
       SceneManager._scene._spriteset._mapEditorCursor.updateDrawing();
     }
   }
@@ -1616,6 +1658,9 @@ class CycloneMapEditor extends CyclonePlugin {
   static _applySingleMapTile(x, y, z, tileId, updateNeighbors = true, previewOnly = false) {
     const itemsToChange = this.getItemsToChange(x, y, z, tileId, !previewOnly, updateNeighbors);
     for (const {x, y, z, tileId} of itemsToChange) {
+      if (z > 5) {
+        continue;
+      }
       const tileIndex = this.tileIndex(x, y, z);
       let effectiveTileId = tileId;
       if (Tilemap.isAutotile(tileId)) {
