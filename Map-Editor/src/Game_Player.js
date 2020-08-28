@@ -24,4 +24,18 @@ CycloneMapEditor.patchClass(Game_Player, $super => class {
 
     $super.reserveTransfer.call(this, mapId, ...args);
   }
+
+  executeEncounter() {
+    const result = $super.executeEncounter.call(this);
+
+    if (result) {
+      if (CycloneMapEditor.changeHistory.length > 0) {
+        if (confirm('Do you want to save your map before the battle starts?')) {
+          CycloneMapEditor._doSave();
+        }
+      }
+    }
+
+    return result;
+  }
 });
