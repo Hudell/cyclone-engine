@@ -632,9 +632,6 @@ class CycloneMapEditor extends CyclonePlugin {
   static clearAllData() {
     changeHistory = [];
     undoHistory = [];
-    currentTileId = 0;
-    tileCols = 1;
-    tileRows = 1;
     rectangleStartMouseX = 0;
     rectangleStartMouseY = 0;
     rectangleStartX = 0;
@@ -643,7 +640,16 @@ class CycloneMapEditor extends CyclonePlugin {
     rectangleHeight = 0;
     rectangleBackWidth = 0;
     rectangleBackHeight = 0;
+
+    this.clearSelection();
+  }
+
+  static clearSelection() {
+    currentTileId = 0;
+    tileCols = 1;
+    tileRows = 1;
     selectedTileList = [];
+    multiLayerSelection = [];
   }
 
   static shouldDisplayMenu() {
@@ -1063,20 +1069,7 @@ class CycloneMapEditor extends CyclonePlugin {
       return;
     }
 
-    changeHistory = [];
-    undoHistory = [];
-    currentTileId = 0;
-    tileCols = 1;
-    tileRows = 1;
-    rectangleWidth = 0;
-    rectangleHeight = 0;
-    rectangleBackWidth = 0;
-    rectangleBackHeight = 0;
-    rectangleStartX = 0;
-    rectangleStartY = 0;
-    rectangleStartMouseX = 0;
-    rectangleStartMouseY = 0;
-
+    this.clearAllData();
     this.loadMapFile();
   }
 
@@ -1171,10 +1164,19 @@ class CycloneMapEditor extends CyclonePlugin {
     }
   }
 
+  static deselectShadowOrRegion(newLayerIndex) {
+    // coming from or to shadows/regions, then de-select the current index
+    if (currentLayer === 4 || currentLayer === 5 || newLayerIndex === 4 || newLayerIndex === 5) {
+      this.clearSelection();
+    }
+  }
+
   static changeCurrentLayer(newIndex) {
     if (newIndex >= layerVisibility.length) {
       return;
     }
+
+    this.deselectShadowOrRegion(newIndex);
 
     currentLayer = newIndex;
     this.layer1Button.checked = newIndex === 0;
@@ -1189,6 +1191,7 @@ class CycloneMapEditor extends CyclonePlugin {
       SceneManager._scene._mapEditorLayerListWindow.refresh();
       SceneManager._scene._mapEditorWindow.refresh();
       SceneManager._scene._mapEditorStatus.refresh();
+      SceneManager._scene._spriteset._mapEditorCursor.updateDrawing();
     }
   }
 
@@ -1430,7 +1433,7 @@ class CycloneMapEditor extends CyclonePlugin {
   }
 
   static changeAutoTileShapeForPosition(x, y, z, tileId, skipPreview = true) {
-    if (this.isShiftMapping()) {
+    if (z >= 4 || this.isShiftMapping()) {
       return tileId;
     }
 
@@ -1784,13 +1787,14 @@ class CycloneMapEditor extends CyclonePlugin {
 
     for (let tileY = startY; tileY < startY + height; tileY++) {
       for (let tileX = startX; tileX < startX + width; tileX++) {
-        for (let z = 0; z <= 3; z++) {
+        for (let z = 3; z >= 0; z--) {
           const tileIndex = this.tileIndex(tileX, tileY, z);
-          selectedTileList[index] = $dataMap.data[tileIndex] || selectedTileList[index] || 0;
+          selectedTileList[index] = selectedTileList[index] || $dataMap.data[tileIndex] || 0;
           if (!currentTileId) {
             currentTileId = selectedTileList[index];
           }
         }
+
         index++;
       }
     }

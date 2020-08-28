@@ -102,7 +102,7 @@ class WindowCycloneMapEditorLayerList extends Window_Base {
       layerIndex += 4;
     }
 
-    if (x < 40) {
+    if (x < 50) {
       this.toggleLayerVisibility(layerIndex);
       return;
     }
