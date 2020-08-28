@@ -105,22 +105,22 @@ const highLayerAutotiles = [
   1,
   2,
   3,
+  20,
   21,
   22,
   23,
-  24,
+  28,
   29,
   30,
   31,
-  32,
+  36,
   37,
   38,
   39,
-  40,
+  44,
   45,
   46,
   47,
-  48,
 ];
 
 class CycloneMapEditor extends CyclonePlugin {
@@ -1661,6 +1661,23 @@ class CycloneMapEditor extends CyclonePlugin {
     }
   }
 
+  static copyHigherRectangle(startX, startY, width, height) {
+    let index = 0;
+
+    for (let tileY = startY; tileY < startY + height; tileY++) {
+      for (let tileX = startX; tileX < startX + width; tileX++) {
+        for (let z = 0; z <= 3; z++) {
+          const tileIndex = this.tileIndex(tileX, tileY, z);
+          selectedTileList[index] = $dataMap.data[tileIndex] || selectedTileList[index] || 0;
+          if (!currentTileId) {
+            currentTileId = selectedTileList[index];
+          }
+        }
+        index++;
+      }
+    }
+  }
+
   static copyManualRectangle(startX, startY, width, height) {
     let index = 0;
 
@@ -1685,9 +1702,12 @@ class CycloneMapEditor extends CyclonePlugin {
     selectedTileList = Array(width * height);
     currentTileId = 0;
 
-    this.copyManualRectangle(startX, startY, width, height);
-    if (currentLayer === 7) {
+    if (Input.isPressed('shift')) {
+      this.copyHigherRectangle(startX, startY, width, height);
+    } else if (currentLayer === 7) {
       this.copyAutoRectangle(startX, startY, width, height);
+    } else {
+      this.copyManualRectangle(startX, startY, width, height);
     }
 
     tileCols = width;
