@@ -344,6 +344,10 @@ class CycloneMapEditor extends CyclonePlugin {
   }
 
   static addMenuBar() {
+    if (!Utils.isNwjs()) {
+      return;
+    }
+
     const menu = new nw.Menu({ type: 'menubar' });
 
     const fileMenu = new nw.Menu();
@@ -639,6 +643,10 @@ class CycloneMapEditor extends CyclonePlugin {
       label: 'Plugin Page',
       key: 'F1',
       click: () => {
+        if (!globalThis.require) {
+          return;
+        }
+
         require('nw.gui').Shell.openExternal('https://makerdevs.com/plugin/cyclone-map-editor');
       },
     }));
@@ -709,6 +717,10 @@ class CycloneMapEditor extends CyclonePlugin {
   }
 
   static refreshMenuVisibility() {
+    if (!Utils.isNwjs()) {
+      return;
+    }
+
     const display = this.shouldDisplayMenu();
     const win = nw.Window.get();
 
@@ -832,6 +844,38 @@ class CycloneMapEditor extends CyclonePlugin {
         this.changeCurrentLayer(8);
         break;
       case 'Numpad9':
+        this.changeCurrentLayer(9);
+        break;
+    }
+  }
+
+  static checkLayerKeys(key) {
+    switch(key) {
+      case '0':
+        this.changeCurrentLayer(7);
+        break;
+      case '1':
+        this.changeCurrentLayer(0);
+        break;
+      case '2':
+        this.changeCurrentLayer(1);
+        break;
+      case '3':
+        this.changeCurrentLayer(2);
+        break;
+      case '4':
+        this.changeCurrentLayer(3);
+        break;
+      case '5':
+        this.changeCurrentLayer(4);
+        break;
+      case '6':
+        this.changeCurrentLayer(5);
+        break;
+      case '8':
+        this.changeCurrentLayer(8);
+        break;
+      case '9':
         this.changeCurrentLayer(9);
         break;
     }
@@ -1067,19 +1111,39 @@ class CycloneMapEditor extends CyclonePlugin {
     this.updateCurrentTool();
   }
 
-  static _doSave() {
+  static _doWebSave(json, fileName) {
+    const element = document.createElement('a');
+    element.setAttribute('href', `data:text/plain;charset=utf-8,${ encodeURIComponent(json) }`);
+    element.setAttribute('download', fileName);
+    element.style.display = 'none';
+    document.body.appendChild(element);
+
+    element.click();
+
+    document.body.removeChild(element);
+  }
+
+  static _doLocalSave(json, fileName) {
     const fs = require('fs');
     const path = require('path');
 
     const projectFolder = path.dirname(process.mainModule.filename);
     const dataFolder = path.join(projectFolder, 'data');
-    const fileName = `Map${ $gameMap._mapId.padZero(3) }.json`;
 
     const filePath = path.join(dataFolder, fileName);
 
-    const json = JSON.stringify($dataMap, null, 2);
     fs.writeFileSync(filePath, json);
+  }
 
+  static _doSave() {
+    const fileName = `Map${ $gameMap._mapId.padZero(3) }.json`;
+    const json = JSON.stringify($dataMap, null, 0);
+
+    if (Utils.isNwjs()) {
+      this._doLocalSave(json, fileName);
+    } else {
+      this._doWebSave(json, fileName);
+    }
     SoundManager.playSave();
   }
 
@@ -1119,7 +1183,46 @@ class CycloneMapEditor extends CyclonePlugin {
     }
   }
 
+  static checkWebShortcuts(key) {
+    switch (key) {
+      case 'e':
+        return this.eraserButton();
+      case 'r':
+        return this.rectangleButton();
+      case 'p':
+        return this.pencilButton();
+      case 'f':
+        return this.fillButton();
+    }
+
+  }
+
+  static checkControlKeys(code) {
+    switch (code) {
+      case 'KeyZ':
+        return this.undoButton();
+      case 'KeyY':
+        return this.redoButton();
+      case 'KeyS':
+        return this.saveButton();
+      case 'KeyR':
+        return this.reloadButton();
+      case 'KeyG':
+        return this.showGridButton();
+    }
+  }
+
   static onKeyUp(event) {
+    if (!Utils.isNwjs()) {
+      if (Input.isPressed('control')) {
+        this.checkControlKeys(event.code);
+        return;
+      }
+
+      this.checkWebShortcuts(event.key);
+      this.checkLayerKeys(event.key);
+    }
+
     if (event.key === 'h') {
       this.toggleMapEditor();
       return;
@@ -1219,15 +1322,17 @@ class CycloneMapEditor extends CyclonePlugin {
     this.deselectShadowOrRegion(newIndex);
 
     currentLayer = newIndex;
-    this.layer1Button.checked = newIndex === 0;
-    this.layer2Button.checked = newIndex === 1;
-    this.layer3Button.checked = newIndex === 2;
-    this.layer4Button.checked = newIndex === 3;
-    this.shadowsButton.checked = newIndex === 4;
-    this.regionsButton.checked = newIndex === 5;
-    this.autoLayerButton.checked = newIndex === 7;
-    this.collisionsButton.checked = newIndex === 8;
-    this.tagsButton.checked = newIndex === 9;
+    if (Utils.isNwjs()) {
+      this.layer1Button.checked = newIndex === 0;
+      this.layer2Button.checked = newIndex === 1;
+      this.layer3Button.checked = newIndex === 2;
+      this.layer4Button.checked = newIndex === 3;
+      this.shadowsButton.checked = newIndex === 4;
+      this.regionsButton.checked = newIndex === 5;
+      this.autoLayerButton.checked = newIndex === 7;
+      this.collisionsButton.checked = newIndex === 8;
+      this.tagsButton.checked = newIndex === 9;
+    }
 
     if (SceneManager._scene instanceof Scene_Map) {
       SceneManager._scene._mapEditorLayerListWindow.refresh();
