@@ -1,5 +1,6 @@
 import './plugin';
 import './Bitmap';
+import './DataManager';
 import './Game_Map';
 import './Game_Player';
 import './Scene_Map';

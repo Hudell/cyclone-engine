@@ -4,6 +4,7 @@ import { Layers } from './constants';
 const layerVisibility = [true, true, true, true, true, false, false, false, false, false];
 let editorActive = true;
 let windowWidth = 408;
+const mapCaches = {};
 
 let currentLayer = 7;
 let currentTab = 'A';
@@ -248,6 +249,8 @@ class CycloneMapEditor extends CyclonePlugin {
   static get statusCounter() { return statusCounter; }
   static get statusDamage() { return statusDamage; }
   static get statusLadder() { return statusLadder; }
+
+  static get mapCaches() { return mapCaches; }
 
   static get currentZoom() { return currentZoom; }
   static set currentZoom(value) {
@@ -900,6 +903,7 @@ class CycloneMapEditor extends CyclonePlugin {
 
   static loadMapFile() {
     SceneManager._scene._mapEditorCommands.hide();
+    delete mapCaches[$gameMap._mapId];
     const fileName = `Map${ $gameMap._mapId.padZero(3) }.json`;
 
     const xhr = new XMLHttpRequest();
@@ -1624,6 +1628,8 @@ class CycloneMapEditor extends CyclonePlugin {
     currentChange = false;
     SceneManager._scene._mapEditorCommands.redraw();
     SceneManager._scene._mapEditorGrid.refresh();
+
+    mapCaches[$gameMap._mapId] = $dataMap;
   }
 
   static redoLastUndoneChange() {
@@ -1659,6 +1665,8 @@ class CycloneMapEditor extends CyclonePlugin {
 
     SceneManager._scene._mapEditorCommands.redraw();
     SceneManager._scene._mapEditorGrid.refresh();
+
+    mapCaches[$gameMap._mapId] = $dataMap;
   }
 
   static maybeUpdateTileNeighbors(x, y, z, expectedUpdate = true, previewOnly = false) {

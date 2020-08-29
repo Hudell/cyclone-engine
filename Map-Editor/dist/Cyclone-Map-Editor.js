@@ -794,6 +794,7 @@ const Layers = {
 const layerVisibility = [true, true, true, true, true, false, false, false, false, false];
 let editorActive = true;
 let windowWidth = 408;
+const mapCaches = {};
 
 let currentLayer = 7;
 let currentTab = 'A';
@@ -1038,6 +1039,8 @@ class CycloneMapEditor$1 extends CyclonePlugin {
   static get statusCounter() { return statusCounter; }
   static get statusDamage() { return statusDamage; }
   static get statusLadder() { return statusLadder; }
+
+  static get mapCaches() { return mapCaches; }
 
   static get currentZoom() { return currentZoom; }
   static set currentZoom(value) {
@@ -1690,6 +1693,7 @@ class CycloneMapEditor$1 extends CyclonePlugin {
 
   static loadMapFile() {
     SceneManager._scene._mapEditorCommands.hide();
+    delete mapCaches[$gameMap._mapId];
     const fileName = `Map${ $gameMap._mapId.padZero(3) }.json`;
 
     const xhr = new XMLHttpRequest();
@@ -2414,6 +2418,8 @@ class CycloneMapEditor$1 extends CyclonePlugin {
     currentChange = false;
     SceneManager._scene._mapEditorCommands.redraw();
     SceneManager._scene._mapEditorGrid.refresh();
+
+    mapCaches[$gameMap._mapId] = $dataMap;
   }
 
   static redoLastUndoneChange() {
@@ -2449,6 +2455,8 @@ class CycloneMapEditor$1 extends CyclonePlugin {
 
     SceneManager._scene._mapEditorCommands.redraw();
     SceneManager._scene._mapEditorGrid.refresh();
+
+    mapCaches[$gameMap._mapId] = $dataMap;
   }
 
   static maybeUpdateTileNeighbors(x, y, z, expectedUpdate = true, previewOnly = false) {
@@ -3469,6 +3477,18 @@ CycloneMapEditor.patchClass(Bitmap, $super => class {
 
       this.fillRect(drawX, drawY, halfWidth, halfHeight, '#00000066');
     }
+  }
+});
+
+CycloneMapEditor.patchClass(DataManager, $super => class {
+  static loadMapData(mapId) {
+    if (mapId > 0 && CycloneMapEditor.mapCaches[mapId]) {
+      globalThis.$dataMap = CycloneMapEditor.mapCaches[mapId];
+      this.onLoad('$dataMap');
+      return;
+    }
+
+    return $super.loadMapData.call(this, mapId);
   }
 });
 
@@ -4661,7 +4681,7 @@ CycloneMapEditor.patchClass(Scene_Map, $super => class {
 
   toggleMapEditor() {
     if (CycloneMapEditor.active && CycloneMapEditor.changeHistory.length > 0) {
-      if (confirm("Do you want to save your map before hiding the map editor? (If you don't, you'll lose your changes if you open the menu).")) {
+      if (confirm('Do you want to save your map before hiding the map editor?')) {
         CycloneMapEditor._doSave();
       }
     }
