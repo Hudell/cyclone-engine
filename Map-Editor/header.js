@@ -18,7 +18,7 @@
  *   `"Ybbd8"'     Y88'     `"Ybbd8"' 88  `"YbbdP"'  88       88  `"Ybbd8"'
  *                 d8'
  *                d8'
- * Live  Map Editor 1.00.00                                          by Hudell
+ * Live  Map Editor 1.01.00                                          by Hudell
  * ===========================================================================
  * Terms of Use
  * ===========================================================================
@@ -59,6 +59,16 @@
  * Did you know?
  * Early map makers used to include fake towns on their maps to identify
  * copies of their work.
+ * ===========================================================================
+ * Change Log
+ * ===========================================================================
+ * 2020-08-29 - Version 1.01.00
+ *   * Web browser support
+ *   * Eraser will now only erase one layer at a time on the auto layer
+ *   * Keep changed data in memory even if you leave the map.
+ *
+ *
+ * 2020-08-28 - Version 1.00.00
  * ===========================================================================
  *
  * @param regionIcons

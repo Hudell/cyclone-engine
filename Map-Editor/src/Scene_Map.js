@@ -242,7 +242,7 @@ CycloneMapEditor.patchClass(Scene_Map, $super => class {
     }
 
     if (mapX >= 0 && mapY >= 0) {
-      if (Input.isPressed('control')) {
+      if (Input.isPressed('control') && !CycloneMapEditor.wasPressing) {
         CycloneMapEditor.selectHigherLayer(mapX, mapY);
       } else {
         CycloneMapEditor.updateCurrentToolTouch(mapX, mapY);
@@ -259,5 +259,22 @@ CycloneMapEditor.patchClass(Scene_Map, $super => class {
     }
 
     return $super.isMenuEnabled.call(this);
+  }
+
+  update() {
+    $super.update.call(this);
+
+    if (!CycloneMapEditor.active) {
+      return;
+    }
+
+    if (CycloneMapEditor.wasPressing || CycloneMapEditor.wasRightButtonDown) {
+      if (this._isControlPressed !== Input.isPressed('control') || this._isShiftPressed !== Input.isPressed('shift')) {
+        this.updateMouse();
+      }
+    }
+
+    this._isControlPressed = Input.isPressed('control');
+    this._isShiftPressed = Input.isPressed('shift');
   }
 });

@@ -1857,10 +1857,13 @@ class CycloneMapEditor$1 extends CyclonePlugin {
     rectangleStartMouseX = 0;
     rectangleStartMouseY = 0;
 
-    this.pencilMenu.checked = currentTool === 'pencil';
-    this.rectangleMenu.checked = currentTool === 'rectangle';
-    this.fillMenu.checked = currentTool === 'fill';
-    this.eraserMenu.checked = currentTool === 'eraser';
+    if (Utils.isNwjs()) {
+      this.pencilMenu.checked = currentTool === 'pencil';
+      this.rectangleMenu.checked = currentTool === 'rectangle';
+      this.fillMenu.checked = currentTool === 'fill';
+      this.eraserMenu.checked = currentTool === 'eraser';
+    }
+
     this.refreshMapEditor();
   }
 
@@ -2680,22 +2683,60 @@ class CycloneMapEditor$1 extends CyclonePlugin {
     }
   }
 
-  static setSelectionTileMaybeMultiLayer(tileX, tileY, selectionCol, selectionRow, previewOnly = false) {
+  static setSelectionTileMaybeMultiLayer(tileX, tileY, selectionCol, selectionRow, previewOnly = false, effectiveLayer = undefined) {
+    effectiveLayer = effectiveLayer ?? currentLayer;
     const index = this.getSelectedTileIndex(selectionCol, selectionRow);
 
-    if (currentLayer === 7 && multiLayerSelection.length) {
+    if (effectiveLayer === 7 && multiLayerSelection.length) {
       for (let z = 0; z <= 3; z++) {
         const tileId = multiLayerSelection[z][index] ?? 0;
         this.setMapTile(tileX, tileY, z, tileId, true, previewOnly);
       }
     } else {
       const tileId = selectedTileList[index] ?? 0;
-      this.setMapTile(tileX, tileY, currentLayer, tileId, true, previewOnly);
+      this.setMapTile(tileX, tileY, effectiveLayer, tileId, true, previewOnly);
+
+      if (effectiveLayer === 2 && currentLayer === 7 && currentTool === 'eraser') {
+        this.setMapTile(tileX, tileY, 3, 0, true, previewOnly);
+      }
     }
   }
 
+  static canApplyRectangle() {
+    return currentTileId !== undefined || currentTool === 'eraser';
+  }
+
+  static isAutoEraser() {
+    return currentLayer === Layers.auto && currentTool === 'eraser' && !Input.isPressed('shift');
+  }
+
+  static getHighestLayerOnArea(startX, startY, width, height) {
+    const highestLayer = (() => {
+      for (let z = 3; z >= 1; z--) {
+        for (let tileY = startY; tileY < startY + height; tileY++) {
+          for (let tileX = startX; tileX < startX + width; tileX++) {
+            const tileIndex = this.tileIndex(tileX, tileY, z);
+            const tileId = $dataMap.data[tileIndex];
+
+            if (tileId > 0) {
+              return z;
+            }
+          }
+        }
+      }
+
+      return 0;
+    })();
+
+    if (highestLayer === 3 && Input.isPressed('control')) {
+      return 2;
+    }
+
+    return highestLayer;
+  }
+
   static applyRectangle(startX, startY, width, height, previewOnly = false) {
-    if (currentTileId === undefined && currentTool !== 'eraser') {
+    if (!this.canApplyRectangle()) {
       return;
     }
 
@@ -2724,10 +2765,15 @@ class CycloneMapEditor$1 extends CyclonePlugin {
       currentChange = {};
     }
 
+    let effectiveLayer = currentLayer;
+    if (this.isAutoEraser()) {
+      effectiveLayer = this.getHighestLayerOnArea(startX, startY, width, height);
+    }
+
     for (let tileY = startY; tileY < startY + height; tileY++) {
       selectionCol = initialCol;
       for (let tileX = startX; tileX < startX + width; tileX++) {
-        this.setSelectionTileMaybeMultiLayer(tileX, tileY, selectionCol, selectionRow, previewOnly);
+        this.setSelectionTileMaybeMultiLayer(tileX, tileY, selectionCol, selectionRow, previewOnly, effectiveLayer);
         selectionCol += colIncrement;
       }
       selectionRow += rowIncrement;
@@ -4905,7 +4951,7 @@ CycloneMapEditor.patchClass(Scene_Map, $super => class {
     }
 
     if (mapX >= 0 && mapY >= 0) {
-      if (Input.isPressed('control')) {
+      if (Input.isPressed('control') && !CycloneMapEditor.wasPressing) {
         CycloneMapEditor.selectHigherLayer(mapX, mapY);
       } else {
         CycloneMapEditor.updateCurrentToolTouch(mapX, mapY);
@@ -4922,6 +4968,23 @@ CycloneMapEditor.patchClass(Scene_Map, $super => class {
     }
 
     return $super.isMenuEnabled.call(this);
+  }
+
+  update() {
+    $super.update.call(this);
+
+    if (!CycloneMapEditor.active) {
+      return;
+    }
+
+    if (CycloneMapEditor.wasPressing || CycloneMapEditor.wasRightButtonDown) {
+      if (this._isControlPressed !== Input.isPressed('control') || this._isShiftPressed !== Input.isPressed('shift')) {
+        this.updateMouse();
+      }
+    }
+
+    this._isControlPressed = Input.isPressed('control');
+    this._isShiftPressed = Input.isPressed('shift');
   }
 });
 
