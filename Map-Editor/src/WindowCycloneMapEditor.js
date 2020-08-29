@@ -1,10 +1,10 @@
 class WindowCycloneMapEditor extends Window_Command {
-  constructor() {
+  initialize() {
     const x = Graphics.width - CycloneMapEditor.windowWidth;
     const y = SceneManager._scene._mapEditorLayerListWindow.y + SceneManager._scene._mapEditorLayerListWindow.height;
     const w = CycloneMapEditor.windowWidth;
     const h = Graphics.height - y - SceneManager._scene._mapEditorStatus.height;
-    super(new Rectangle(x, y, w, h));
+    super.initialize(new Rectangle(x, y, w, h));
     this.showBackgroundDimmer();
   }
 
@@ -146,8 +146,45 @@ class WindowCycloneMapEditor extends Window_Command {
 
   drawShadow(index) {
     const rect = this.itemRect(index);
-    this.contents.drawShadow(index, rect.x, rect.y, rect.width, rect.height);
+    const shadowId = index;
+    const x = rect.x;
+    const y = rect.y;
+    const drawWidth = rect.width;
+    const drawHeight = rect.height;
+
+    const halfWidth = (drawWidth ?? CycloneMapEditor.tileWidth) / 2;
+    const halfHeight = (drawHeight ?? CycloneMapEditor.tileHeight) / 2;
+
+    if (shadowId < 0 || shadowId > 15) {
+      return;
+    }
+
+    const table = shadowId.toString(2).padZero(4);
+    for (let i = 0; i < 4; i++) {
+      let color = '#000000';
+      if (table[3 - i] !== '1') {
+        color = '#FFFFFF99';
+      }
+
+      const drawX = x + (i % 2) * halfWidth;
+      const drawY = y + Math.floor(i / 2) * halfHeight;
+
+      this.contents.fillRect(drawX, drawY, halfWidth, halfHeight, color);
+    }
+
+    const context = this.contents.context;
+    context.save();
+    context.strokeStyle = '#FF0000';
+    context.beginPath();
+    context.moveTo(x, y);
+    context.lineTo(x + drawWidth, y);
+    context.stroke();
+    context.beginPath();
+    context.moveTo(x, y);
+    context.lineTo(x, y + drawHeight);
+    context.stroke();
   }
+
 
   drawItem(index) {
     this.resetTextColor();

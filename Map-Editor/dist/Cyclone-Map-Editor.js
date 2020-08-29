@@ -18,7 +18,7 @@
  *   `"Ybbd8"'     Y88'     `"Ybbd8"' 88  `"YbbdP"'  88       88  `"Ybbd8"'
  *                 d8'
  *                d8'
- * Live  Map Editor 1.00.00                                          by Hudell
+ * Live  Map Editor                                                  by Hudell
  * ===========================================================================
  * Terms of Use
  * ===========================================================================
@@ -59,6 +59,21 @@
  * Did you know?
  * Early map makers used to include fake towns on their maps to identify
  * copies of their work.
+ * ===========================================================================
+ * Change Log
+ * ===========================================================================
+ * 2020-08-29 - Version 1.02.00
+ *   * Created a version of this plugin for Rpg Maker MV
+ *   * Changed the way shadows are displayed on the tile list
+ *   * Copying an area while holding shift will now skip invisible layers.
+ *
+ * 2020-08-29 - Version 1.01.00
+ *   * Web browser support
+ *   * Eraser will now only erase one layer at a time on the auto layer
+ *   * Keep changed data in memory even if you leave the map.
+ *
+ *
+ * 2020-08-28 - Version 1.00.00
  * ===========================================================================
  *
  * @param regionIcons
@@ -1487,12 +1502,16 @@ class CycloneMapEditor$1 extends CyclonePlugin {
     return true;
   }
 
+  static isFullScreen() {
+    return Graphics._isFullScreen();
+  }
+
   static refreshScreenSize() {
     if (this.resizeTimeout) {
       clearTimeout(this.resizeTimeout);
     }
 
-    if (Graphics._isFullScreen()) {
+    if (this.isFullScreen()) {
       return;
     }
 
@@ -1997,22 +2016,29 @@ class CycloneMapEditor$1 extends CyclonePlugin {
   static checkControlKeys(code) {
     switch (code) {
       case 'KeyZ':
-        return this.undoButton();
+        this.undoButton();
+        return true;
       case 'KeyY':
-        return this.redoButton();
+        this.redoButton();
+        return true;
       case 'KeyS':
-        return this.saveButton();
+        this.saveButton();
+        return true;
       case 'KeyR':
-        return this.reloadButton();
+        this.reloadButton();
+        return true;
       case 'KeyG':
-        return this.showGridButton();
+        this.showGridButton();
+        return true;
     }
   }
 
   static onKeyUp(event) {
     if (!Utils.isNwjs()) {
-      if (Input.isPressed('control')) {
-        this.checkControlKeys(event.code);
+      if (Input.isPressed('shift') || Input.isPressed('control')) {
+        if (this.checkControlKeys(event.code)) {
+          event.preventDefault();
+        }
         return;
       }
 
@@ -2423,6 +2449,7 @@ class CycloneMapEditor$1 extends CyclonePlugin {
     SceneManager._scene._mapEditorGrid.refresh();
 
     mapCaches[$gameMap._mapId] = $dataMap;
+    this.refreshTilemap();
   }
 
   static redoLastUndoneChange() {
@@ -2439,6 +2466,7 @@ class CycloneMapEditor$1 extends CyclonePlugin {
     }
 
     this.logChange(false);
+    this.refreshTilemap();
   }
 
   static logChange(clearUndo = true) {
@@ -2818,24 +2846,20 @@ class CycloneMapEditor$1 extends CyclonePlugin {
   }
 
   static copyAutoRectangle(startX, startY, width, height) {
-    let index = 0;
     for (let z = 0; z <= 3; z++) {
       multiLayerSelection[z] = Array(width * height);
     }
 
-    for (let tileY = startY; tileY < startY + height; tileY++) {
-      for (let tileX = startX; tileX < startX + width; tileX++) {
-        for (let z = 0; z <= 3; z++) {
-          const tileIndex = this.tileIndex(tileX, tileY, z);
-          multiLayerSelection[z][index] = $dataMap.data[tileIndex] || 0;
-          selectedTileList[index] = $dataMap.data[tileIndex] || selectedTileList[index] || 0;
-          if (currentTileId === undefined) {
-            currentTileId = selectedTileList[index];
-          }
+    this.iterateRectangle(startX, startY, width, height, (tileX, tileY, index) => {
+      for (let z = 0; z <= 3; z++) {
+        const tileIndex = this.tileIndex(tileX, tileY, z);
+        multiLayerSelection[z][index] = $dataMap.data[tileIndex] || 0;
+        selectedTileList[index] = $dataMap.data[tileIndex] || selectedTileList[index] || 0;
+        if (currentTileId === undefined) {
+          currentTileId = selectedTileList[index];
         }
-        index++;
       }
-    }
+    });
   }
 
   static _selectTileIfNoneSelectedYet(tileId) {
@@ -2856,6 +2880,16 @@ class CycloneMapEditor$1 extends CyclonePlugin {
     return true;
   }
 
+  static iterateRectangle(startX, startY, width, height, fn) {
+    let index = 0;
+    for (let tileY = startY; tileY < startY + height; tileY++) {
+      for (let tileX = startX; tileX < startX + width; tileX++) {
+        fn(tileX, tileY, index);
+        index++;
+      }
+    }
+  }
+
   static copyHigherAutoRectangle(startX, startY, width, height) {
     for (let z = 0; z <= 3; z++) {
       multiLayerSelection[z] = Array(width * height);
@@ -2863,20 +2897,20 @@ class CycloneMapEditor$1 extends CyclonePlugin {
 
     let foundAny = false;
     for (let z = 3; z >= 0; z--) {
-      let index = 0;
-      for (let tileY = startY; tileY < startY + height; tileY++) {
-        for (let tileX = startX; tileX < startX + width; tileX++) {
-          const tileIndex = this.tileIndex(tileX, tileY, z);
-          multiLayerSelection[z][index] = $dataMap.data[tileIndex] || 0;
-          selectedTileList[index] = $dataMap.data[tileIndex] || selectedTileList[index] || 0;
-          this._selectTileIfNoneSelectedYet(selectedTileList[index]);
-          if ($dataMap.data[tileIndex]) {
-            foundAny = true;
-          }
-
-          index++;
-        }
+      if (!this.isLayerVisible(z)) {
+        continue;
       }
+
+      this.iterateRectangle(startX, startY, width, height, (tileX, tileY, index) => {
+        const tileIndex = this.tileIndex(tileX, tileY, z);
+        multiLayerSelection[z][index] = $dataMap.data[tileIndex] || 0;
+        selectedTileList[index] = $dataMap.data[tileIndex] || selectedTileList[index] || 0;
+        this._selectTileIfNoneSelectedYet(selectedTileList[index]);
+
+        if ($dataMap.data[tileIndex]) {
+          foundAny = true;
+        }
+      });
 
       if (this._shouldSkipRemainingLayersCopy(foundAny, z)) {
         return;
@@ -2888,20 +2922,18 @@ class CycloneMapEditor$1 extends CyclonePlugin {
     let foundAny = false;
 
     for (let z = 3; z >= 0; z--) {
-      let index = 0;
-
-      for (let tileY = startY; tileY < startY + height; tileY++) {
-        for (let tileX = startX; tileX < startX + width; tileX++) {
-          const tileIndex = this.tileIndex(tileX, tileY, z);
-          selectedTileList[index] = selectedTileList[index] || $dataMap.data[tileIndex] || 0;
-          this._selectTileIfNoneSelectedYet(selectedTileList[index]);
-          if ($dataMap.data[tileIndex]) {
-            foundAny = true;
-          }
-
-          index++;
-        }
+      if (!this.isLayerVisible(z)) {
+        continue;
       }
+
+      this.iterateRectangle(startX, startY, width, height, (tileX, tileY, index) => {
+        const tileIndex = this.tileIndex(tileX, tileY, z);
+        selectedTileList[index] = selectedTileList[index] || $dataMap.data[tileIndex] || 0;
+        this._selectTileIfNoneSelectedYet(selectedTileList[index]);
+        if ($dataMap.data[tileIndex]) {
+          foundAny = true;
+        }
+      });
 
       if (this._shouldSkipRemainingLayersCopy(foundAny, z)) {
         return;
@@ -2910,16 +2942,11 @@ class CycloneMapEditor$1 extends CyclonePlugin {
   }
 
   static copyManualRectangle(startX, startY, width, height) {
-    let index = 0;
-
-    for (let tileY = startY; tileY < startY + height; tileY++) {
-      for (let tileX = startX; tileX < startX + width; tileX++) {
-        const tileIndex = this.tileIndex(tileX, tileY, currentLayer);
-        selectedTileList[index] = $dataMap.data[tileIndex] || 0;
-        this._selectTileIfNoneSelectedYet(selectedTileList[index]);
-        index++;
-      }
-    }
+    this.iterateRectangle(startX, startY, width, height, (tileX, tileY, index) => {
+      const tileIndex = this.tileIndex(tileX, tileY, currentLayer);
+      selectedTileList[index] = $dataMap.data[tileIndex] || 0;
+      this._selectTileIfNoneSelectedYet(selectedTileList[index]);
+    });
   }
 
   static copyRectangle(startX, startY, width, height) {
@@ -3783,15 +3810,15 @@ class WindowCycloneGrid extends Window_Base {
     let paddingY;
 
     if ($gameMap._displayX < 0) {
-      paddingX = $gameMap._displayX * CycloneMapEditor.tileWidth;
+      paddingX = Math.floor($gameMap._displayX * CycloneMapEditor.tileWidth);
     } else {
-      paddingX = ($gameMap._displayX - Math.floor($gameMap._displayX)) * drawWidth;
+      paddingX = Math.floor(($gameMap._displayX - Math.floor($gameMap._displayX)) * drawWidth);
     }
 
     if ($gameMap._displayY < 0) {
-      paddingY = $gameMap._displayY * CycloneMapEditor.tileHeight;
+      paddingY = Math.floor($gameMap._displayY * CycloneMapEditor.tileHeight);
     } else {
-      paddingY = ($gameMap._displayY - Math.floor($gameMap._displayY)) * drawHeight;
+      paddingY = Math.floor(($gameMap._displayY - Math.floor($gameMap._displayY)) * drawHeight);
     }
 
     const mapStartX = 0 - paddingX;
@@ -3857,43 +3884,17 @@ redoIcon.src = 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABgAAAAYCAYAAADgdz
 
 
 class WindowCycloneMapEditorCommands extends Window_Command {
-  constructor() {
+  initialize() {
     const x = Graphics.width - CycloneMapEditor.windowWidth;
     const y = 0;
     const w = CycloneMapEditor.windowWidth;
     const h = 74;
-    super(new Rectangle(x, y, w, h));
+    super.initialize(new Rectangle(x, y, w, h));
     this.showBackgroundDimmer();
+    this.configureHandlers();
   }
 
-  processCursorMove() {
-  }
-
-  processHandling() {
-  }
-
-  updateBackOpacity() {
-    this.backOpacity = 255;
-  }
-
-  _updateCursor() {
-    this._cursorSprite.visible = false;
-  }
-
-  makeCommandList() {
-    this.addCommand('Undo', 'undo');
-    this.addCommand('Redo', 'redo');
-
-    this.addCommand('', '');
-
-    this.addCommand('Pen', 'pencil');
-    this.addCommand('Rect', 'rectangle');
-    this.addCommand('Fill', 'fill');
-    this.addCommand('Erase', 'eraser');
-
-    // this.addCommand('Save', 'save');
-    // this.addCommand('Reload', 'reload');
-
+  configureHandlers() {
     this.setHandler('undo', () => {
       CycloneMapEditor.undoButton();
       this.activate();
@@ -3928,6 +3929,32 @@ class WindowCycloneMapEditorCommands extends Window_Command {
     });
   }
 
+  processCursorMove() {
+  }
+
+  processHandling() {
+  }
+
+  updateBackOpacity() {
+    this.backOpacity = 255;
+  }
+
+  _updateCursor() {
+    this._cursorSprite.visible = false;
+  }
+
+  makeCommandList() {
+    this.addCommand('Undo', 'undo');
+    this.addCommand('Redo', 'redo');
+
+    this.addCommand('', '');
+
+    this.addCommand('Pen', 'pencil');
+    this.addCommand('Rect', 'rectangle');
+    this.addCommand('Fill', 'fill');
+    this.addCommand('Erase', 'eraser');
+  }
+
   colSpacing() {
     return 6;
   }
@@ -3943,15 +3970,6 @@ class WindowCycloneMapEditorCommands extends Window_Command {
   redraw() {
     Window_Selectable.prototype.refresh.call(this);
   }
-
-  // itemWidth() {
-  //   return ImageManager.iconWidth;
-  // }
-
-  // itemHeight() {
-  //   return ImageManager.iconHeight;
-  // }
-  //
 
   getSymbolIcon(symbol) {
     switch(symbol) {
@@ -4034,11 +4052,11 @@ const visibleIcon = new Image();
 visibleIcon.src = 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABgAAAAYCAYAAADgdz34AAABhGlDQ1BJQ0MgcHJvZmlsZQAAKJF9kT1Iw0AcxV9bpUUqgmYo4pChdbIgKuIoVSyChdJWaNXB5NIvaGJIUlwcBdeCgx+LVQcXZ10dXAVB8APEydFJ0UVK/F9SaBHjwXE/3t173L0D/M0aU82ecUDVLCOTTIj5wooYfEUIEQgYRExipp7KLuTgOb7u4ePrXZxneZ/7c/QrRZMBPpF4lumGRbxOPL1p6Zz3iQVWkRTic+Ixgy5I/Mh12eU3zmWH/TxTMHKZOWKBWCx3sdzFrGKoxFPEUUXVKN+fd1nhvMVZrdVZ+578heGitpzlOs0RJLGIFNIQIaOOKmqwEKdVI8VEhvYTHv5hx58ml0yuKhg55rEBFZLjB/+D392apckJNymcAHpfbPsjBgR3gVbDtr+Pbbt1AgSegSut499oAjOfpDc6WvQIGNgGLq47mrwHXO4AkSddMiRHCtD0l0rA+xl9UwEYugX6Vt3e2vs4fQBy1NXSDXBwCIyWKXvN492h7t7+PdPu7weVs3K1THf6MgAAAAZiS0dEAP8A/wD/oL2nkwAAAAlwSFlzAAAuIwAALiMBeKU/dgAAAAd0SU1FB+QIGBQWDOrdNdUAAAAZdEVYdENvbW1lbnQAQ3JlYXRlZCB3aXRoIEdJTVBXgQ4XAAABOUlEQVRIx+2Uu07DMBSG/6AM6WR1apdYQkiRMrUbZM1SXgB2RkYY8hBdsvYJOtCpEqqYuvQpsIQiAQOdok7xdphOidM2NmIkv+ThHNvfufgCdOr0V3muCyutqW73gsBpr+8KTqPoqN8WyLfBGTyfxcYc+yutqS2Ib4MzeJguDTD70yiyBjkKT6SkYjWhSmtjJFJSIiUt7sZUaU3FakKJlNQ8I9ZZW+acNQA8318dnANXNp/F+0qcW/T5+oVh+mPH2RMecWvY9bWsUAj62O08pxZt8tFBi5pjk4/2LQqFoFAIslbQCwKPWzXFJQCgf73AxbkEALwV7yhfbgAAWV5irRSiwQAA0Mzec72m04e+MZflJQC0wp1e8qmHtlYKAFrhzl9FKASp7dbwMbgN/qu/iAPVbett6fQ/9A0c7tBBCKKL7gAAAABJRU5ErkJggg==';
 
 class WindowCycloneMapEditorLayerList extends Window_Base {
-  constructor() {
+  initialize() {
     const x = Graphics.width - CycloneMapEditor.windowWidth;
     const y = SceneManager._scene._mapEditorCommands.height;
     const h = 150;
-    super(new Rectangle(x, y, CycloneMapEditor.windowWidth, h));
+    super.initialize(new Rectangle(x, y, CycloneMapEditor.windowWidth, h));
     this.showBackgroundDimmer();
   }
 
@@ -4131,7 +4149,7 @@ class WindowCycloneMapEditorLayerList extends Window_Base {
       layerIndex += 4;
     }
 
-    if (x < 50) {
+    if (x < 50 && layerIndex < 7) {
       this.toggleLayerVisibility(layerIndex);
       return;
     }
@@ -4142,9 +4160,9 @@ class WindowCycloneMapEditorLayerList extends Window_Base {
 }
 
 class WindowCycloneMapEditorStatus extends Window_Base {
-  constructor() {
+  initialize() {
     const h = 40;
-    super(new Rectangle(0, Graphics.height - h, Graphics.width, h));
+    super.initialize(new Rectangle(0, Graphics.height - h, Graphics.width, h));
     this.showBackgroundDimmer();
   }
 
@@ -4165,86 +4183,66 @@ class WindowCycloneMapEditorStatus extends Window_Base {
     return 16;
   }
 
-  // eslint-disable-next-line complexity
-  drawContents() {
-    this.contents.clear();
-    this.contents.fontSize = 16;
-
+  makeLine() {
     let line = '';
-    let splitter = '';
 
-    if (CycloneMapEditor.params.showMapId) {
-      line += `${ splitter }Map: ${ $gameMap._mapId }`;
-      splitter = ', ';
-    }
+    const addConditional = (paramName, newPart) => {
+      if (CycloneMapEditor.params[paramName]) {
+        if (line && newPart) {
+          return `, ${ newPart }`;
+        }
 
-    if (CycloneMapEditor.params.showTilesetId) {
-      line += `${ splitter }Tileset: ${ $gameMap._tilesetId }`;
-      splitter = ', ';
-    }
+        return newPart;
+      }
 
-    if (CycloneMapEditor.params.showPosition) {
-      line += `${ splitter }Pos: ${ CycloneMapEditor.statusMapX }, ${ CycloneMapEditor.statusMapY }`;
-      splitter = ', ';
-    }
+      return '';
+    };
+
+    line += addConditional('showMapId', `Map: ${ $gameMap._mapId }`);
+    line += addConditional('showTilesetId', `Tileset: ${ $gameMap._tilesetId }`);
+    line += addConditional('showPosition', `Pos: ${ CycloneMapEditor.statusMapX }, ${ CycloneMapEditor.statusMapY }`);
 
     if (CycloneMapEditor.params.showCellTiles) {
       const { statusTile1, statusTile2, statusTile3, statusTile4 } = CycloneMapEditor;
       if (line) {
         line += ' - ';
       }
-
       line += `Tiles: (${ statusTile1 }, ${ statusTile2 }, ${ statusTile3 }, ${ statusTile4 })`;
-      splitter = ', ';
     }
 
-    if (CycloneMapEditor.params.showRegionId) {
-      line += `${ splitter }Region: ${ CycloneMapEditor.statusRegion }`;
-      splitter = ', ';
-    }
+    line += addConditional('showRegionId', `Region: ${ CycloneMapEditor.statusRegion }`);
+    line += addConditional('showTag', `Tag: ${ CycloneMapEditor.statusTag }`);
+    line += addConditional('showCollision', `Collision: ${ CycloneMapEditor.statusCollision }`);
+    line += addConditional('showLadder', CycloneMapEditor.statusLadder ? ' Ladder' : '');
+    line += addConditional('showBush', CycloneMapEditor.statusBush ? ' Bush' : '');
+    line += addConditional('showCounter', CycloneMapEditor.statusCounter ? ' Counter' : '');
+    line += addConditional('showDamageFloor', CycloneMapEditor.statusDamage ? ' Damage' : '');
 
-    if (CycloneMapEditor.params.showTag) {
-      line += `${ splitter }Tag: ${ CycloneMapEditor.statusTag }`;
-      splitter = ', ';
-    }
+    return line;
+  }
 
-    if (CycloneMapEditor.params.showCollision) {
-      line += `${ splitter }Collision: ${ CycloneMapEditor.statusCollision }`;
-      splitter = ', ';
-    }
+  textY() {
+    return 12;
+  }
 
-    if (CycloneMapEditor.params.showLadder && CycloneMapEditor.statusLadder) {
-      line += `${ splitter } Ladder`;
-      splitter = ', ';
-    }
+  drawContents() {
+    this.contents.clear();
+    this.contents.fontSize = 16;
 
-    if (CycloneMapEditor.params.showBush && CycloneMapEditor.statusBush) {
-      line += `${ splitter } Bush`;
-      splitter = ', ';
-    }
+    const line = this.makeLine();
 
-    if (CycloneMapEditor.params.showCounter && CycloneMapEditor.statusCounter) {
-      line += `${ splitter } Counter`;
-      splitter = ', ';
-    }
-
-    if (CycloneMapEditor.params.showDamageFloor && CycloneMapEditor.statusDamage) {
-      line += `${ splitter } Damage`;
-      splitter = ', ';
-    }
-
-    this.drawText(`${ line }`, 8, 12, this.width - 8, 'left');
-    this.drawText(`TileId: ${ CycloneMapEditor.statusTileId }`, 0, 12, this.width - 8, 'right');
+    this.drawText(line, 8, this.textY(), this.width - 8, 'left');
+    this.drawText(`TileId: ${ CycloneMapEditor.statusTileId }`, 0, this.textY(), this.width - 8, 'right');
   }
 }
 
 class WindowCycloneMapEditor extends Window_Command {
-  constructor() {
+  initialize() {
     const x = Graphics.width - CycloneMapEditor.windowWidth;
     const y = SceneManager._scene._mapEditorLayerListWindow.y + SceneManager._scene._mapEditorLayerListWindow.height;
     const w = CycloneMapEditor.windowWidth;
     const h = Graphics.height - y - SceneManager._scene._mapEditorStatus.height;
-    super(new Rectangle(x, y, w, h));
+    super.initialize(new Rectangle(x, y, w, h));
     this.showBackgroundDimmer();
   }
 
@@ -4386,8 +4384,45 @@ class WindowCycloneMapEditor extends Window_Command {
 
   drawShadow(index) {
     const rect = this.itemRect(index);
-    this.contents.drawShadow(index, rect.x, rect.y, rect.width, rect.height);
+    const shadowId = index;
+    const x = rect.x;
+    const y = rect.y;
+    const drawWidth = rect.width;
+    const drawHeight = rect.height;
+
+    const halfWidth = (drawWidth ?? CycloneMapEditor.tileWidth) / 2;
+    const halfHeight = (drawHeight ?? CycloneMapEditor.tileHeight) / 2;
+
+    if (shadowId < 0 || shadowId > 15) {
+      return;
+    }
+
+    const table = shadowId.toString(2).padZero(4);
+    for (let i = 0; i < 4; i++) {
+      let color = '#000000';
+      if (table[3 - i] !== '1') {
+        color = '#FFFFFF99';
+      }
+
+      const drawX = x + (i % 2) * halfWidth;
+      const drawY = y + Math.floor(i / 2) * halfHeight;
+
+      this.contents.fillRect(drawX, drawY, halfWidth, halfHeight, color);
+    }
+
+    const context = this.contents.context;
+    context.save();
+    context.strokeStyle = '#FF0000';
+    context.beginPath();
+    context.moveTo(x, y);
+    context.lineTo(x + drawWidth, y);
+    context.stroke();
+    context.beginPath();
+    context.moveTo(x, y);
+    context.lineTo(x, y + drawHeight);
+    context.stroke();
   }
+
 
   drawItem(index) {
     this.resetTextColor();

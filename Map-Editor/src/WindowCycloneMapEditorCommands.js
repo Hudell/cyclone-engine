@@ -27,43 +27,17 @@ redoIcon.src = 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABgAAAAYCAYAAADgdz
 
 
 class WindowCycloneMapEditorCommands extends Window_Command {
-  constructor() {
+  initialize() {
     const x = Graphics.width - CycloneMapEditor.windowWidth;
     const y = 0;
     const w = CycloneMapEditor.windowWidth;
     const h = 74;
-    super(new Rectangle(x, y, w, h));
+    super.initialize(new Rectangle(x, y, w, h));
     this.showBackgroundDimmer();
+    this.configureHandlers();
   }
 
-  processCursorMove() {
-  }
-
-  processHandling() {
-  }
-
-  updateBackOpacity() {
-    this.backOpacity = 255;
-  }
-
-  _updateCursor() {
-    this._cursorSprite.visible = false;
-  }
-
-  makeCommandList() {
-    this.addCommand('Undo', 'undo');
-    this.addCommand('Redo', 'redo');
-
-    this.addCommand('', '');
-
-    this.addCommand('Pen', 'pencil');
-    this.addCommand('Rect', 'rectangle');
-    this.addCommand('Fill', 'fill');
-    this.addCommand('Erase', 'eraser');
-
-    // this.addCommand('Save', 'save');
-    // this.addCommand('Reload', 'reload');
-
+  configureHandlers() {
     this.setHandler('undo', () => {
       CycloneMapEditor.undoButton();
       this.activate();
@@ -98,6 +72,32 @@ class WindowCycloneMapEditorCommands extends Window_Command {
     });
   }
 
+  processCursorMove() {
+  }
+
+  processHandling() {
+  }
+
+  updateBackOpacity() {
+    this.backOpacity = 255;
+  }
+
+  _updateCursor() {
+    this._cursorSprite.visible = false;
+  }
+
+  makeCommandList() {
+    this.addCommand('Undo', 'undo');
+    this.addCommand('Redo', 'redo');
+
+    this.addCommand('', '');
+
+    this.addCommand('Pen', 'pencil');
+    this.addCommand('Rect', 'rectangle');
+    this.addCommand('Fill', 'fill');
+    this.addCommand('Erase', 'eraser');
+  }
+
   colSpacing() {
     return 6;
   }
@@ -113,15 +113,6 @@ class WindowCycloneMapEditorCommands extends Window_Command {
   redraw() {
     Window_Selectable.prototype.refresh.call(this);
   }
-
-  // itemWidth() {
-  //   return ImageManager.iconWidth;
-  // }
-
-  // itemHeight() {
-  //   return ImageManager.iconHeight;
-  // }
-  //
 
   getSymbolIcon(symbol) {
     switch(symbol) {

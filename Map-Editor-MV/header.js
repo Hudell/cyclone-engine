@@ -1,5 +1,4 @@
 /*:
- * @target MZ
  * @plugindesc Live Map Editor
  *
  * <pluginName:CycloneMapEditor>
@@ -17,7 +16,7 @@
  *  "8a,   ,aa   `8b,d8'   "8a,   ,aa 88 "8a,   ,a8" 88       88 "8b,   ,aa
  *   `"Ybbd8"'     Y88'     `"Ybbd8"' 88  `"YbbdP"'  88       88  `"Ybbd8"'
  *                 d8'
- *                d8'
+ *                d8'                                                       MV
  * Live  Map Editor                                                  by Hudell
  * ===========================================================================
  * Terms of Use
@@ -63,17 +62,7 @@
  * Change Log
  * ===========================================================================
  * 2020-08-29 - Version 1.02.00
- *   * Created a version of this plugin for Rpg Maker MV
- *   * Changed the way shadows are displayed on the tile list
- *   * Copying an area while holding shift will now skip invisible layers.
- *
- * 2020-08-29 - Version 1.01.00
- *   * Web browser support
- *   * Eraser will now only erase one layer at a time on the auto layer
- *   * Keep changed data in memory even if you leave the map.
- *
- *
- * 2020-08-28 - Version 1.00.00
+ *   * First MV Compatible version
  * ===========================================================================
  *
  * @param regionIcons

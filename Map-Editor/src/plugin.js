@@ -697,12 +697,16 @@ class CycloneMapEditor extends CyclonePlugin {
     return true;
   }
 
+  static isFullScreen() {
+    return Graphics._isFullScreen();
+  }
+
   static refreshScreenSize() {
     if (this.resizeTimeout) {
       clearTimeout(this.resizeTimeout);
     }
 
-    if (Graphics._isFullScreen()) {
+    if (this.isFullScreen()) {
       return;
     }
 
@@ -1207,22 +1211,29 @@ class CycloneMapEditor extends CyclonePlugin {
   static checkControlKeys(code) {
     switch (code) {
       case 'KeyZ':
-        return this.undoButton();
+        this.undoButton();
+        return true;
       case 'KeyY':
-        return this.redoButton();
+        this.redoButton();
+        return true;
       case 'KeyS':
-        return this.saveButton();
+        this.saveButton();
+        return true;
       case 'KeyR':
-        return this.reloadButton();
+        this.reloadButton();
+        return true;
       case 'KeyG':
-        return this.showGridButton();
+        this.showGridButton();
+        return true;
     }
   }
 
   static onKeyUp(event) {
     if (!Utils.isNwjs()) {
-      if (Input.isPressed('control')) {
-        this.checkControlKeys(event.code);
+      if (Input.isPressed('shift') || Input.isPressed('control')) {
+        if (this.checkControlKeys(event.code)) {
+          event.preventDefault();
+        }
         return;
       }
 
@@ -1633,6 +1644,7 @@ class CycloneMapEditor extends CyclonePlugin {
     SceneManager._scene._mapEditorGrid.refresh();
 
     mapCaches[$gameMap._mapId] = $dataMap;
+    this.refreshTilemap();
   }
 
   static redoLastUndoneChange() {
@@ -1649,6 +1661,7 @@ class CycloneMapEditor extends CyclonePlugin {
     }
 
     this.logChange(false);
+    this.refreshTilemap();
   }
 
   static logChange(clearUndo = true) {
@@ -2028,24 +2041,20 @@ class CycloneMapEditor extends CyclonePlugin {
   }
 
   static copyAutoRectangle(startX, startY, width, height) {
-    let index = 0;
     for (let z = 0; z <= 3; z++) {
       multiLayerSelection[z] = Array(width * height);
     }
 
-    for (let tileY = startY; tileY < startY + height; tileY++) {
-      for (let tileX = startX; tileX < startX + width; tileX++) {
-        for (let z = 0; z <= 3; z++) {
-          const tileIndex = this.tileIndex(tileX, tileY, z);
-          multiLayerSelection[z][index] = $dataMap.data[tileIndex] || 0;
-          selectedTileList[index] = $dataMap.data[tileIndex] || selectedTileList[index] || 0;
-          if (currentTileId === undefined) {
-            currentTileId = selectedTileList[index];
-          }
+    this.iterateRectangle(startX, startY, width, height, (tileX, tileY, index) => {
+      for (let z = 0; z <= 3; z++) {
+        const tileIndex = this.tileIndex(tileX, tileY, z);
+        multiLayerSelection[z][index] = $dataMap.data[tileIndex] || 0;
+        selectedTileList[index] = $dataMap.data[tileIndex] || selectedTileList[index] || 0;
+        if (currentTileId === undefined) {
+          currentTileId = selectedTileList[index];
         }
-        index++;
       }
-    }
+    });
   }
 
   static _selectTileIfNoneSelectedYet(tileId) {
@@ -2066,6 +2075,16 @@ class CycloneMapEditor extends CyclonePlugin {
     return true;
   }
 
+  static iterateRectangle(startX, startY, width, height, fn) {
+    let index = 0;
+    for (let tileY = startY; tileY < startY + height; tileY++) {
+      for (let tileX = startX; tileX < startX + width; tileX++) {
+        fn(tileX, tileY, index);
+        index++;
+      }
+    }
+  }
+
   static copyHigherAutoRectangle(startX, startY, width, height) {
     for (let z = 0; z <= 3; z++) {
       multiLayerSelection[z] = Array(width * height);
@@ -2073,20 +2092,20 @@ class CycloneMapEditor extends CyclonePlugin {
 
     let foundAny = false;
     for (let z = 3; z >= 0; z--) {
-      let index = 0;
-      for (let tileY = startY; tileY < startY + height; tileY++) {
-        for (let tileX = startX; tileX < startX + width; tileX++) {
-          const tileIndex = this.tileIndex(tileX, tileY, z);
-          multiLayerSelection[z][index] = $dataMap.data[tileIndex] || 0;
-          selectedTileList[index] = $dataMap.data[tileIndex] || selectedTileList[index] || 0;
-          this._selectTileIfNoneSelectedYet(selectedTileList[index]);
-          if ($dataMap.data[tileIndex]) {
-            foundAny = true;
-          }
-
-          index++;
-        }
+      if (!this.isLayerVisible(z)) {
+        continue;
       }
+
+      this.iterateRectangle(startX, startY, width, height, (tileX, tileY, index) => {
+        const tileIndex = this.tileIndex(tileX, tileY, z);
+        multiLayerSelection[z][index] = $dataMap.data[tileIndex] || 0;
+        selectedTileList[index] = $dataMap.data[tileIndex] || selectedTileList[index] || 0;
+        this._selectTileIfNoneSelectedYet(selectedTileList[index]);
+
+        if ($dataMap.data[tileIndex]) {
+          foundAny = true;
+        }
+      });
 
       if (this._shouldSkipRemainingLayersCopy(foundAny, z)) {
         return;
@@ -2098,20 +2117,18 @@ class CycloneMapEditor extends CyclonePlugin {
     let foundAny = false;
 
     for (let z = 3; z >= 0; z--) {
-      let index = 0;
-
-      for (let tileY = startY; tileY < startY + height; tileY++) {
-        for (let tileX = startX; tileX < startX + width; tileX++) {
-          const tileIndex = this.tileIndex(tileX, tileY, z);
-          selectedTileList[index] = selectedTileList[index] || $dataMap.data[tileIndex] || 0;
-          this._selectTileIfNoneSelectedYet(selectedTileList[index]);
-          if ($dataMap.data[tileIndex]) {
-            foundAny = true;
-          }
-
-          index++;
-        }
+      if (!this.isLayerVisible(z)) {
+        continue;
       }
+
+      this.iterateRectangle(startX, startY, width, height, (tileX, tileY, index) => {
+        const tileIndex = this.tileIndex(tileX, tileY, z);
+        selectedTileList[index] = selectedTileList[index] || $dataMap.data[tileIndex] || 0;
+        this._selectTileIfNoneSelectedYet(selectedTileList[index]);
+        if ($dataMap.data[tileIndex]) {
+          foundAny = true;
+        }
+      });
 
       if (this._shouldSkipRemainingLayersCopy(foundAny, z)) {
         return;
@@ -2120,16 +2137,11 @@ class CycloneMapEditor extends CyclonePlugin {
   }
 
   static copyManualRectangle(startX, startY, width, height) {
-    let index = 0;
-
-    for (let tileY = startY; tileY < startY + height; tileY++) {
-      for (let tileX = startX; tileX < startX + width; tileX++) {
-        const tileIndex = this.tileIndex(tileX, tileY, currentLayer);
-        selectedTileList[index] = $dataMap.data[tileIndex] || 0;
-        this._selectTileIfNoneSelectedYet(selectedTileList[index]);
-        index++;
-      }
-    }
+    this.iterateRectangle(startX, startY, width, height, (tileX, tileY, index) => {
+      const tileIndex = this.tileIndex(tileX, tileY, currentLayer);
+      selectedTileList[index] = $dataMap.data[tileIndex] || 0;
+      this._selectTileIfNoneSelectedYet(selectedTileList[index]);
+    });
   }
 
   static copyRectangle(startX, startY, width, height) {

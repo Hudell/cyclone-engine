@@ -139,15 +139,15 @@ class WindowCycloneGrid extends Window_Base {
     let paddingY;
 
     if ($gameMap._displayX < 0) {
-      paddingX = $gameMap._displayX * CycloneMapEditor.tileWidth;
+      paddingX = Math.floor($gameMap._displayX * CycloneMapEditor.tileWidth);
     } else {
-      paddingX = ($gameMap._displayX - Math.floor($gameMap._displayX)) * drawWidth;
+      paddingX = Math.floor(($gameMap._displayX - Math.floor($gameMap._displayX)) * drawWidth);
     }
 
     if ($gameMap._displayY < 0) {
-      paddingY = $gameMap._displayY * CycloneMapEditor.tileHeight;
+      paddingY = Math.floor($gameMap._displayY * CycloneMapEditor.tileHeight);
     } else {
-      paddingY = ($gameMap._displayY - Math.floor($gameMap._displayY)) * drawHeight;
+      paddingY = Math.floor(($gameMap._displayY - Math.floor($gameMap._displayY)) * drawHeight);
     }
 
     const mapStartX = 0 - paddingX;

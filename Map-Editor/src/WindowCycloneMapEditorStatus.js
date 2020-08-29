@@ -1,7 +1,7 @@
 class WindowCycloneMapEditorStatus extends Window_Base {
-  constructor() {
+  initialize() {
     const h = 40;
-    super(new Rectangle(0, Graphics.height - h, Graphics.width, h));
+    super.initialize(new Rectangle(0, Graphics.height - h, Graphics.width, h));
     this.showBackgroundDimmer();
   }
 
@@ -22,76 +22,56 @@ class WindowCycloneMapEditorStatus extends Window_Base {
     return 16;
   }
 
-  // eslint-disable-next-line complexity
-  drawContents() {
-    this.contents.clear();
-    this.contents.fontSize = 16;
-
+  makeLine() {
     let line = '';
-    let splitter = '';
 
-    if (CycloneMapEditor.params.showMapId) {
-      line += `${ splitter }Map: ${ $gameMap._mapId }`;
-      splitter = ', ';
-    }
+    const addConditional = (paramName, newPart) => {
+      if (CycloneMapEditor.params[paramName]) {
+        if (line && newPart) {
+          return `, ${ newPart }`;
+        }
 
-    if (CycloneMapEditor.params.showTilesetId) {
-      line += `${ splitter }Tileset: ${ $gameMap._tilesetId }`;
-      splitter = ', ';
-    }
+        return newPart;
+      }
 
-    if (CycloneMapEditor.params.showPosition) {
-      line += `${ splitter }Pos: ${ CycloneMapEditor.statusMapX }, ${ CycloneMapEditor.statusMapY }`;
-      splitter = ', ';
-    }
+      return '';
+    };
+
+    line += addConditional('showMapId', `Map: ${ $gameMap._mapId }`);
+    line += addConditional('showTilesetId', `Tileset: ${ $gameMap._tilesetId }`);
+    line += addConditional('showPosition', `Pos: ${ CycloneMapEditor.statusMapX }, ${ CycloneMapEditor.statusMapY }`);
 
     if (CycloneMapEditor.params.showCellTiles) {
       const { statusTile1, statusTile2, statusTile3, statusTile4 } = CycloneMapEditor;
       if (line) {
         line += ' - ';
       }
-
       line += `Tiles: (${ statusTile1 }, ${ statusTile2 }, ${ statusTile3 }, ${ statusTile4 })`;
-      splitter = ', ';
     }
 
-    if (CycloneMapEditor.params.showRegionId) {
-      line += `${ splitter }Region: ${ CycloneMapEditor.statusRegion }`;
-      splitter = ', ';
-    }
+    line += addConditional('showRegionId', `Region: ${ CycloneMapEditor.statusRegion }`);
+    line += addConditional('showTag', `Tag: ${ CycloneMapEditor.statusTag }`);
+    line += addConditional('showCollision', `Collision: ${ CycloneMapEditor.statusCollision }`);
+    line += addConditional('showLadder', CycloneMapEditor.statusLadder ? ' Ladder' : '');
+    line += addConditional('showBush', CycloneMapEditor.statusBush ? ' Bush' : '');
+    line += addConditional('showCounter', CycloneMapEditor.statusCounter ? ' Counter' : '');
+    line += addConditional('showDamageFloor', CycloneMapEditor.statusDamage ? ' Damage' : '');
 
-    if (CycloneMapEditor.params.showTag) {
-      line += `${ splitter }Tag: ${ CycloneMapEditor.statusTag }`;
-      splitter = ', ';
-    }
+    return line;
+  }
 
-    if (CycloneMapEditor.params.showCollision) {
-      line += `${ splitter }Collision: ${ CycloneMapEditor.statusCollision }`;
-      splitter = ', ';
-    }
+  textY() {
+    return 12;
+  }
 
-    if (CycloneMapEditor.params.showLadder && CycloneMapEditor.statusLadder) {
-      line += `${ splitter } Ladder`;
-      splitter = ', ';
-    }
+  drawContents() {
+    this.contents.clear();
+    this.contents.fontSize = 16;
 
-    if (CycloneMapEditor.params.showBush && CycloneMapEditor.statusBush) {
-      line += `${ splitter } Bush`;
-      splitter = ', ';
-    }
+    const line = this.makeLine();
 
-    if (CycloneMapEditor.params.showCounter && CycloneMapEditor.statusCounter) {
-      line += `${ splitter } Counter`;
-      splitter = ', ';
-    }
-
-    if (CycloneMapEditor.params.showDamageFloor && CycloneMapEditor.statusDamage) {
-      line += `${ splitter } Damage`;
-      splitter = ', ';
-    }
-
-    this.drawText(`${ line }`, 8, 12, this.width - 8, 'left');
-    this.drawText(`TileId: ${ CycloneMapEditor.statusTileId }`, 0, 12, this.width - 8, 'right');
+    this.drawText(line, 8, this.textY(), this.width - 8, 'left');
+    this.drawText(`TileId: ${ CycloneMapEditor.statusTileId }`, 0, this.textY(), this.width - 8, 'right');
   }
 }
 

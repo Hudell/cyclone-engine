@@ -10,6 +10,7 @@ globals:
   require: false
   nw: false
   globalThis: false
+  window: false
 
   PIXI: false
   Utils: false
@@ -35,6 +36,7 @@ globals:
   Scene_Map: false
   Scene_Menu: false
   Scene_MenuBase: false
+  Scene_Boot: false
   Spriteset_Map: false
   Sprite_Clickable: false
   Sprite_Balloon: false
