@@ -1,5 +1,6 @@
 import { CyclonePlugin } from '../../Core/main';
 import { Layers } from './constants';
+import { MapshotTileMap } from './mapshot/MapshotTileMap';
 
 const layerVisibility = [true, true, true, true, true, false, false, false, false, false];
 let editorActive = true;
@@ -641,6 +642,82 @@ class CycloneMapEditor extends CyclonePlugin {
       submenu: layerMenu,
     }));
 
+    const exportMenu = new nw.Menu();
+    exportMenu.append(new nw.MenuItem({
+      label: 'Layer 1',
+      click: () => {
+        CycloneMapEditor.exportSingleLayer(0);
+      },
+    }));
+    exportMenu.append(new nw.MenuItem({
+      label: 'Layer 2',
+      click: () => {
+        CycloneMapEditor.exportSingleLayer(1);
+      },
+    }));
+    exportMenu.append(new nw.MenuItem({
+      label: 'Layer 3',
+      click: () => {
+        CycloneMapEditor.exportSingleLayer(2);
+      },
+    }));
+    exportMenu.append(new nw.MenuItem({
+      label: 'Layer 4',
+      click: () => {
+        CycloneMapEditor.exportSingleLayer(3);
+      },
+    }));
+    exportMenu.append(new nw.MenuItem( {type: 'separator'}));
+    exportMenu.append(new nw.MenuItem({
+      label: 'Lower Tiles',
+      click: () => {
+        CycloneMapEditor.exportLowerTiles();
+      },
+    }));
+    exportMenu.append(new nw.MenuItem({
+      label: 'Upper Tiles',
+      click: () => {
+        CycloneMapEditor.exportUpperTiles();
+      },
+    }));
+    exportMenu.append(new nw.MenuItem( {type: 'separator'}));
+    exportMenu.append(new nw.MenuItem({
+      label: 'Whole Map',
+      click: () => {
+        CycloneMapEditor.exportWholeMap();
+      },
+    }));
+    exportMenu.append(new nw.MenuItem( {type: 'separator'}));
+    exportMenu.append(new nw.MenuItem({
+      label: 'Low Events',
+      click: () => {
+        CycloneMapEditor.exportLowEvents();
+      },
+    }));
+    exportMenu.append(new nw.MenuItem({
+      label: 'Normal Events',
+      click: () => {
+        CycloneMapEditor.exportNormalEvents();
+      },
+    }));
+    exportMenu.append(new nw.MenuItem({
+      label: 'High Events',
+      click: () => {
+        CycloneMapEditor.exportHighEvents();
+      },
+    }));
+    exportMenu.append(new nw.MenuItem({
+      label: 'All Events',
+      click: () => {
+        CycloneMapEditor.exportAllEvents();
+      },
+    }));
+
+    menu.append(new nw.MenuItem({
+      label: 'Export',
+      submenu: exportMenu,
+    }));
+
     const helpMenu = new nw.Menu();
     helpMenu.append(new nw.MenuItem( {
       label: 'Plugin Page',
@@ -935,6 +1012,99 @@ class CycloneMapEditor extends CyclonePlugin {
     };
 
     xhr.send();
+  }
+
+  static downloadMapshot(bitmap, fileName) {
+    const imageType = 'png';
+    const imageQuality = 1;
+
+    const urlData = bitmap.canvas.toDataURL(imageType, imageQuality);
+    const strippedData = urlData.replace(/^data:image\/png;base64,/, '');
+
+    const data = atob(strippedData);
+    const buffer = new ArrayBuffer(data.length);
+    const view = new Uint8Array(buffer);
+    for (let i = 0; i < data.length; i++) {
+      view[i] = data.charCodeAt(i) & 0xff;
+    }
+    const blob = new Blob([buffer], { type: 'application/octet-stream'});
+    const url = URL.createObjectURL(blob);
+
+    let iframe = document.getElementsByName('image_download')[0];
+    if (!iframe) {
+      iframe = document.createElement('iframe');
+      iframe.setAttribute('name', 'image_download');
+      iframe.style.display = 'none';
+      document.body.appendChild(iframe);
+    }
+
+    const element = document.createElement('a');
+    element.setAttribute('href', url);
+    element.setAttribute('download', fileName + '.png');
+    element.setAttribute('target', 'image_download');
+    element.style.display = 'none';
+    document.body.appendChild(element);
+
+    element.click();
+
+    document.body.removeChild(element);
+  }
+
+  static exportSingleLayer(layerIndex) {
+    const tilemap = new MapshotTileMap();
+    tilemap.drawSingleLayer(layerIndex);
+
+    this.downloadMapshot(tilemap, `Map${ $gameMap._mapId.padZero(3) }_Layer${ layerIndex + 1 }`);
+  }
+
+  static exportLowerTiles() {
+    const tilemap = new MapshotTileMap();
+    tilemap.drawLowerTiles();
+
+    this.downloadMapshot(tilemap, `Map${ $gameMap._mapId.padZero(3) }_Lower`);
+  }
+
+  static exportUpperTiles() {
+    const tilemap = new MapshotTileMap();
+    tilemap.drawUpperTiles();
+
+    this.downloadMapshot(tilemap, `Map${ $gameMap._mapId.padZero(3) }_Upper`);
+  }
+
+  static exportWholeMap() {
+    const tilemap = new MapshotTileMap();
+    tilemap.drawLowerTiles();
+    tilemap.drawUpperTiles();
+
+    this.downloadMapshot(tilemap, `Map${ $gameMap._mapId.padZero(3) }`);
+  }
+
+  static exportLowEvents() {
+    const tilemap = new MapshotTileMap();
+    tilemap.drawEvents(0);
+
+    this.downloadMapshot(tilemap, `Map${ $gameMap._mapId.padZero(3) }_Events_0`);
+  }
+
+  static exportNormalEvents() {
+    const tilemap = new MapshotTileMap();
+    tilemap.drawEvents(1);
+
+    this.downloadMapshot(tilemap, `Map${ $gameMap._mapId.padZero(3) }_Events_1`);
+  }
+
+  static exportHighEvents() {
+    const tilemap = new MapshotTileMap();
+    tilemap.drawEvents(2);
+
+    this.downloadMapshot(tilemap, `Map${ $gameMap._mapId.padZero(3) }_Events_2`);
+  }
+
+  static exportAllEvents() {
+    const tilemap = new MapshotTileMap();
+    tilemap.drawEvents();
+
+    this.downloadMapshot(tilemap, `Map${ $gameMap._mapId.padZero(3) }_Events`);
   }
 
   static undoButton() {

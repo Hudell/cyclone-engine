@@ -62,6 +62,9 @@
  * ===========================================================================
  * Change Log
  * ===========================================================================
+ * 2020-08-30 - Version 1.03.00
+ *   * Added options to export the map as images
+ *
  * 2020-08-29 - Version 1.02.00
  *   * Created a version of this plugin for Rpg Maker MV
  *   * Changed the way shadows are displayed on the tile list

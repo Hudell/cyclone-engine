@@ -93,6 +93,9 @@ function _createClass(Constructor, protoProps, staticProps) { if (protoProps) _d
  * ===========================================================================
  * Change Log
  * ===========================================================================
+ * 2020-08-30 - Version 1.03.00
+ *   * Added options to export the map as images
+ *
  * 2020-08-29 - Version 1.02.00
  *   * First MV Compatible version
  * ===========================================================================
@@ -1334,6 +1337,148 @@ function _createClass(Constructor, protoProps, staticProps) { if (protoProps) _d
     collisions: 8,
     tags: 9
   };
+
+  var MapshotTileMap = /*#__PURE__*/function (_Bitmap) {
+    _inherits(MapshotTileMap, _Bitmap);
+
+    var _super = _createSuper(MapshotTileMap);
+
+    function MapshotTileMap() {
+      var _this5;
+
+      _classCallCheck(this, MapshotTileMap);
+
+      var tileWidth = $gameMap.tileWidth();
+      var tileHeight = $gameMap.tileHeight();
+      var width = $gameMap.width() * tileWidth;
+      var height = $gameMap.height() * tileHeight;
+      _this5 = _super.call(this, width, height);
+      _this5.flags = $gameMap.tileset().flags;
+      return _this5;
+    }
+
+    _createClass(MapshotTileMap, [{
+      key: "drawSingleLayer",
+      value: function drawSingleLayer(layerIndex) {
+        var width = $gameMap.width();
+        var height = $gameMap.height();
+
+        for (var y = 0; y < height; y++) {
+          for (var _x = 0; _x < width; _x++) {
+            this.drawLayerSpot(_x, y, layerIndex);
+          }
+        }
+      }
+    }, {
+      key: "drawLayerSpot",
+      value: function drawLayerSpot(x, y, z) {
+        var _$dataMap$data$index;
+
+        var filterFn = arguments.length > 3 && arguments[3] !== undefined ? arguments[3] : undefined;
+        var index = CycloneMapEditor.tileIndex(x, y, z);
+        var tileId = (_$dataMap$data$index = $dataMap.data[index]) !== null && _$dataMap$data$index !== void 0 ? _$dataMap$data$index : 0;
+
+        if (filterFn && !filterFn(tileId)) {
+          return;
+        }
+
+        var drawX = x * $gameMap.tileWidth();
+        var drawY = y * $gameMap.tileHeight();
+        this.drawTile(tileId, drawX, drawY);
+      }
+    }, {
+      key: "isHigherTile",
+      value: function isHigherTile(tileId) {
+        return this.flags[tileId] & 0x10;
+      }
+    }, {
+      key: "drawLowerTiles",
+      value: function drawLowerTiles() {
+        var _this6 = this;
+
+        var width = $gameMap.width();
+        var height = $gameMap.height();
+
+        var filterFn = function filterFn(tileId) {
+          return !_this6.isHigherTile(tileId);
+        };
+
+        for (var z = 0; z <= 3; z++) {
+          for (var y = 0; y < height; y++) {
+            for (var _x2 = 0; _x2 < width; _x2++) {
+              this.drawLayerSpot(_x2, y, z, filterFn);
+            }
+          }
+        }
+      }
+    }, {
+      key: "drawUpperTiles",
+      value: function drawUpperTiles() {
+        var _this7 = this;
+
+        var width = $gameMap.width();
+        var height = $gameMap.height();
+
+        var filterFn = function filterFn(tileId) {
+          return _this7.isHigherTile(tileId);
+        };
+
+        for (var z = 0; z <= 3; z++) {
+          for (var y = 0; y < height; y++) {
+            for (var _x3 = 0; _x3 < width; _x3++) {
+              this.drawLayerSpot(_x3, y, z, filterFn);
+            }
+          }
+        }
+      }
+    }, {
+      key: "drawEvents",
+      value: function drawEvents() {
+        var priority = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : undefined;
+
+        var events = SceneManager._scene._spriteset._tilemap.children.filter(function (child) {
+          return child instanceof Sprite_Character;
+        });
+
+        var _iterator7 = _createForOfIteratorHelper(events),
+            _step7;
+
+        try {
+          for (_iterator7.s(); !(_step7 = _iterator7.n()).done;) {
+            var sprite = _step7.value;
+
+            if (sprite._character !== null) {
+              if (sprite._character instanceof Game_Player || sprite._character instanceof Game_Follower || sprite._character instanceof Game_Vehicle) {
+                continue;
+              }
+            }
+
+            sprite.update();
+
+            if (sprite._characterName === '' && sprite._tileId === 0) {
+              continue;
+            }
+
+            if (priority !== undefined && sprite._character._priorityType !== priority) {
+              continue;
+            }
+
+            var _x4 = sprite.x - sprite._frame.width / 2 + $gameMap._displayX * $gameMap.tileWidth();
+
+            var y = sprite.y - sprite._frame.height + $gameMap._displayY * $gameMap.tileHeight();
+            this.blt(sprite.bitmap, sprite._frame.x, sprite._frame.y, sprite._frame.width, sprite._frame.height, _x4, y, sprite._frame.width, sprite._frame.height);
+          }
+        } catch (err) {
+          _iterator7.e(err);
+        } finally {
+          _iterator7.f();
+        }
+      }
+    }]);
+
+    return MapshotTileMap;
+  }(Bitmap);
+
   var layerVisibility = [true, true, true, true, true, false, false, false, false, false];
   var editorActive = true;
   var windowWidth = 408;
@@ -1443,18 +1588,18 @@ function _createClass(Constructor, protoProps, staticProps) { if (protoProps) _d
   var CycloneMapEditor$1 = /*#__PURE__*/function (_CyclonePlugin) {
     _inherits(CycloneMapEditor$1, _CyclonePlugin);
 
-    var _super = _createSuper(CycloneMapEditor$1);
+    var _super2 = _createSuper(CycloneMapEditor$1);
 
     function CycloneMapEditor$1() {
       _classCallCheck(this, CycloneMapEditor$1);
 
-      return _super.apply(this, arguments);
+      return _super2.apply(this, arguments);
     }
 
     _createClass(CycloneMapEditor$1, null, [{
       key: "register",
       value: function register() {
-        var _this5 = this;
+        var _this8 = this;
 
         _get(_getPrototypeOf(CycloneMapEditor$1), "initialize", this).call(this, 'CycloneMapEditor');
 
@@ -1515,35 +1660,35 @@ function _createClass(Constructor, protoProps, staticProps) { if (protoProps) _d
         });
 
         document.addEventListener('keydown', function () {
-          _this5.onKeyDown.apply(_this5, arguments);
+          _this8.onKeyDown.apply(_this8, arguments);
         });
         document.addEventListener('keypress', function () {
-          _this5.onKeyPress.apply(_this5, arguments);
+          _this8.onKeyPress.apply(_this8, arguments);
         });
         document.addEventListener('keyup', function () {
-          _this5.onKeyUp.apply(_this5, arguments);
+          _this8.onKeyUp.apply(_this8, arguments);
         });
         var regionIcons = this.params.regionIcons;
         this.regionIcons = new Map();
 
         if (regionIcons) {
-          var _iterator7 = _createForOfIteratorHelper(regionIcons),
-              _step7;
+          var _iterator8 = _createForOfIteratorHelper(regionIcons),
+              _step8;
 
           try {
-            for (_iterator7.s(); !(_step7 = _iterator7.n()).done;) {
-              var _step7$value = _step7.value,
-                  regionId = _step7$value.regionId,
-                  icon = _step7$value.icon;
+            for (_iterator8.s(); !(_step8 = _iterator8.n()).done;) {
+              var _step8$value = _step8.value,
+                  regionId = _step8$value.regionId,
+                  icon = _step8$value.icon;
 
               if (regionId && icon) {
                 this.regionIcons.set(regionId, icon);
               }
             }
           } catch (err) {
-            _iterator7.e(err);
+            _iterator8.e(err);
           } finally {
-            _iterator7.f();
+            _iterator8.f();
           }
         }
 
@@ -1841,6 +1986,86 @@ function _createClass(Constructor, protoProps, staticProps) { if (protoProps) _d
           label: 'Layer',
           submenu: layerMenu
         }));
+        var exportMenu = new nw.Menu();
+        exportMenu.append(new nw.MenuItem({
+          label: 'Layer 1',
+          click: function click() {
+            CycloneMapEditor$1.exportSingleLayer(0);
+          }
+        }));
+        exportMenu.append(new nw.MenuItem({
+          label: 'Layer 2',
+          click: function click() {
+            CycloneMapEditor$1.exportSingleLayer(1);
+          }
+        }));
+        exportMenu.append(new nw.MenuItem({
+          label: 'Layer 3',
+          click: function click() {
+            CycloneMapEditor$1.exportSingleLayer(2);
+          }
+        }));
+        exportMenu.append(new nw.MenuItem({
+          label: 'Layer 4',
+          click: function click() {
+            CycloneMapEditor$1.exportSingleLayer(3);
+          }
+        }));
+        exportMenu.append(new nw.MenuItem({
+          type: 'separator'
+        }));
+        exportMenu.append(new nw.MenuItem({
+          label: 'Lower Tiles',
+          click: function click() {
+            CycloneMapEditor$1.exportLowerTiles();
+          }
+        }));
+        exportMenu.append(new nw.MenuItem({
+          label: 'Upper Tiles',
+          click: function click() {
+            CycloneMapEditor$1.exportUpperTiles();
+          }
+        }));
+        exportMenu.append(new nw.MenuItem({
+          type: 'separator'
+        }));
+        exportMenu.append(new nw.MenuItem({
+          label: 'Whole Map',
+          click: function click() {
+            CycloneMapEditor$1.exportWholeMap();
+          }
+        }));
+        exportMenu.append(new nw.MenuItem({
+          type: 'separator'
+        }));
+        exportMenu.append(new nw.MenuItem({
+          label: 'Low Events',
+          click: function click() {
+            CycloneMapEditor$1.exportLowEvents();
+          }
+        }));
+        exportMenu.append(new nw.MenuItem({
+          label: 'Normal Events',
+          click: function click() {
+            CycloneMapEditor$1.exportNormalEvents();
+          }
+        }));
+        exportMenu.append(new nw.MenuItem({
+          label: 'High Events',
+          click: function click() {
+            CycloneMapEditor$1.exportHighEvents();
+          }
+        }));
+        exportMenu.append(new nw.MenuItem({
+          label: 'All Events',
+          click: function click() {
+            CycloneMapEditor$1.exportAllEvents();
+          }
+        }));
+        menu.append(new nw.MenuItem({
+          label: 'Export',
+          submenu: exportMenu
+        }));
         var helpMenu = new nw.Menu();
         helpMenu.append(new nw.MenuItem({
           label: 'Plugin Page',
@@ -1904,7 +2129,7 @@ function _createClass(Constructor, protoProps, staticProps) { if (protoProps) _d
     }, {
       key: "refreshScreenSize",
       value: function refreshScreenSize() {
-        var _this6 = this;
+        var _this9 = this;
 
         if (this.resizeTimeout) {
           clearTimeout(this.resizeTimeout);
@@ -1916,8 +2141,8 @@ function _createClass(Constructor, protoProps, staticProps) { if (protoProps) _d
 
         this.resizeTimeout = setTimeout(function () {
           // Adds a second timeout to block the show/hide functionality for a little while
-          _this6.resizeTimeout = setTimeout(function () {
-            _this6.resizeTimeout = false;
+          _this9.resizeTimeout = setTimeout(function () {
+            _this9.resizeTimeout = false;
           }, 500);
           var xDelta = Graphics.width - window.innerWidth;
           var yDelta = Graphics.height - window.innerHeight;
@@ -1968,10 +2193,10 @@ function _createClass(Constructor, protoProps, staticProps) { if (protoProps) _d
     }, {
       key: "validTabs",
       value: function validTabs() {
-        var _this7 = this;
+        var _this10 = this;
 
         return tabs.filter(function (tab) {
-          return _this7.isTabValid(tab);
+          return _this10.isTabValid(tab);
         });
       }
     }, {
@@ -2172,6 +2397,100 @@ function _createClass(Constructor, protoProps, staticProps) { if (protoProps) _d
         };
 
         xhr.send();
+      }
+    }, {
+      key: "downloadMapshot",
+      value: function downloadMapshot(bitmap, fileName) {
+        var imageType = 'png';
+        var imageQuality = 1;
+        var urlData = bitmap.canvas.toDataURL(imageType, imageQuality);
+        var strippedData = urlData.replace(/^data:image\/png;base64,/, '');
+        var data = atob(strippedData);
+        var buffer = new ArrayBuffer(data.length);
+        var view = new Uint8Array(buffer);
+
+        for (var i = 0; i < data.length; i++) {
+          view[i] = data.charCodeAt(i) & 0xff;
+        }
+
+        var blob = new Blob([buffer], {
+          type: 'application/octet-stream'
+        });
+        var url = URL.createObjectURL(blob);
+        var iframe = document.getElementsByName('image_download')[0];
+
+        if (!iframe) {
+          iframe = document.createElement('iframe');
+          iframe.setAttribute('name', 'image_download');
+          iframe.style.display = 'none';
+          document.body.appendChild(iframe);
+        }
+
+        var element = document.createElement('a');
+        element.setAttribute('href', url);
+        element.setAttribute('download', fileName + '.png');
+        element.setAttribute('target', 'image_download');
+        element.style.display = 'none';
+        document.body.appendChild(element);
+        element.click();
+        document.body.removeChild(element);
+      }
+    }, {
+      key: "exportSingleLayer",
+      value: function exportSingleLayer(layerIndex) {
+        var tilemap = new MapshotTileMap();
+        tilemap.drawSingleLayer(layerIndex);
+        this.downloadMapshot(tilemap, "Map".concat($gameMap._mapId.padZero(3), "_Layer").concat(layerIndex + 1));
+      }
+    }, {
+      key: "exportLowerTiles",
+      value: function exportLowerTiles() {
+        var tilemap = new MapshotTileMap();
+        tilemap.drawLowerTiles();
+        this.downloadMapshot(tilemap, "Map".concat($gameMap._mapId.padZero(3), "_Lower"));
+      }
+    }, {
+      key: "exportUpperTiles",
+      value: function exportUpperTiles() {
+        var tilemap = new MapshotTileMap();
+        tilemap.drawUpperTiles();
+        this.downloadMapshot(tilemap, "Map".concat($gameMap._mapId.padZero(3), "_Upper"));
+      }
+    }, {
+      key: "exportWholeMap",
+      value: function exportWholeMap() {
+        var tilemap = new MapshotTileMap();
+        tilemap.drawLowerTiles();
+        tilemap.drawUpperTiles();
+        this.downloadMapshot(tilemap, "Map".concat($gameMap._mapId.padZero(3)));
+      }
+    }, {
+      key: "exportLowEvents",
+      value: function exportLowEvents() {
+        var tilemap = new MapshotTileMap();
+        tilemap.drawEvents(0);
+        this.downloadMapshot(tilemap, "Map".concat($gameMap._mapId.padZero(3), "_Events_0"));
+      }
+    }, {
+      key: "exportNormalEvents",
+      value: function exportNormalEvents() {
+        var tilemap = new MapshotTileMap();
+        tilemap.drawEvents(1);
+        this.downloadMapshot(tilemap, "Map".concat($gameMap._mapId.padZero(3), "_Events_1"));
+      }
+    }, {
+      key: "exportHighEvents",
+      value: function exportHighEvents() {
+        var tilemap = new MapshotTileMap();
+        tilemap.drawEvents(2);
+        this.downloadMapshot(tilemap, "Map".concat($gameMap._mapId.padZero(3), "_Events_2"));
+      }
+    }, {
+      key: "exportAllEvents",
+      value: function exportAllEvents() {
+        var tilemap = new MapshotTileMap();
+        tilemap.drawEvents();
+        this.downloadMapshot(tilemap, "Map".concat($gameMap._mapId.padZero(3), "_Events"));
       }
     }, {
       key: "undoButton",
@@ -2703,7 +3022,7 @@ function _createClass(Constructor, protoProps, staticProps) { if (protoProps) _d
     }, {
       key: "getWallColumnTypeForPosition",
       value: function getWallColumnTypeForPosition(x, y, z, tileId) {
-        var _this8 = this;
+        var _this11 = this;
 
         var skipPreview = arguments.length > 4 && arguments[4] !== undefined ? arguments[4] : true;
         // wall auto tiles need the left and right columns to have the same amount of rows for it to match
@@ -2711,9 +3030,9 @@ function _createClass(Constructor, protoProps, staticProps) { if (protoProps) _d
         var hasRightColumn = true;
 
         var compareWallAutoTileLine = function compareWallAutoTileLine(newY, sameCenter) {
-          var leftTileId = _this8.getCurrentTileAtPosition(x - 1, newY, z, skipPreview);
+          var leftTileId = _this11.getCurrentTileAtPosition(x - 1, newY, z, skipPreview);
 
-          var rightTileId = _this8.getCurrentTileAtPosition(x + 1, newY, z, skipPreview);
+          var rightTileId = _this11.getCurrentTileAtPosition(x + 1, newY, z, skipPreview);
 
           if (sameCenter) {
             if (!Tilemap.isSameKindTile(tileId, leftTileId)) {
@@ -3202,26 +3521,26 @@ function _createClass(Constructor, protoProps, staticProps) { if (protoProps) _d
 
         var itemsToChange = this.getItemsToChange(x, y, z, tileId, !previewOnly, updateNeighbors);
 
-        var _iterator8 = _createForOfIteratorHelper(itemsToChange),
-            _step8;
+        var _iterator9 = _createForOfIteratorHelper(itemsToChange),
+            _step9;
 
         try {
-          for (_iterator8.s(); !(_step8 = _iterator8.n()).done;) {
-            var _step8$value = _step8.value,
-                _x = _step8$value.x,
-                _y = _step8$value.y,
-                _z = _step8$value.z,
-                _tileId = _step8$value.tileId;
+          for (_iterator9.s(); !(_step9 = _iterator9.n()).done;) {
+            var _step9$value = _step9.value,
+                _x5 = _step9$value.x,
+                _y = _step9$value.y,
+                _z = _step9$value.z,
+                _tileId = _step9$value.tileId;
 
             if (_z > 5) {
               continue;
             }
 
-            var tileIndex = this.tileIndex(_x, _y, _z);
+            var tileIndex = this.tileIndex(_x5, _y, _z);
             var effectiveTileId = _tileId;
 
             if (Tilemap.isAutotile(_tileId)) {
-              effectiveTileId = this.changeAutoTileShapeForPosition(_x, _y, _z, _tileId, false);
+              effectiveTileId = this.changeAutoTileShapeForPosition(_x5, _y, _z, _tileId, false);
             }
 
             if (previewOnly) {
@@ -3236,12 +3555,12 @@ function _createClass(Constructor, protoProps, staticProps) { if (protoProps) _d
               $dataMap.data[tileIndex] = effectiveTileId;
             }
 
-            this.maybeUpdateTileNeighbors(_x, _y, _z, updateNeighbors, previewOnly);
+            this.maybeUpdateTileNeighbors(_x5, _y, _z, updateNeighbors, previewOnly);
           }
         } catch (err) {
-          _iterator8.e(err);
+          _iterator9.e(err);
         } finally {
-          _iterator8.f();
+          _iterator9.f();
         }
       }
     }, {
@@ -3336,13 +3655,13 @@ function _createClass(Constructor, protoProps, staticProps) { if (protoProps) _d
     }, {
       key: "getHighestLayerOnArea",
       value: function getHighestLayerOnArea(startX, startY, width, height) {
-        var _this9 = this;
+        var _this12 = this;
 
         var highestLayer = function () {
           for (var z = 3; z >= 1; z--) {
             for (var tileY = startY; tileY < startY + height; tileY++) {
               for (var tileX = startX; tileX < startX + width; tileX++) {
-                var tileIndex = _this9.tileIndex(tileX, tileY, z);
+                var tileIndex = _this12.tileIndex(tileX, tileY, z);
 
                 var tileId = $dataMap.data[tileIndex];
 
@@ -3425,7 +3744,7 @@ function _createClass(Constructor, protoProps, staticProps) { if (protoProps) _d
     }, {
       key: "maybeRefreshGrid",
       value: function maybeRefreshGrid() {
-        var _this10 = this;
+        var _this13 = this;
 
         if (currentLayer !== 5) {
           return;
@@ -3438,7 +3757,7 @@ function _createClass(Constructor, protoProps, staticProps) { if (protoProps) _d
 
             if (gridNeedsRefresh) {
               setTimeout(function () {
-                _this10.maybeRefreshGrid();
+                _this13.maybeRefreshGrid();
               }, 50);
             }
           }, 50);
@@ -3462,7 +3781,7 @@ function _createClass(Constructor, protoProps, staticProps) { if (protoProps) _d
     }, {
       key: "copyAutoRectangle",
       value: function copyAutoRectangle(startX, startY, width, height) {
-        var _this11 = this;
+        var _this14 = this;
 
         for (var z = 0; z <= 3; z++) {
           multiLayerSelection[z] = Array(width * height);
@@ -3470,7 +3789,7 @@ function _createClass(Constructor, protoProps, staticProps) { if (protoProps) _d
 
         this.iterateRectangle(startX, startY, width, height, function (tileX, tileY, index) {
           for (var _z2 = 0; _z2 <= 3; _z2++) {
-            var tileIndex = _this11.tileIndex(tileX, tileY, _z2);
+            var tileIndex = _this14.tileIndex(tileX, tileY, _z2);
 
             multiLayerSelection[_z2][index] = $dataMap.data[tileIndex] || 0;
             selectedTileList[index] = $dataMap.data[tileIndex] || selectedTileList[index] || 0;
@@ -3516,7 +3835,7 @@ function _createClass(Constructor, protoProps, staticProps) { if (protoProps) _d
     }, {
       key: "copyHigherAutoRectangle",
       value: function copyHigherAutoRectangle(startX, startY, width, height) {
-        var _this12 = this;
+        var _this15 = this;
 
         for (var z = 0; z <= 3; z++) {
           multiLayerSelection[z] = Array(width * height);
@@ -3525,24 +3844,24 @@ function _createClass(Constructor, protoProps, staticProps) { if (protoProps) _d
         var foundAny = false;
 
         var _loop = function _loop(_z3) {
-          if (!_this12.isLayerVisible(_z3)) {
+          if (!_this15.isLayerVisible(_z3)) {
             return "continue";
           }
 
-          _this12.iterateRectangle(startX, startY, width, height, function (tileX, tileY, index) {
-            var tileIndex = _this12.tileIndex(tileX, tileY, _z3);
+          _this15.iterateRectangle(startX, startY, width, height, function (tileX, tileY, index) {
+            var tileIndex = _this15.tileIndex(tileX, tileY, _z3);
 
             multiLayerSelection[_z3][index] = $dataMap.data[tileIndex] || 0;
             selectedTileList[index] = $dataMap.data[tileIndex] || selectedTileList[index] || 0;
 
-            _this12._selectTileIfNoneSelectedYet(selectedTileList[index]);
+            _this15._selectTileIfNoneSelectedYet(selectedTileList[index]);
 
             if ($dataMap.data[tileIndex]) {
               foundAny = true;
             }
           });
 
-          if (_this12._shouldSkipRemainingLayersCopy(foundAny, _z3)) {
+          if (_this15._shouldSkipRemainingLayersCopy(foundAny, _z3)) {
             return {
               v: void 0
             };
@@ -3559,28 +3878,28 @@ function _createClass(Constructor, protoProps, staticProps) { if (protoProps) _d
     }, {
       key: "copyHigherRectangle",
       value: function copyHigherRectangle(startX, startY, width, height) {
-        var _this13 = this;
+        var _this16 = this;
 
         var foundAny = false;
 
         var _loop2 = function _loop2(z) {
-          if (!_this13.isLayerVisible(z)) {
+          if (!_this16.isLayerVisible(z)) {
             return "continue";
           }
 
-          _this13.iterateRectangle(startX, startY, width, height, function (tileX, tileY, index) {
-            var tileIndex = _this13.tileIndex(tileX, tileY, z);
+          _this16.iterateRectangle(startX, startY, width, height, function (tileX, tileY, index) {
+            var tileIndex = _this16.tileIndex(tileX, tileY, z);
 
             selectedTileList[index] = selectedTileList[index] || $dataMap.data[tileIndex] || 0;
 
-            _this13._selectTileIfNoneSelectedYet(selectedTileList[index]);
+            _this16._selectTileIfNoneSelectedYet(selectedTileList[index]);
 
             if ($dataMap.data[tileIndex]) {
               foundAny = true;
             }
           });
 
-          if (_this13._shouldSkipRemainingLayersCopy(foundAny, z)) {
+          if (_this16._shouldSkipRemainingLayersCopy(foundAny, z)) {
             return {
               v: void 0
             };
@@ -3597,14 +3916,14 @@ function _createClass(Constructor, protoProps, staticProps) { if (protoProps) _d
     }, {
       key: "copyManualRectangle",
       value: function copyManualRectangle(startX, startY, width, height) {
-        var _this14 = this;
+        var _this17 = this;
 
         this.iterateRectangle(startX, startY, width, height, function (tileX, tileY, index) {
-          var tileIndex = _this14.tileIndex(tileX, tileY, currentLayer);
+          var tileIndex = _this17.tileIndex(tileX, tileY, currentLayer);
 
           selectedTileList[index] = $dataMap.data[tileIndex] || 0;
 
-          _this14._selectTileIfNoneSelectedYet(selectedTileList[index]);
+          _this17._selectTileIfNoneSelectedYet(selectedTileList[index]);
         });
       }
     }, {
@@ -3748,24 +4067,24 @@ function _createClass(Constructor, protoProps, staticProps) { if (protoProps) _d
         var workLayer = currentLayer <= 3 ? currentLayer : 0;
         currentChange = {};
 
-        var _iterator9 = _createForOfIteratorHelper(affectedArea),
-            _step9;
+        var _iterator10 = _createForOfIteratorHelper(affectedArea),
+            _step10;
 
         try {
-          for (_iterator9.s(); !(_step9 = _iterator9.n()).done;) {
-            var tileIndex = _step9.value;
+          for (_iterator10.s(); !(_step10 = _iterator10.n()).done;) {
+            var tileIndex = _step10.value;
             var y = this.indexPositionY(tileIndex, workLayer);
 
-            var _x2 = tileIndex - this.tileIndex(0, y, workLayer);
+            var _x6 = tileIndex - this.tileIndex(0, y, workLayer);
 
-            var xDiff = (_x2 + width - mapX) % tileCols;
+            var xDiff = (_x6 + width - mapX) % tileCols;
             var yDiff = (y + height - mapY) % tileRows;
-            this.setSelectionTileMaybeMultiLayer(_x2, y, xDiff, yDiff, false);
+            this.setSelectionTileMaybeMultiLayer(_x6, y, xDiff, yDiff, false);
           }
         } catch (err) {
-          _iterator9.e(err);
+          _iterator10.e(err);
         } finally {
-          _iterator9.f();
+          _iterator10.f();
         }
 
         this.logChange();
@@ -3797,17 +4116,17 @@ function _createClass(Constructor, protoProps, staticProps) { if (protoProps) _d
         var index = 0;
 
         for (var y = mapY; y < mapY + tileRows; y++) {
-          for (var _x3 = mapX; _x3 < mapX + tileCols; _x3++) {
-            if (!$gameMap.isValid(_x3, y)) {
+          for (var _x7 = mapX; _x7 < mapX + tileCols; _x7++) {
+            if (!$gameMap.isValid(_x7, y)) {
               continue;
             }
 
             if (currentLayer === 7 && multiLayerSelection.length) {
               for (var z = 0; z <= 3; z++) {
-                this.setMapTile(_x3, y, z, multiLayerSelection[z][index]);
+                this.setMapTile(_x7, y, z, multiLayerSelection[z][index]);
               }
             } else {
-              this.setMapTile(_x3, y, currentLayer, selectedTileList[index]);
+              this.setMapTile(_x7, y, currentLayer, selectedTileList[index]);
             }
 
             index++;
@@ -4753,12 +5072,12 @@ function _createClass(Constructor, protoProps, staticProps) { if (protoProps) _d
   var WindowCycloneGrid = /*#__PURE__*/function (_Window_Base) {
     _inherits(WindowCycloneGrid, _Window_Base);
 
-    var _super2 = _createSuper(WindowCycloneGrid);
+    var _super3 = _createSuper(WindowCycloneGrid);
 
     function WindowCycloneGrid() {
       _classCallCheck(this, WindowCycloneGrid);
 
-      return _super2.apply(this, arguments);
+      return _super3.apply(this, arguments);
     }
 
     _createClass(WindowCycloneGrid, [{
@@ -4922,8 +5241,8 @@ function _createClass(Constructor, protoProps, staticProps) { if (protoProps) _d
         var rightPos = Math.min(Graphics.width, mapEndX);
         var bottomPos = Math.min(Graphics.height, mapEndY);
 
-        for (var _x4 = mapStartX; _x4 < rightPos; _x4 += drawWidth) {
-          if (_x4 + drawWidth < 0) {
+        for (var _x8 = mapStartX; _x8 < rightPos; _x8 += drawWidth) {
+          if (_x8 + drawWidth < 0) {
             continue;
           }
 
@@ -4932,7 +5251,7 @@ function _createClass(Constructor, protoProps, staticProps) { if (protoProps) _d
               continue;
             }
 
-            this.drawCell(_x4, y);
+            this.drawCell(_x8, y);
           }
         }
       }
@@ -4974,12 +5293,12 @@ function _createClass(Constructor, protoProps, staticProps) { if (protoProps) _d
   var WindowCycloneMapEditorCommands = /*#__PURE__*/function (_Window_Command) {
     _inherits(WindowCycloneMapEditorCommands, _Window_Command);
 
-    var _super3 = _createSuper(WindowCycloneMapEditorCommands);
+    var _super4 = _createSuper(WindowCycloneMapEditorCommands);
 
     function WindowCycloneMapEditorCommands() {
       _classCallCheck(this, WindowCycloneMapEditorCommands);
 
-      return _super3.apply(this, arguments);
+      return _super4.apply(this, arguments);
     }
 
     _createClass(WindowCycloneMapEditorCommands, [{
@@ -4998,47 +5317,47 @@ function _createClass(Constructor, protoProps, staticProps) { if (protoProps) _d
     }, {
       key: "configureHandlers",
       value: function configureHandlers() {
-        var _this15 = this;
+        var _this18 = this;
 
         this.setHandler('undo', function () {
           CycloneMapEditor.undoButton();
 
-          _this15.activate();
+          _this18.activate();
         });
         this.setHandler('redo', function () {
           CycloneMapEditor.redoButton();
 
-          _this15.activate();
+          _this18.activate();
         });
         this.setHandler('pencil', function () {
           CycloneMapEditor.pencilButton();
 
-          _this15.activate();
+          _this18.activate();
         });
         this.setHandler('rectangle', function () {
           CycloneMapEditor.rectangleButton();
 
-          _this15.activate();
+          _this18.activate();
         });
         this.setHandler('fill', function () {
           CycloneMapEditor.fillButton();
 
-          _this15.activate();
+          _this18.activate();
         });
         this.setHandler('eraser', function () {
           CycloneMapEditor.eraserButton();
 
-          _this15.activate();
+          _this18.activate();
         });
         this.setHandler('save', function () {
           CycloneMapEditor.saveButton();
 
-          _this15.activate();
+          _this18.activate();
         });
         this.setHandler('reload', function () {
           CycloneMapEditor.reloadButton();
 
-          _this15.activate();
+          _this18.activate();
         });
       }
     }, {
@@ -5183,12 +5502,12 @@ function _createClass(Constructor, protoProps, staticProps) { if (protoProps) _d
   var WindowCycloneMapEditorLayerList = /*#__PURE__*/function (_Window_Base2) {
     _inherits(WindowCycloneMapEditorLayerList, _Window_Base2);
 
-    var _super4 = _createSuper(WindowCycloneMapEditorLayerList);
+    var _super5 = _createSuper(WindowCycloneMapEditorLayerList);
 
     function WindowCycloneMapEditorLayerList() {
       _classCallCheck(this, WindowCycloneMapEditorLayerList);
 
-      return _super4.apply(this, arguments);
+      return _super5.apply(this, arguments);
     }
 
     _createClass(WindowCycloneMapEditorLayerList, [{
@@ -5237,18 +5556,18 @@ function _createClass(Constructor, protoProps, staticProps) { if (protoProps) _d
           this.drawText(names[i], 40, i * 30, CycloneMapEditor.windowWidth / 2 - 40, 'left');
 
           if (names[i + 4]) {
-            var _x5 = CycloneMapEditor.windowWidth / 2;
+            var _x9 = CycloneMapEditor.windowWidth / 2;
 
             if (i !== 3) {
-              ctx.drawImage(CycloneMapEditor.layerVisibility[i + 4] ? visibleIcon : hiddenIcon, _x5 - 4, 30 * i - 4, 48, 48);
-              _x5 += 40;
+              ctx.drawImage(CycloneMapEditor.layerVisibility[i + 4] ? visibleIcon : hiddenIcon, _x9 - 4, 30 * i - 4, 48, 48);
+              _x9 += 40;
             } else {
-              _x5 += 10;
+              _x9 += 10;
             }
 
             this.contents.fontBold = CycloneMapEditor.currentLayer === i + 4;
             this.changeTextColor(CycloneMapEditor.currentLayer === i + 4 ? ColorManager.powerUpColor() : ColorManager.normalColor());
-            this.drawText(names[i + 4], _x5, i * 30, CycloneMapEditor.windowWidth / 2 - 40, 'left');
+            this.drawText(names[i + 4], _x9, i * 30, CycloneMapEditor.windowWidth / 2 - 40, 'left');
           }
         }
       }
@@ -5311,12 +5630,12 @@ function _createClass(Constructor, protoProps, staticProps) { if (protoProps) _d
   var WindowCycloneMapEditorStatus = /*#__PURE__*/function (_Window_Base3) {
     _inherits(WindowCycloneMapEditorStatus, _Window_Base3);
 
-    var _super5 = _createSuper(WindowCycloneMapEditorStatus);
+    var _super6 = _createSuper(WindowCycloneMapEditorStatus);
 
     function WindowCycloneMapEditorStatus() {
       _classCallCheck(this, WindowCycloneMapEditorStatus);
 
-      return _super5.apply(this, arguments);
+      return _super6.apply(this, arguments);
     }
 
     _createClass(WindowCycloneMapEditorStatus, [{
@@ -5416,12 +5735,12 @@ function _createClass(Constructor, protoProps, staticProps) { if (protoProps) _d
   var WindowCycloneMapEditor = /*#__PURE__*/function (_Window_Command2) {
     _inherits(WindowCycloneMapEditor, _Window_Command2);
 
-    var _super6 = _createSuper(WindowCycloneMapEditor);
+    var _super7 = _createSuper(WindowCycloneMapEditor);
 
     function WindowCycloneMapEditor() {
       _classCallCheck(this, WindowCycloneMapEditor);
 
-      return _super6.apply(this, arguments);
+      return _super7.apply(this, arguments);
     }
 
     _createClass(WindowCycloneMapEditor, [{
@@ -5630,7 +5949,7 @@ function _createClass(Constructor, protoProps, staticProps) { if (protoProps) _d
     }, {
       key: "drawItem",
       value: function drawItem(index) {
-        var _this16 = this;
+        var _this19 = this;
 
         this.resetTextColor();
         this.changePaintOpacity(this.isCommandEnabled(index));
@@ -5655,7 +5974,7 @@ function _createClass(Constructor, protoProps, staticProps) { if (protoProps) _d
 
         if (!bitmap.isReady() && bitmap._loadListeners.length < 2) {
           bitmap.addLoadListener(function () {
-            _this16._needsRefresh = true;
+            _this19._needsRefresh = true;
           });
         }
       }
@@ -5678,21 +5997,21 @@ function _createClass(Constructor, protoProps, staticProps) { if (protoProps) _d
           if (isSelected) {
             this._selectionIndex = index;
           } else {
-            var _iterator10 = _createForOfIteratorHelper(CycloneMapEditor.selectedTileList),
-                _step10;
+            var _iterator11 = _createForOfIteratorHelper(CycloneMapEditor.selectedTileList),
+                _step11;
 
             try {
-              for (_iterator10.s(); !(_step10 = _iterator10.n()).done;) {
-                var tileId = _step10.value;
+              for (_iterator11.s(); !(_step11 = _iterator11.n()).done;) {
+                var tileId = _step11.value;
 
                 if (Tilemap.isSameKindTile(tileId, item.name)) {
                   isSelected = true;
                 }
               }
             } catch (err) {
-              _iterator10.e(err);
+              _iterator11.e(err);
             } finally {
-              _iterator10.f();
+              _iterator11.f();
             }
           }
 
@@ -5828,8 +6147,8 @@ function _createClass(Constructor, protoProps, staticProps) { if (protoProps) _d
         var selectionIndex = 0;
 
         for (var y = topRow; y < topRow + CycloneMapEditor.tileRows; y++) {
-          for (var _x6 = leftCol; _x6 < leftCol + CycloneMapEditor.tileCols; _x6++) {
-            var newIndex = y * maxCols + _x6;
+          for (var _x10 = leftCol; _x10 < leftCol + CycloneMapEditor.tileCols; _x10++) {
+            var newIndex = y * maxCols + _x10;
             var newTileId = this.commandName(newIndex);
             CycloneMapEditor.selectedTileList[selectionIndex] = newTileId;
             selectionIndex++;
@@ -6338,12 +6657,12 @@ function _createClass(Constructor, protoProps, staticProps) { if (protoProps) _d
   var SpriteMapEditorCursor = /*#__PURE__*/function (_Sprite) {
     _inherits(SpriteMapEditorCursor, _Sprite);
 
-    var _super7 = _createSuper(SpriteMapEditorCursor);
+    var _super8 = _createSuper(SpriteMapEditorCursor);
 
     function SpriteMapEditorCursor() {
       _classCallCheck(this, SpriteMapEditorCursor);
 
-      return _super7.apply(this, arguments);
+      return _super8.apply(this, arguments);
     }
 
     _createClass(SpriteMapEditorCursor, [{
@@ -6465,28 +6784,28 @@ function _createClass(Constructor, protoProps, staticProps) { if (protoProps) _d
           var column = 0;
           var row = 0;
 
-          var _iterator11 = _createForOfIteratorHelper(CycloneMapEditor.multiLayerSelection[z]),
-              _step11;
+          var _iterator12 = _createForOfIteratorHelper(CycloneMapEditor.multiLayerSelection[z]),
+              _step12;
 
           try {
-            for (_iterator11.s(); !(_step11 = _iterator11.n()).done;) {
-              var tileId = _step11.value;
+            for (_iterator12.s(); !(_step12 = _iterator12.n()).done;) {
+              var tileId = _step12.value;
 
               if (column >= CycloneMapEditor.tileCols) {
                 column = 0;
                 row++;
               }
 
-              var _x7 = column * CycloneMapEditor.tileWidth;
+              var _x11 = column * CycloneMapEditor.tileWidth;
 
               var y = row * CycloneMapEditor.tileHeight;
-              this.bitmap.drawTile(tileId, _x7, y);
+              this.bitmap.drawTile(tileId, _x11, y);
               column++;
             }
           } catch (err) {
-            _iterator11.e(err);
+            _iterator12.e(err);
           } finally {
-            _iterator11.f();
+            _iterator12.f();
           }
         }
       }
@@ -6501,36 +6820,36 @@ function _createClass(Constructor, protoProps, staticProps) { if (protoProps) _d
         var column = 0;
         var row = 0;
 
-        var _iterator12 = _createForOfIteratorHelper(CycloneMapEditor.selectedTileList),
-            _step12;
+        var _iterator13 = _createForOfIteratorHelper(CycloneMapEditor.selectedTileList),
+            _step13;
 
         try {
-          for (_iterator12.s(); !(_step12 = _iterator12.n()).done;) {
-            var tileId = _step12.value;
+          for (_iterator13.s(); !(_step13 = _iterator13.n()).done;) {
+            var tileId = _step13.value;
 
             if (column >= CycloneMapEditor.tileCols) {
               column = 0;
               row++;
             }
 
-            var _x8 = column * CycloneMapEditor.tileWidth;
+            var _x12 = column * CycloneMapEditor.tileWidth;
 
             var y = row * CycloneMapEditor.tileHeight;
 
             if (CycloneMapEditor.currentLayer === 5) {
-              this.bitmap.drawRegion(tileId, _x8, y);
+              this.bitmap.drawRegion(tileId, _x12, y);
             } else if (CycloneMapEditor.currentLayer === 4) {
-              this.bitmap.drawShadow(tileId, _x8, y);
+              this.bitmap.drawShadow(tileId, _x12, y);
             } else {
-              this.bitmap.drawTile(tileId, _x8, y);
+              this.bitmap.drawTile(tileId, _x12, y);
             }
 
             column++;
           }
         } catch (err) {
-          _iterator12.e(err);
+          _iterator13.e(err);
         } finally {
-          _iterator12.f();
+          _iterator13.f();
         }
       }
     }, {

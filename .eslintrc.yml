@@ -41,6 +41,7 @@ globals:
   Sprite_Clickable: false
   Sprite_Balloon: false
   Sprite_Animation: false
+  Sprite_Character: false
 
   Game_Player: false
   Game_Event: false
@@ -48,6 +49,8 @@ globals:
   Game_Variables: false
   Game_Interpreter: false
   Game_Party: false
+  Game_Follower: false
+  Game_Vehicle: false
 
   Window_Base: false
   Window_Selectable: false
