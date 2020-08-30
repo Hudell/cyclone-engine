@@ -141,7 +141,7 @@ class CyclonePlugin {
       // Tap into rpg maker core so we can update our interpreters in sync with the engine
       const oldUpdateMain = SceneManager.updateMain;
       SceneManager.updateMain = () => {
-        oldUpdateMain.call(this);
+        oldUpdateMain.call(SceneManager);
         this.update();
       };
     }
