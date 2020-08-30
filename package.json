@@ -3,7 +3,9 @@
   "version": "1.0.0",
   "description": "RPG Maker MZ Plugins",
   "scripts": {
-    "editor": "cd Map-Editor & rollup -cw"
+    "editor": "cd source/Map-Editor & rollup -cw",
+    "editor-mv": "cd source/Map-Editor-MV & rollup -cw",
+    "maps": "cd source/Maps & rollup -cw"
   },
   "author": "Hudell",
   "license": "Apache2",

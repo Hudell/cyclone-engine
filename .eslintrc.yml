@@ -69,6 +69,7 @@ globals:
 
   CyclonePlugin: true
   CycloneMapEditor: true
+  CycloneMaps: true
 rules:
   indent:
     - warn

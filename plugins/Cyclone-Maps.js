@@ -22,7 +22,7 @@
  *   `"Ybbd8"'     Y88'     `"Ybbd8"' 88  `"YbbdP"'  88       88  `"Ybbd8"'
  *                 d8'
  *                d8'
- * Advanced Map Features 1.00.00                                     by Hudell
+ * Advanced Map Features                                             by Hudell
  * ===========================================================================
  * Terms of Use
  * ===========================================================================
@@ -63,6 +63,15 @@
  * Did you know?
  * Early maps used to have the east side on top. That's the origin of the verb
  * "to orient", which meant putting the orient (east) on its correct position.
+ * ===========================================================================
+ * Change Log
+ * ===========================================================================
+ * 2020-08-30 - Version 1.01.00
+ *   * Fixed issue with fog opacity not going down
+ *   * Removed Cyclone Core Dependency
+ *
+ *
+ * 2020-08-23 - Version 1.00.00
  * ===========================================================================
  * Instructions
  * ===========================================================================
@@ -448,21 +457,644 @@
  * @type string
  * @desc The name of this region
  */
+(function () {
+'use strict';
 
-CycloneEngine.requireVersion(2, 'CycloneMaps');
+const trueStrings = Object.freeze(['TRUE', 'ON', '1', 'YES', 'T', 'V' ]);
 
-class CycloneMaps extends CyclonePlugin {
+class CyclonePlugin {
+  static initialize(pluginName) {
+    this.pluginName = pluginName;
+    this.fileName = undefined;
+    this.superClasses = new Map();
+    this.params = {};
+    this.structs = new Map();
+    this.eventListeners = new Map();
+
+    this.structs.set('Dictionary', {
+      name: {
+        type: 'string',
+        defaultValue: '',
+      },
+      value: {
+        type: 'string',
+        defaultValue: '',
+      },
+    });
+  }
+
+  static register(paramMap = {}) {
+    const dataMap = this.loadAllParams();
+    this.params = this.loadParamMap(paramMap, dataMap);
+  }
+
+  static loadAllParams() {
+    for (const plugin of globalThis.$plugins) {
+      if (!plugin?.status) {
+        continue;
+      }
+      if (!plugin?.description?.includes(`<pluginName:${ this.pluginName }`)) {
+        continue;
+      }
+
+      this.fileName = plugin.name;
+      const pluginParams = new Map();
+
+      for (const paramName in plugin.parameters) {
+        if (!paramName || paramName.startsWith('-')) {
+          continue;
+        }
+
+        pluginParams.set(paramName, plugin.parameters[paramName]);
+      }
+
+      return pluginParams;
+    }
+  }
+
+  static loadParamMap(paramMap, dataMap = undefined) {
+    const params = {};
+
+    for (const key in paramMap) {
+      if (!paramMap.hasOwnProperty(key)) {
+        continue;
+      }
+
+      try {
+        params[key] = this.parseParam(key, paramMap, dataMap);
+      } catch(e) {
+        console.error(`CycloneEngine crashed while trying to parse a parameter value (${ key }). Please report the following error to Hudell:`);
+        console.log(e);
+      }
+    }
+
+    return params;
+  }
+
+  static registerEvent(eventName, callback) {
+    if (!this.eventListeners.has(eventName)) {
+      this.eventListeners.set(eventName, new Set());
+    }
+
+    const listeners = this.eventListeners.get(eventName);
+    listeners.add(callback);
+  }
+
+  static removeEventListener(eventName, callback) {
+    if (!this.eventListeners.has(eventName)) {
+      return;
+    }
+
+    const listeners = this.eventListeners.get(eventName);
+    listeners.delete(callback);
+  }
+
+  static shouldReturnCallbackResult(result, { abortOnTrue, abortOnFalse, returnOnValue }) {
+    if (result === false && abortOnFalse) {
+      return true;
+    }
+
+    if (result === true && abortOnTrue) {
+      return true;
+    }
+
+    if (result !== undefined && returnOnValue) {
+      return true;
+    }
+
+    return false;
+  }
+
+  static runEvent(eventName, { abortOnTrue = false, abortOnFalse = false, returnOnValue = false } = {}, ...args) {
+    if (!this.eventListeners.has(eventName)) {
+      return;
+    }
+
+    const listeners = this.eventListeners.get(eventName);
+    for (const callback of listeners) {
+      if (typeof callback === 'number') {
+        this.runCommonEvent(callback);
+        continue;
+      }
+      if (typeof callback !== 'function') {
+        console.error('CycloneEngine: Invalid callback type:');
+        console.log(callback);
+        continue;
+      }
+
+      const result = callback(...args);
+      if (this.shouldReturnCallbackResult(result, { abortOnTrue, abortOnFalse, returnOnValue })) {
+        return result;
+      }
+    }
+  }
+
+  static runCommonEvent(eventId) {
+    const commonEvent = globalThis.$dataCommonEvents[eventId];
+    if (!commonEvent) {
+      return;
+    }
+
+    const interpreter = new Game_Interpreter(1);
+    interpreter.setup(commonEvent.list, 0);
+
+    if (!this._interpreters) {
+      this._interpreters = new Set();
+      // Tap into rpg maker core so we can update our interpreters in sync with the engine
+      const oldUpdateMain = SceneManager.updateMain;
+      SceneManager.updateMain = () => {
+        oldUpdateMain.call(this);
+        this.update();
+      };
+    }
+
+    this._interpreters.add(interpreter);
+  }
+
+  static update() {
+    if (!this._interpreters) {
+      return;
+    }
+
+    for (const interpreter of this._interpreters) {
+      interpreter.update();
+
+      if (!interpreter.isRunning()) {
+        this._interpreters.delete(interpreter);
+      }
+    }
+  }
+
+  static getPluginFileName() {
+    return this.fileName ?? this.pluginName;
+  }
+
+  static _descriptorIsProperty(descriptor) {
+    return descriptor.get || descriptor.set || !descriptor.value || typeof descriptor.value !== 'function';
+  }
+
+  static _getAllClassDescriptors(classObj, usePrototype = false) {
+    if (classObj === Object) {
+      return {};
+    }
+
+    const descriptors = Object.getOwnPropertyDescriptors(usePrototype ? classObj.prototype : classObj);
+    let parentDescriptors = {};
+    if (classObj.prototype) {
+      const parentClass = Object.getPrototypeOf(classObj.prototype).constructor;
+      if (parentClass !== Object) {
+        parentDescriptors = this._getAllClassDescriptors(parentClass, usePrototype);
+      }
+    }
+
+    return Object.assign({}, parentDescriptors, descriptors);
+  }
+
+  static _assignDescriptor(receiver, giver, descriptor, descriptorName) {
+    if (this._descriptorIsProperty(descriptor)) {
+      if (descriptor.get || descriptor.set) {
+        Object.defineProperty(receiver, descriptorName, {
+          get: descriptor.get,
+          set: descriptor.set,
+          enumerable: descriptor.enumerable,
+          configurable: descriptor.configurable,
+        });
+      } else {
+        Object.defineProperty(receiver, descriptorName, {
+          value: descriptor.value,
+          enumerable: descriptor.enumerable,
+          configurable: descriptor.configurable,
+        });
+      }
+    } else {
+      receiver[descriptorName] = giver[descriptorName];
+    }
+  }
+
+  static _applyPatch(baseClass, patchClass, $super, ignoredNames, usePrototype = false) {
+    const baseMethods = this._getAllClassDescriptors(baseClass, usePrototype);
+
+    const baseClassOrPrototype = usePrototype ? baseClass.prototype : baseClass;
+    const patchClassOrPrototype = usePrototype ? patchClass.prototype : patchClass;
+    const descriptors = Object.getOwnPropertyDescriptors(patchClassOrPrototype);
+    let anyOverride = false;
+
+    for (const methodName in descriptors) {
+      if (ignoredNames.includes(methodName)) {
+        continue;
+      }
+
+      if (methodName in baseMethods) {
+        anyOverride = true;
+        const baseDescriptor = baseMethods[methodName];
+        this._assignDescriptor($super, baseClassOrPrototype, baseDescriptor, methodName);
+      }
+
+      const descriptor = descriptors[methodName];
+      this._assignDescriptor(baseClassOrPrototype, patchClassOrPrototype, descriptor, methodName);
+    }
+
+    return anyOverride;
+  }
+
+  static patchClass(baseClass, patchFn) {
+    const $super = {};
+    const $prototype = {};
+    const $dynamicSuper = {};
+    const patchClass = patchFn($dynamicSuper, $prototype);
+
+    if (typeof patchClass !== 'function') {
+      throw new Error(`Invalid class patch for ${ baseClass.name }`);
+    }
+
+    const ignoredStaticNames = Object.getOwnPropertyNames(class {});
+    const ignoredNames = Object.getOwnPropertyNames((class {}).prototype);
+    const anyStaticOverride = this._applyPatch(baseClass, patchClass, $super, ignoredStaticNames);
+    const anyNonStaticOverride = this._applyPatch(baseClass, patchClass, $prototype, ignoredNames, true);
+
+    if (anyStaticOverride) {
+      const descriptors = Object.getOwnPropertyDescriptors($super);
+      for (const descriptorName in descriptors) {
+        this._assignDescriptor($dynamicSuper, $super, descriptors[descriptorName], descriptorName);
+      }
+
+      if (anyNonStaticOverride) {
+        $dynamicSuper.$prototype = $prototype;
+      }
+    } else  {
+      Object.assign($dynamicSuper, $prototype);
+    }
+
+    this.superClasses[baseClass.name] = $dynamicSuper;
+  }
+
+  static isTrue(value) {
+    if (typeof value !== 'string') {
+      return Boolean(value);
+    }
+
+    return trueStrings.includes(value.toUpperCase());
+  }
+
+  static isFalse(value) {
+    return !this.isTrue(value);
+  }
+
+  static getIntParam({ value, defaultValue }) {
+    try {
+      const result = parseInt(value);
+
+      if (isNaN(result)) {
+        return defaultValue;
+      }
+
+      return result;
+    } catch(e) {
+      if (value !== '') {
+        console.error(`Cyclone Engine plugin ${ this.pluginName }: Param is expected to be an integer number, but the received value was '${ value }'.`);
+      }
+      return defaultValue;
+    }
+  }
+
+  static getFloatParam({ value, defaultValue }) {
+    try {
+      const result = parseFloat(value.replace(',', '.'));
+
+      if (isNaN(result)) {
+        return defaultValue;
+      }
+
+      return result;
+    } catch(e) {
+      if (value !== '') {
+        console.error(`Cyclone Engine plugin ${ this.pluginName }: Param is expected to be a number, but the received value was '${ value }'.`);
+      }
+
+      return defaultValue;
+    }
+  }
+
+  static getIntListParam({ value }) {
+    return this.parseArray((value ?? '').trim(), item => {
+      try {
+        return parseInt(item.trim());
+      } catch(e) {
+        if (item !== '') {
+          console.error(`Cyclone Engine plugin ${ this.pluginName }: Param is expected to be a list of integer numbers, but one of the items was '${ item }'.`);
+        }
+        return 0;
+      }
+    });
+  }
+
+  static parseStructArrayParam({ data, type }) {
+    const newData = [];
+    for (const json of data) {
+      const itemData = this.parseStructParam({ value: json, defaultValue: '', type });
+      if (itemData) {
+        newData.push(itemData);
+      }
+    }
+
+    return newData;
+  }
+
+  static getFloatListParam({ value }) {
+    return this.parseArray((value || '').trim(), item => {
+      try {
+        return parseFloat(item.trim());
+      } catch(e) {
+        if (item !== '') {
+          console.error(`Cyclone Engine plugin ${ this.pluginName }: Param ${ name } is expected to be a list of numbers, but one of the items was '${ item }'.`);
+        }
+        return 0;
+      }
+    });
+  }
+
+  static getParam({ value, defaultValue, type }) {
+    if (type.endsWith('[]')) {
+      return this.parseArrayParam({ value, type });
+    }
+
+    if (type.startsWith('struct<')) {
+      return this.parseStructParam({ value, defaultValue, type });
+    }
+
+    if (value === undefined) {
+      return defaultValue;
+    }
+
+    switch(type) {
+      case 'int':
+        return this.getIntParam({value, defaultValue });
+      case 'float':
+        return this.getFloatParam({ value, defaultValue });
+      case 'boolean':
+        return (typeof value === 'boolean') ? value : this.isTrue(String(value).trim());
+      default:
+        return value;
+    }
+  }
+
+  static getPluginParam(paramName) {
+    return this.params.get(paramName);
+  }
+
+  static defaultValueForType(typeName) {
+    switch(typeName) {
+      case 'int':
+        return 0;
+      case 'boolean':
+        return false;
+    }
+
+    return '';
+  }
+
+  static parseParam(key, paramMap, dataMap = undefined) {
+    let paramData = paramMap[key];
+    if (paramData && typeof paramData === 'string') {
+      paramData = {
+        type: paramData,
+        defaultValue: this.defaultValueForType(paramData)
+      };
+    }
+
+    const { name = key, type = 'string', defaultValue = '' } = paramData;
+    let value;
+    if (dataMap) {
+      value = dataMap.get(name) ?? defaultValue;
+    } else {
+      const data = this.getPluginParam(name) || {};
+      value = data.value ?? defaultValue;
+    }
+    return this.getParam({
+      value,
+      defaultValue,
+      type
+    });
+  }
+
+  static parseArrayParam({ value, type }) {
+    const data = this.parseArray(value);
+    if (!data || !data.length) {
+      return data;
+    }
+
+    const itemType = type.substr(0, type.length - 2);
+
+    const newData = [];
+    for (const value of data) {
+      const defaultValue = this.defaultValueForType(itemType);
+      newData.push(this.getParam({ value, type: itemType, defaultValue }));
+    }
+
+    return newData;
+  }
+
+  static getRegexMatch(text, regex, matchIndex) {
+    const matches = text.match(regex);
+    return matches?.[matchIndex];
+  }
+
+  static parseStructParam({ value, defaultValue, type }) {
+    let data;
+    if (value) {
+      try {
+        data = JSON.parse(value);
+      } catch (e) {
+        console.error('Cyclone Engine failed to parse param structure: ', value);
+        console.error(e);
+      }
+    }
+
+    if (!data) {
+      data = JSON.parse(defaultValue);
+    }
+
+    const structTypeName = this.getRegexMatch(type, /struct<(.*)>/i, 1);
+    if (!structTypeName) {
+      console.error(`Unknown plugin param type: ${ type }`);
+      return data;
+    }
+
+    const structType = this.structs.get(structTypeName);
+    if (!structType) {
+      console.error(`Unknown param structure type: ${ structTypeName }`);
+      return data;
+    }
+
+    for (const key in structType) {
+      if (!structType.hasOwnProperty(key)) {
+        continue;
+      }
+
+      let dataType = structType[key];
+      if (typeof dataType === 'string') {
+        dataType = {
+          type: dataType,
+          defaultValue: this.defaultValueForType(dataType),
+        };
+      }
+
+      data[key] = this.getParam({
+        value: data[key],
+        defaultValue: dataType.defaultValue,
+        type: dataType.type,
+      });
+    }
+
+    return data;
+  }
+
+  static parseList(data, mapper) {
+    let str = data;
+    if (str.startsWith('[')) {
+      str = str.substr(1);
+    }
+    if (str.endsWith(']')) {
+      str = str.substr(0, str.length -1);
+    }
+
+    const list = str.split(',');
+
+    if (mapper) {
+      return list.map(item => mapper(item));
+    }
+
+    return list;
+  }
+
+  static parseArray(value, mapper) {
+    let data;
+    try {
+      data = JSON.parse(value);
+    } catch(e) {
+      return [];
+    }
+
+    if (!data || !data.length) {
+      return [];
+    }
+
+    if (mapper) {
+      return data.map(item => mapper(item));
+    }
+
+    return data;
+  }
+
+  static buildMetadata(notes) {
+    const rgx = /<([^<>:]+)(:?)([^>]*)>/g;
+    const matches = notes.matchAll(rgx);
+    const values = new Map();
+
+    for (const match of matches) {
+      if (match.length > 3 && match[2] === ':') {
+        values.set(match[1], match[3]);
+      } else {
+        values.set(match[1], true);
+      }
+    }
+
+    return values;
+  }
+
+  static defaultIfNaN(value, defaultValue) {
+    if (isNaN(Number(value))) {
+      return defaultValue;
+    }
+
+    return value;
+  }
+
+  static getValueMaybeVariable(rawValue) {
+    const value = rawValue.trim();
+
+    if (value.startsWith('$')) {
+      const variableId = parseInt(value.slice(1));
+      if (isNaN(variableId)) {
+        throw new Error(`Invalid Variable ID: ${ variableId }`);
+      }
+
+      if (variableId === 0) {
+        return 0;
+      }
+
+      return $gameVariables.value(variableId);
+    }
+
+    return value;
+  }
+
+  static debounce(fn, delay) {
+    let clearTimer;
+    return function(...args) {
+      const context = this;
+      clearTimeout(clearTimer);
+      clearTimer = setTimeout(() => fn.call(context, ...args), delay);
+    };
+  }
+
+  static _addProperty(classObj, propName, { getter: getterFn, setter: setterFn, lazy = false })  {
+    if (lazy) {
+      // Creates a property that replaces itself with the value the first time it's called.
+      return Object.defineProperty(classObj, propName, {
+        get: function() { // eslint-disable-line object-shorthand
+          delete this[propName];
+          const value = getterFn.call(this);
+          Object.defineProperty(this, propName, { value });
+          return value;
+        },
+        set: setterFn === true ? (function(value) {this[`_${ propName }`] = value; }) : undefined,
+        configurable: true,
+      });
+    }
+
+    return Object.defineProperty(classObj, propName, {
+      get: getterFn ?? (function() { return this[`_${ propName }`]; }),
+      set: setterFn === false ? undefined : (typeof setterFn === 'function' ? setterFn : (function(value) {this[`_${ propName }`] = value; })),
+      configurable: false,
+    });
+  }
+
+  static registerCommand(commandName, params, fn) {
+    if (typeof params === 'function') {
+      return PluginManager.registerCommand(this.getPluginFileName(), commandName, params);
+    }
+
+    return PluginManager.registerCommand(this.getPluginFileName(), commandName, (receivedArgs) => {
+      const dataMap = new Map();
+      for (const key in receivedArgs) {
+        if (!receivedArgs.hasOwnProperty(key)) {
+          continue;
+        }
+        dataMap.set(key, receivedArgs[key]);
+      }
+      const parsedArgs = this.loadParamMap(params, dataMap);
+      Object.assign(receivedArgs, parsedArgs);
+
+      return fn(receivedArgs);
+    });
+  }
+}
+
+class CycloneMaps$1 extends CyclonePlugin {
   static register() {
-    CycloneEngine.structs.set('CycloneCommonEventRegion', {
+    super.initialize('CycloneMaps');
+
+    this.structs.set('CycloneCommonEventRegion', {
       regionId: 'int',
       commonEventId: 'int',
     });
-    CycloneEngine.structs.set('CycloneNamedRegion', {
+    this.structs.set('CycloneNamedRegion', {
       regionId: 'int',
       name: 'string',
     });
 
-    super.register('CycloneMaps', {
+    super.register({
       commonEventId: {
         name: 'Map Change Event Id',
         type: 'int',
@@ -644,23 +1276,20 @@ class CycloneMaps extends CyclonePlugin {
     this.clearSettings();
   }
 
-  static get enableOverlays() {
-    return this.params.get('enableOverlays');
-  }
   static get groundZ() {
-    return this.params.get('groundZ');
+    return this.params.groundZ;
   }
   static get parallaxZ() {
-    return this.params.get('parallaxZ');
+    return this.params.parallaxZ;
   }
   static get shadowZ() {
-    return this.params.get('shadowZ');
+    return this.params.shadowZ;
   }
   static get fogZ() {
-    return this.params.get('fogZ');
+    return this.params.fogZ;
   }
   static get lightZ() {
-    return this.params.get('lightZ');
+    return this.params.lightZ;
   }
 
   static clearSettings() {
@@ -695,18 +1324,17 @@ class CycloneMaps extends CyclonePlugin {
     this.changedGroundFileName = false;
     this.groundName = '';
 
-    this.blockRegionId = this.params.get('blockRegionId');
-    this.unblockRegionId = this.params.get('unblockRegionId');
-    this.blockPlayerRegionId = this.params.get('blockPlayerRegionId');
-    this.unblockPlayerRegionId = this.params.get('unblockPlayerRegionId');
-    this.blockEventRegionId = this.params.get('blockEventRegionId');
-    this.unblockEventRegionId = this.params.get('unblockEventRegionId');
+    this.blockRegionId = this.params.blockRegionId;
+    this.unblockRegionId = this.params.unblockRegionId;
+    this.blockPlayerRegionId = this.params.blockPlayerRegionId;
+    this.unblockPlayerRegionId = this.params.unblockPlayerRegionId;
+    this.blockEventRegionId = this.params.blockEventRegionId;
+    this.unblockEventRegionId = this.params.unblockEventRegionId;
 
-    this.disableTilemap = this.params.get('disableTilemap');
-    this.disableAutoShadows = this.params.get('disableAutoShadows');
+    this.disableAutoShadows = this.params.disableAutoShadows;
 
-    const commonEventRegions = this.params.get('commonEventRegions');
-    const namedRegions = this.params.get('namedRegions');
+    const commonEventRegions = this.params.commonEventRegions;
+    const namedRegions = this.params.namedRegions;
 
     this.commonEventRegions = new Map();
     this.namedRegions = new Map();
@@ -727,54 +1355,36 @@ class CycloneMaps extends CyclonePlugin {
     const regionId = $gameMap.regionId($gamePlayer.x, $gamePlayer.y);
 
     if (this.commonEventRegions.has(regionId)) {
-      CycloneEngine.runCommonEvent(this.commonEventRegions.get(regionId));
+      this.runCommonEvent(this.commonEventRegions.get(regionId));
     }
   }
 }
 
-CycloneMaps.register();
+globalThis.CycloneMaps = CycloneMaps$1;
+CycloneMaps$1.register();
 
-CycloneMaps.patchClass(Game_Player, $super => class {
-  performTransfer() {
-    if (this.isTransferring()) {
-      if (CycloneMaps.params.get('commonEventId') > 0) {
-        $gameTemp.reserveCommonEvent(CycloneMaps.params.get('commonEventId'));
+CycloneMaps.patchClass(DataManager, $super => class {
+  static setupNewGame() {
+    $super.setupNewGame.call(this);
+
+    if (CycloneMaps.params.enableOverlays && CycloneMaps.params.quickStart) {
+      const { fogSwitchId, lightSwitchId, parallaxSwitchId, shadowSwitchId } = CycloneMaps.params;
+
+      if (fogSwitchId > 0) {
+        $gameSwitches.setValue(fogSwitchId, true);
       }
-    }
 
-    $super.performTransfer.call(this);
-  }
-
-  isMapPassable(x, y, d) {
-    const blockRegionId = CycloneMaps.blockPlayerRegionId;
-    const unblockRegionId = CycloneMaps.unblockPlayerRegionId;
-
-    if (blockRegionId > 0 || unblockRegionId > 0) {
-      const newX = $gameMap.roundXWithDirection(x, d);
-      const newY = $gameMap.roundYWithDirection(y, d);
-      const regionId = $gameMap.regionId(newX, newY);
-
-      if (regionId > 0) {
-        if (regionId === blockRegionId) {
-          return false;
-        }
-
-        if (regionId === unblockRegionId) {
-          return false;
-        }
+      if (lightSwitchId > 0) {
+        $gameSwitches.setValue(lightSwitchId, true);
       }
-    }
 
-    return $super.isMapPassable.call(this, x, y, d);
-  }
-});
+      if (parallaxSwitchId > 0) {
+        $gameSwitches.setValue(parallaxSwitchId, true);
+      }
 
-CycloneMaps.patchClass(Game_Party, $super => class {
-  onPlayerWalk() {
-    $super.onPlayerWalk.call(this);
-
-    if (CycloneMaps.commonEventRegions.size > 0) {
-      CycloneMaps.checkRegionActions();
+      if (shadowSwitchId > 0) {
+        $gameSwitches.setValue(shadowSwitchId, true);
+      }
     }
   }
 });
@@ -806,7 +1416,7 @@ CycloneMaps.patchClass(Game_Event, $super => class {
 
 CycloneMaps.patchClass(Game_Map, $super => class {
   tileWidth() {
-    const customWidth = CycloneMaps.params.get('tileWidth');
+    const customWidth = CycloneMaps.params.tileWidth;
     if (typeof customWidth === 'number' && customWidth > 0) {
       return customWidth;
     }
@@ -815,7 +1425,7 @@ CycloneMaps.patchClass(Game_Map, $super => class {
   }
 
   tileHeight() {
-    const customHeight = CycloneMaps.params.get('tileHeight');
+    const customHeight = CycloneMaps.params.tileHeight;
     if (typeof customHeight === 'number' && customHeight > 0) {
       return customHeight;
     }
@@ -828,7 +1438,7 @@ CycloneMaps.patchClass(Game_Map, $super => class {
       return true;
     }
 
-    const bushRegionId = CycloneMaps.params.get('bushRegionId');
+    const bushRegionId = CycloneMaps.params.bushRegionId;
     if (!bushRegionId) {
       return false;
     }
@@ -862,35 +1472,54 @@ CycloneMaps.patchClass(Game_Map, $super => class {
   }
 });
 
-CycloneMaps.patchClass(Tilemap, $super => class {
-  initialize() {
-    $super.initialize.call(this);
-    this._tileWidth = $gameMap.tileWidth();
-    this._tileHeight = $gameMap.tileHeight();
-  }
+CycloneMaps.patchClass(Game_Party, $super => class {
+  onPlayerWalk() {
+    $super.onPlayerWalk.call(this);
 
-  updateTransform() {
-    if (CycloneMaps.disableTilemap && CycloneMaps.enableOverlays) {
-      this._sortChildren();
-      PIXI.Container.prototype.updateTransform.call(this);
-      return;
+    if (CycloneMaps.commonEventRegions.size > 0) {
+      CycloneMaps.checkRegionActions();
+    }
+  }
+});
+
+CycloneMaps.patchClass(Game_Player, $super => class {
+  performTransfer() {
+    if (this.isTransferring()) {
+      if (CycloneMaps.params.commonEventId > 0) {
+        $gameTemp.reserveCommonEvent(CycloneMaps.params.commonEventId);
+      }
     }
 
-    $super.updateTransform.call(this);
+    $super.performTransfer.call(this);
   }
 
-  _addShadow(...args) {
-    if (CycloneMaps.disableAutoShadows) {
-      return;
+  isMapPassable(x, y, d) {
+    const blockRegionId = CycloneMaps.blockPlayerRegionId;
+    const unblockRegionId = CycloneMaps.unblockPlayerRegionId;
+
+    if (blockRegionId > 0 || unblockRegionId > 0) {
+      const newX = $gameMap.roundXWithDirection(x, d);
+      const newY = $gameMap.roundYWithDirection(y, d);
+      const regionId = $gameMap.regionId(newX, newY);
+
+      if (regionId > 0) {
+        if (regionId === blockRegionId) {
+          return false;
+        }
+
+        if (regionId === unblockRegionId) {
+          return false;
+        }
+      }
     }
 
-    return $super._addShadow.call(this, ...args);
+    return $super.isMapPassable.call(this, x, y, d);
   }
 });
 
 CycloneMaps.patchClass(ImageManager, $super => class {
   static loadTileset(filename) {
-    const customPath = CycloneMaps.params.get('tilesetPath');
+    const customPath = CycloneMaps.params.tilesetPath;
     if (customPath) {
       return this.loadBitmap(customPath, filename);
     }
@@ -899,28 +1528,104 @@ CycloneMaps.patchClass(ImageManager, $super => class {
   }
 });
 
-CycloneMaps.patchClass(DataManager, $super => class {
-  static setupNewGame() {
-    $super.setupNewGame.call(this);
+class WindowRegionName extends Window_MapName {
+  refresh() {
+    this.contents.clear();
 
-    if (CycloneMaps.params.get('enableOverlays') && CycloneMaps.params.get('quickStart')) {
-      const { fogSwitchId, lightSwitchId, parallaxSwitchId, shadowSwitchId } = CycloneMaps.getParamList();
+    const regionId = this._currentRegionId || 0;
+    if (regionId === 0) {
+      return;
+    }
 
-      if (fogSwitchId > 0) {
-        $gameSwitches.setValue(fogSwitchId, true);
-      }
+    const regionName = CycloneMaps.namedRegions.get(regionId);
+    if (!regionName) {
+      return;
+    }
 
-      if (lightSwitchId > 0) {
-        $gameSwitches.setValue(lightSwitchId, true);
-      }
+    const width = this.contentsWidth();
+    this.drawBackground(0, 0, width, this.lineHeight());
+    this.drawText(regionName, 0, 0, width, 'center');
+  }
 
-      if (parallaxSwitchId > 0) {
-        $gameSwitches.setValue(parallaxSwitchId, true);
-      }
+  update() {
+    if (this._delay) {
+      this._delay--;
+      return;
+    }
 
-      if (shadowSwitchId > 0) {
-        $gameSwitches.setValue(shadowSwitchId, true);
-      }
+    this._delay = 10;
+    const regionId = $gameMap.regionId($gamePlayer._x, $gamePlayer._y);
+
+    const shouldUpdate = regionId > 0 || !this._showCount;
+
+    if (shouldUpdate && (CycloneMaps.params.regionNamesStay || regionId !== this._currentRegionId)) {
+      this._currentRegionId = regionId;
+      this.open();
+      return;
+    }
+
+    super.update();
+  }
+}
+
+CycloneMaps.patchClass(Scene_Map, $super => class {
+  createRegionNameWindow() {
+    const rect = this.mapNameWindowRect();
+    this._regionNameWindow = new WindowRegionName(rect);
+    this.addChild(this._regionNameWindow);
+  }
+
+  createMapNameWindow() {
+    $super.createMapNameWindow.call(this);
+    this.createRegionNameWindow();
+  }
+
+  updateTransferPlayer() {
+    if ($gamePlayer.isTransferring()) {
+      this._regionNameWindow.close();
+    }
+
+    $super.updateTransferPlayer();
+    this._regionNameWindow._delay = 0;
+    this._regionNameWindow.update();
+  }
+
+  callMenu() {
+    $super.callMenu.call(this);
+    this._regionNameWindow.hide();
+  }
+
+  launchBattle() {
+    $super.launchBattle.call(this);
+    this._regionNameWindow.hide();
+  }
+
+  stop() {
+    this._regionNameWindow.close();
+    $super.stop.call(this);
+  }
+});
+
+CycloneMaps.patchClass(Sprite_Animation, $super => class {
+  initMembers() {
+    $super.initMembers.call(this);
+    const animationZ = CycloneMaps.params.animationZ;
+
+    // Only apply if we have a valid Z different from the default
+    if (animationZ !== 0 && animationZ !== 8) {
+      this.z = animationZ;
+    }
+  }
+});
+
+CycloneMaps.patchClass(Sprite_Balloon, $super => class {
+  initMembers() {
+    $super.initMembers.call(this);
+    const balloonZ = CycloneMaps.params.balloonZ;
+
+    // Only apply if we have a valid Z different from the default
+    if (balloonZ !== 0 && balloonZ !== 7) {
+      this.z = balloonZ;
     }
   }
 });
@@ -932,7 +1637,7 @@ CycloneMaps.patchClass(Spriteset_Map, $super => class {
   }
 
   loadOverlayBitmap(folderName, fileName) {
-    if (CycloneMaps.params.get('organizedFolders')) {
+    if (CycloneMaps.params.organizedFolders) {
       return ImageManager.loadBitmap(`img/overlays/${ folderName }/`, fileName);
     }
 
@@ -958,21 +1663,21 @@ CycloneMaps.patchClass(Spriteset_Map, $super => class {
   }
 
   createGroundLayer() {
-    this._groundLayer = this.createOverlayLayer('grounds', CycloneMaps.params.get('groundLayerFileName'), 'ground', CycloneMaps.groundZ);
+    this._groundLayer = this.createOverlayLayer('grounds', CycloneMaps.params.groundLayerFileName, 'ground', CycloneMaps.groundZ);
   }
 
   createParallaxLayer() {
-    const { parallaxLayerFileName, parallaxSwitchId } = CycloneMaps.getParamList();
+    const { parallaxLayerFileName, parallaxSwitchId } = CycloneMaps.params;
     this._parallaxLayer = this.createOverlayLayer('pars', parallaxLayerFileName, 'par', CycloneMaps.parallaxZ, parallaxSwitchId);
   }
 
   createShadowLayer() {
-    const { shadowLayerFileName, shadowSwitchId } = CycloneMaps.getParamList();
+    const { shadowLayerFileName, shadowSwitchId } = CycloneMaps.params;
     this._shadowLayer = this.createOverlayLayer('shadows', shadowLayerFileName, 'shadow', CycloneMaps.shadowZ, shadowSwitchId);
   }
 
   createLightLayer() {
-    const { lightLayerFileName, lightSwitchId, lightOpacity } = CycloneMaps.getParamList();
+    const { lightLayerFileName, lightSwitchId, lightOpacity } = CycloneMaps.params;
     this._lightLayer = this.createOverlayLayer('lights', lightLayerFileName, 'light', CycloneMaps.lightZ, lightSwitchId, lightOpacity);
     if (this._lightLayer) {
       this._lightLayer.blendMode = 1;
@@ -1016,7 +1721,7 @@ CycloneMaps.patchClass(Spriteset_Map, $super => class {
   }
 
   createCharacters() {
-    if (!CycloneMaps.params.get('enableOverlays')) {
+    if (!CycloneMaps.params.enableOverlays) {
       $super.createCharacters.call(this);
       return;
     }
@@ -1034,12 +1739,12 @@ CycloneMaps.patchClass(Spriteset_Map, $super => class {
       return false;
     }
 
-    return CycloneEngine.getValueMaybeVariable($dataMap.meta[variableName]);
+    return CycloneMaps.getValueMaybeVariable($dataMap.meta[variableName]);
   }
 
   getOverlayIntVariable(variableName, defaultValue) {
     const value = parseInt(this.getOverlayVariable(variableName)) ?? defaultValue;
-    return CycloneEngine.defaultIfNaN(value, defaultValue);
+    return CycloneMaps.defaultIfNaN(value, defaultValue);
   }
 
   updateLayerOpacity(layer, maxOpacity, opacityChange) {
@@ -1077,21 +1782,21 @@ CycloneMaps.patchClass(Spriteset_Map, $super => class {
   }
 
   updateGroundLayer() {
-    const { groundLayerFileName } = CycloneMaps.getParamList();
+    const { groundLayerFileName } = CycloneMaps.params;
 
     this.updateLayer('_groundLayer', CycloneMaps.changedGroundFileName, 'grounds', CycloneMaps.groundName || groundLayerFileName, 'ground', CycloneMaps.groundZ, 0);
     CycloneMaps.changedGroundFileName = false;
   }
 
   updateParallaxLayer() {
-    const { parallaxLayerFileName, parallaxSwitchId } = CycloneMaps.getParamList();
+    const { parallaxLayerFileName, parallaxSwitchId } = CycloneMaps.params;
 
     this.updateLayer('_parallaxLayer', CycloneMaps.changedParallaxFileName, 'pars', CycloneMaps.parallaxName || parallaxLayerFileName, 'par', CycloneMaps.parallaxZ, parallaxSwitchId);
     CycloneMaps.changedParallaxFileName = false;
   }
 
   updateShadowLayer() {
-    const { shadowLayerFileName, shadowSwitchId } = CycloneMaps.getParamList();
+    const { shadowLayerFileName, shadowSwitchId } = CycloneMaps.params;
 
     this.updateLayer('_shadowLayer', CycloneMaps.changedShadowFileName, 'shadows', CycloneMaps.shadowName || shadowLayerFileName, 'shadow', CycloneMaps.shadowZ, shadowSwitchId);
     CycloneMaps.changedShadowFileName = false;
@@ -1102,7 +1807,7 @@ CycloneMaps.patchClass(Spriteset_Map, $super => class {
   }
 
   isFogEnabled() {
-    const { fogSwitchId } = CycloneMaps.getParamList();
+    const { fogSwitchId } = CycloneMaps.params;
     return fogSwitchId > 0 && $gameSwitches.value(fogSwitchId);
   }
 
@@ -1124,7 +1829,7 @@ CycloneMaps.patchClass(Spriteset_Map, $super => class {
       CycloneMaps.newFogOpacityDuration = 0;
       CycloneMaps.currentOpacityTarget = 0;
 
-      const fogSwitchId = CycloneMaps.params.get('fogSwitchId');
+      const fogSwitchId = CycloneMaps.params.fogSwitchId;
       if (fogSwitchId > 0) {
         $gameSwitches.setValue(fogSwitchId, false);
       }
@@ -1152,6 +1857,8 @@ CycloneMaps.patchClass(Spriteset_Map, $super => class {
     // If the opacity is not at the desired level yet, fade it in
     if (this._fogLayer.opacity < targetOpacity) {
       this.stepFogLayerOpacity(transition, targetOpacity);
+    } else if (this._fogLayer.opacity > targetOpacity) {
+      this._fogLayer.opacity = targetOpacity;
     }
   }
 
@@ -1178,13 +1885,13 @@ CycloneMaps.patchClass(Spriteset_Map, $super => class {
   }
 
   updateLightLayer() {
-    const { lightLayerFileName, lightSwitchId, lightOpacity } = CycloneMaps.getParamList();
+    const { lightLayerFileName, lightSwitchId, lightOpacity } = CycloneMaps.params;
     this.updateLayer('_lightLayer', CycloneMaps.changedLightFileName, 'lights', CycloneMaps.lightName || lightLayerFileName, 'light', CycloneMaps.lightZ, lightSwitchId, lightOpacity, 1);
     CycloneMaps.changedLightFileName = false;
   }
 
   updateTilemap() {
-    if (CycloneMaps.params.get('enableOverlays')) {
+    if (CycloneMaps.params.enableOverlays) {
       this.updateGroundLayer();
       this.updateParallaxLayer();
       this.updateShadowLayer();
@@ -1196,104 +1903,29 @@ CycloneMaps.patchClass(Spriteset_Map, $super => class {
   }
 });
 
-CycloneMaps.patchClass(Sprite_Balloon, $super => class {
-  initMembers() {
-    $super.initMembers.call(this);
-    const balloonZ = CycloneMaps.params.get('balloonZ');
+CycloneMaps.patchClass(Tilemap, $super => class {
+  initialize() {
+    $super.initialize.call(this);
+    this._tileWidth = $gameMap.tileWidth();
+    this._tileHeight = $gameMap.tileHeight();
+  }
 
-    // Only apply if we have a valid Z different from the default
-    if (balloonZ !== 0 && balloonZ !== 7) {
-      this.z = balloonZ;
+  updateTransform() {
+    if (CycloneMaps.params.disableTilemap && CycloneMaps.params.enableOverlays) {
+      this._sortChildren();
+      PIXI.Container.prototype.updateTransform.call(this);
+      return;
     }
+
+    $super.updateTransform.call(this);
+  }
+
+  _addShadow(...args) {
+    if (CycloneMaps.disableAutoShadows) {
+      return;
+    }
+
+    return $super._addShadow.call(this, ...args);
   }
 });
-
-CycloneMaps.patchClass(Sprite_Animation, $super => class {
-  initMembers() {
-    $super.initMembers.call(this);
-    const animationZ = CycloneMaps.params.get('animationZ');
-
-    // Only apply if we have a valid Z different from the default
-    if (animationZ !== 0 && animationZ !== 8) {
-      this.z = animationZ;
-    }
-  }
-});
-
-CycloneMaps.patchClass(Scene_Map, $super => class {
-  createRegionNameWindow() {
-    const rect = this.mapNameWindowRect();
-    this._regionNameWindow = new WindowRegionName(rect);
-    this.addChild(this._regionNameWindow);
-  }
-
-  createMapNameWindow() {
-    $super.createMapNameWindow.call(this);
-    this.createRegionNameWindow();
-  }
-
-  updateTransferPlayer() {
-    if ($gamePlayer.isTransferring()) {
-      this._regionNameWindow.close();
-    }
-
-    $super.updateTransferPlayer();
-    this._regionNameWindow._delay = 0;
-    this._regionNameWindow.update();
-  }
-
-  callMenu() {
-    $super.callMenu.call(this);
-    this._regionNameWindow.hide();
-  }
-
-  launchBattle() {
-    $super.launchBattle.call(this);
-    this._regionNameWindow.hide();
-  }
-
-  stop() {
-    this._regionNameWindow.close();
-    $super.stop.call(this);
-  }
-});
-
-class WindowRegionName extends Window_MapName {
-  refresh() {
-    this.contents.clear();
-
-    const regionId = this._currentRegionId || 0;
-    if (regionId === 0) {
-      return;
-    }
-
-    const regionName = CycloneMaps.namedRegions.get(regionId);
-    if (!regionName) {
-      return;
-    }
-
-    const width = this.contentsWidth();
-    this.drawBackground(0, 0, width, this.lineHeight());
-    this.drawText(regionName, 0, 0, width, 'center');
-  }
-
-  update() {
-    if (this._delay) {
-      this._delay--;
-      return;
-    }
-
-    this._delay = 10;
-    const regionId = $gameMap.regionId($gamePlayer._x, $gamePlayer._y);
-
-    const shouldUpdate = regionId > 0 || !this._showCount;
-
-    if (shouldUpdate && (CycloneMaps.params.get('regionNamesStay') || regionId !== this._currentRegionId)) {
-      this._currentRegionId = regionId;
-      this.open();
-      return;
-    }
-
-    super.update();
-  }
-}
+})();
