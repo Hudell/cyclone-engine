@@ -20,6 +20,9 @@ CycloneMapEditor.patchClass(Bitmap, $super => class {
     }
 
     const bitmap =  CycloneMapEditor.loadTilesetBitmap(tileId);
+    if (!bitmap) {
+      return;
+    }
 
     const sourceX = ((Math.floor(tileId / 128) % 2) * 8 + (tileId % 8)) * CycloneMapEditor.tileWidth;
     const sourceY = (Math.floor((tileId % 256) / 8) % 16) * CycloneMapEditor.tileHeight;
@@ -121,6 +124,9 @@ CycloneMapEditor.patchClass(Bitmap, $super => class {
 
   drawAutoTile(tileId, x, y, drawWidth, drawHeight) {
     const bitmap =  CycloneMapEditor.loadTilesetBitmap(tileId);
+    if (!bitmap) {
+      return;
+    }
 
     if (Tilemap.isTileA1(tileId)) {
       return this.drawTileA1(bitmap, tileId, x, y, drawWidth, drawHeight);

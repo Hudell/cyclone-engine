@@ -16,10 +16,6 @@ WindowCycloneMapEditorCommands.prototype.windowHeight = function() {
   return 74;
 };
 
-WindowCycloneMapEditorCommands.prototype.spacing = function() {
-  return 0;
-};
-
 WindowCycloneMapEditorCommands.prototype.standardPadding = function() {
   return 8;
 };
