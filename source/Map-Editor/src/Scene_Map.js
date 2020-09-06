@@ -14,6 +14,9 @@ CycloneMapEditor.patchClass(Scene_Map, $super => class {
     this.createMapEditorWindows();
     CycloneMapEditor.clearAllData();
     this.refreshMapEditorWindows();
+    CycloneMapEditor.addMenuBar();
+
+    CycloneMapEditor.loadExtraData();
   }
 
   toggleMapEditor() {
@@ -158,8 +161,8 @@ CycloneMapEditor.patchClass(Scene_Map, $super => class {
       return;
     }
 
-    const mapX = $gameMap.canvasToMapX(x);
-    const mapY = $gameMap.canvasToMapY(y);
+    const mapX = CycloneMapEditor.canvasToMapX(x);
+    const mapY = CycloneMapEditor.canvasToMapY(y);
 
     if (mapX >= 0 && mapY >= 0) {
       CycloneMapEditor.updateRightTouch(mapX, mapY);
@@ -214,8 +217,8 @@ CycloneMapEditor.patchClass(Scene_Map, $super => class {
 
     const pressed = TouchInput.isPressed();
     const { x, y } = TouchInput;
-    const mapX = $gameMap.canvasToMapX(x);
-    const mapY = $gameMap.canvasToMapY(y);
+    const mapX = CycloneMapEditor.canvasToMapX(x);
+    const mapY = CycloneMapEditor.canvasToMapY(y);
 
     const tile1 = CycloneMapEditor.getCurrentTileAtPosition(mapX, mapY, 0, true);
     const tile2 = CycloneMapEditor.getCurrentTileAtPosition(mapX, mapY, 1, true);

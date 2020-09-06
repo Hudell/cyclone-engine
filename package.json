@@ -6,7 +6,8 @@
     "editor": "cd source/Map-Editor & rollup -cw",
     "editor-mv": "cd source/Map-Editor-MV & rollup -cw",
     "maps": "cd source/Maps & rollup -cw",
-    "time": "cd source/Time & rollup -cw"
+    "time": "cd source/Time & rollup -cw",
+    "movement": "cd source/Movement & rollup -cw"
   },
   "author": "Hudell",
   "license": "Apache2",

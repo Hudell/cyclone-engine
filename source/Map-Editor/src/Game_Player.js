@@ -38,4 +38,9 @@ CycloneMapEditor.patchClass(Game_Player, $super => class {
 
     return result;
   }
+
+  updateMove() {
+    $super.updateMove.call(this);
+    CycloneMapEditor.requestCollisionRefresh();
+  }
 });

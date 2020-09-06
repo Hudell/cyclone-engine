@@ -27,21 +27,26 @@ class WindowCycloneGrid extends Window_Base {
       return;
     }
 
-    const drawWidth = Math.floor(CycloneMapEditor.tileWidth * CycloneMapEditor.currentZoom);
-    const drawHeight = Math.floor(CycloneMapEditor.tileHeight * CycloneMapEditor.currentZoom);
+    const gridRatio = CycloneMapEditor.getGridRatio();
 
-    const padding = this.padding;
+    const drawWidth = Math.floor(CycloneMapEditor.tileWidth * CycloneMapEditor.currentZoom) / gridRatio;
+    const drawHeight = Math.floor(CycloneMapEditor.tileHeight * CycloneMapEditor.currentZoom) / gridRatio;
+
     const context = this.contents.context;
     context.save();
     context.strokeStyle = '#000000';
-    context.beginPath();
-    context.moveTo(x - padding, y - padding);
-    context.lineTo(x - padding + drawWidth, y - padding);
+
+    for (let cellX = 0; cellX < gridRatio; cellX++) {
+      for (let cellY = 0; cellY < gridRatio; cellY++) {
+
+        const drawX = x + cellX * drawWidth;
+        const drawY = y + cellY * drawHeight;
+
+        this.contents.strokeRect(drawX, drawY, drawWidth, drawHeight);
+      }
+    }
     context.stroke();
-    context.beginPath();
-    context.moveTo(x - padding, y - padding);
-    context.lineTo(x - padding, y - padding + drawHeight);
-    context.stroke();
+
   }
 
   maybeDrawRegions(x, y) {
@@ -62,20 +67,20 @@ class WindowCycloneGrid extends Window_Base {
     }
   }
 
-  maybeDrawCollisions(x, y) {
-    if (!CycloneMapEditor.isLayerVisible(Layers.collisions)) {
-      return;
-    }
+  checkTilePassability(x, y, d) {
+    return $gameMap.isPassable(x, y, d);
+  }
 
+  drawTilesetCollision(x, y) {
     const mapX = $gameMap.canvasToMapX(x);
     const mapY = $gameMap.canvasToMapY(y);
     const drawWidth = CycloneMapEditor.tileWidth;
     const drawHeight = CycloneMapEditor.tileHeight;
 
-    const downBlocked = !$gameMap.isPassable(mapX, mapY, 2);
-    const upBlocked = !$gameMap.isPassable(mapX, mapY, 8);
-    const leftBlocked = !$gameMap.isPassable(mapX, mapY, 4);
-    const rightBlocked = !$gameMap.isPassable(mapX, mapY, 6);
+    const downBlocked = !this.checkTilePassability(mapX, mapY, 2);
+    const upBlocked = !this.checkTilePassability(mapX, mapY, 8);
+    const leftBlocked = !this.checkTilePassability(mapX, mapY, 4);
+    const rightBlocked = !this.checkTilePassability(mapX, mapY, 6);
 
     if (downBlocked && upBlocked && leftBlocked && rightBlocked) {
       this.contents.fillRect(x, y, drawWidth, drawHeight, '#FF000066');
@@ -86,17 +91,59 @@ class WindowCycloneGrid extends Window_Base {
     const pieceWidth = Math.floor(drawWidth / 4);
 
     if (downBlocked) {
-      this.contents.fillRect(x, y + drawHeight - pieceHeight, drawWidth, pieceHeight, '#FF0000AA');
+      this.contents.fillRect(x, y + drawHeight - pieceHeight, drawWidth, pieceHeight, '#FF00FFAA');
     }
     if (upBlocked) {
-      this.contents.fillRect(x, y, drawWidth, pieceHeight, '#FF0000AA');
+      this.contents.fillRect(x, y, drawWidth, pieceHeight, '#FF00FFAA');
     }
     if (leftBlocked) {
-      this.contents.fillRect(x, y, pieceWidth, drawHeight, '#FF0000AA');
+      this.contents.fillRect(x, y, pieceWidth, drawHeight, '#FF00FFAA');
     }
     if (rightBlocked) {
-      this.contents.fillRect(x + drawWidth - pieceWidth, y, pieceWidth, drawHeight, '#FF0000AA');
+      this.contents.fillRect(x + drawWidth - pieceWidth, y, pieceWidth, drawHeight, '#FF00FFAA');
     }
+  }
+
+  drawCustomCollision(x, y) {
+    const mapX = CycloneMapEditor.canvasToMapX(x);
+    const mapY = CycloneMapEditor.canvasToMapY(y);
+    const customCollisionTable = CycloneMapEditor.customCollisionTable;
+    const height = $gameMap.height() * 4;
+    const width = $gameMap.width() * 4;
+    const tileWidth = CycloneMapEditor.tileWidth;
+    const tileHeight = CycloneMapEditor.tileHeight;
+    const drawWidth = tileWidth / 4;
+    const drawHeight = tileHeight / 4;
+    const colors = ['#00FF0066', '#FF0000AA', '#FF00FFFF'];
+
+    for (let cellX = 0; cellX < 4; cellX++) {
+      for (let cellY = 0; cellY < 4; cellY++) {
+
+        const intX = Math.floor(mapX * 4) + cellX;
+        const intY = Math.floor(mapY * 4) + cellY;
+        const index = (intY % height) * width + (intX % width);
+
+        if (customCollisionTable[index]) {
+          const drawX = x + (cellX * drawWidth);
+          const drawY = y + (cellY * drawHeight);
+
+          this.contents.clearRect(drawX, drawY, drawWidth, drawHeight);
+
+          const colorIndex = customCollisionTable[index] - 1;
+          const color = colors[colorIndex % colors.length];
+          this.contents.fillRect(drawX, drawY, drawWidth, drawHeight, color);
+        }
+      }
+    }
+  }
+
+  maybeDrawCollisions(x, y) {
+    if (!CycloneMapEditor.isLayerVisible(Layers.collisions)) {
+      return;
+    }
+
+    this.drawTilesetCollision(x, y);
+    this.drawCustomCollision(x, y);
   }
 
   maybeDrawTags(x, y) {
@@ -119,6 +166,12 @@ class WindowCycloneGrid extends Window_Base {
   }
 
   drawCell(x, y) {
+    const mapX = $gameMap.canvasToMapX(x);
+    const mapY = $gameMap.canvasToMapY(y);
+
+    if (!$gameMap.isValid(mapX, mapY)) {
+      return false;
+    }
     this.drawCellGrid(x, y);
 
     this.maybeDrawRegions(x, y);
@@ -171,6 +224,72 @@ class WindowCycloneGrid extends Window_Base {
         this.drawCell(x, y);
       }
     }
+
+    if (CycloneMapEditor.isLayerVisible(Layers.collisions)) {
+      this.drawEventsCollision();
+      this.drawPlayerCollision();
+    }
+  }
+
+  drawEventsCollision() {
+    const drawWidth = $gameMap.tileWidth();
+    const drawHeight = $gameMap.tileHeight();
+
+    for (const event of $gameMap._events) {
+      if (!event) {
+        continue;
+      }
+      if (event._priorityType !== 1 || event._through || event._erased) {
+        continue;
+      }
+
+      const x = event.x * $gameMap.tileWidth();
+      const y = event.y * $gameMap.tileHeight();
+      const drawX = x - ($gameMap._displayX * $gameMap.tileWidth());
+      const drawY = y - ($gameMap._displayY * $gameMap.tileHeight());
+
+      if (drawX + drawWidth < 0 || drawY + drawHeight < 0) {
+        continue;
+      }
+
+      this.contents.fillRect(drawX, drawY, drawWidth, drawHeight, '#FF00FF66');
+    }
+  }
+
+  drawPlayerCollision() {
+    if (window.CycloneMovement) {
+      return this.drawCycloneMovementPlayerCollision();
+    }
+
+    const x = $gamePlayer.x * $gameMap.tileWidth();
+    const y = $gamePlayer.y * $gameMap.tileHeight();
+    const drawWidth = $gameMap.tileWidth();
+    const drawHeight = $gameMap.tileHeight();
+    const drawX = x - ($gameMap._displayX * $gameMap.tileWidth());
+    const drawY = y - ($gameMap._displayY * $gameMap.tileHeight());
+
+    if (drawX + drawWidth < 0 || drawY + drawHeight < 0) {
+      return;
+    }
+
+    this.contents.fillRect(drawX, drawY, drawWidth, drawHeight, '#0000FF66');
+  }
+
+  drawCycloneMovementPlayerCollision() {
+    const { top, left, width, height } = $gamePlayer;
+
+    const x = left * $gameMap.tileWidth();
+    const y = top * $gameMap.tileHeight();
+    const drawWidth = width * $gameMap.tileWidth();
+    const drawHeight = height * $gameMap.tileHeight();
+    const drawX = x - ($gameMap._displayX * $gameMap.tileWidth());
+    const drawY = y - ($gameMap._displayY * $gameMap.tileHeight());
+
+    if (drawX + drawWidth < 0 || drawY + drawHeight < 0) {
+      return;
+    }
+
+    this.contents.fillRect(drawX, drawY, drawWidth, drawHeight, '#0000FF66');
   }
 
   update() {
@@ -181,6 +300,10 @@ class WindowCycloneGrid extends Window_Base {
     if (this._lastDisplayX !== $gameMap._displayX || this._lastDisplayY !== $gameMap._displayY) {
       this.refresh();
     }
+  }
+
+  requestRefresh() {
+    this._lastDisplayX = -999;
   }
 }
 

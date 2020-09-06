@@ -72,6 +72,20 @@ class WindowCycloneMapEditor extends Window_Command {
     }
   }
 
+  isTileLayer() {
+    return CycloneMapEditor.currentLayer === 7 || CycloneMapEditor.currentLayer < 4;
+  }
+
+  makeTileList() {
+    for (let tileId = Tilemap.TILE_ID_A1; tileId < Tilemap.TILE_ID_MAX; tileId += 48) {
+      this.addTile(tileId);
+    }
+
+    for (let tileId = Tilemap.TILE_ID_B; tileId < Tilemap.TILE_ID_A5; tileId++) {
+      this.addTile(tileId);
+    }
+  }
+
   makeCommandList() {
     if (this._manualTileSelected) {
       this.makeManualTilesList();
@@ -88,13 +102,21 @@ class WindowCycloneMapEditor extends Window_Command {
       return;
     }
 
-    for (let tileId = Tilemap.TILE_ID_A1; tileId < Tilemap.TILE_ID_MAX; tileId += 48) {
-      this.addTile(tileId);
+    if (this.isTileLayer()) {
+      this.makeTileList();
+      return;
     }
 
-    for (let tileId = Tilemap.TILE_ID_B; tileId < Tilemap.TILE_ID_A5; tileId++) {
-      this.addTile(tileId);
+    if (CycloneMapEditor.currentLayer === 8) {
+      this.makeCollisionList();
+      return;
     }
+  }
+
+  makeCollisionList() {
+    this.addCommand(0, 'collision', true, 0);
+    this.addCommand(1, 'collision', true, 1);
+    this.addCommand(2, 'collision', true, 2);
   }
 
   ensureSelectionVisible() {
@@ -142,6 +164,32 @@ class WindowCycloneMapEditor extends Window_Command {
   drawRegion(index) {
     const rect = this.itemRect(index);
     this.contents.drawRegion(index, rect.x, rect.y, rect.width, rect.height);
+  }
+
+  drawCollision(index) {
+    if (index === 0) {
+      return;
+    }
+
+    const rect = this.itemRect(index);
+    const x = rect.x;
+    const y = rect.y;
+    const drawWidth = rect.width;
+    const drawHeight = rect.height;
+    const color = ['#00FF00', '#FF0000', '#FF00FF'][(index - 1) % 3];
+    this.contents.fillRect(x, y, drawWidth, drawHeight, color);
+
+    const context = this.contents.context;
+    context.save();
+    context.strokeStyle = '#000000';
+    context.beginPath();
+    context.moveTo(x, y);
+    context.lineTo(x + drawWidth, y);
+    context.stroke();
+    context.beginPath();
+    context.moveTo(x, y);
+    context.lineTo(x, y + drawHeight);
+    context.stroke();
   }
 
   drawShadow(index) {
@@ -199,6 +247,11 @@ class WindowCycloneMapEditor extends Window_Command {
 
     if (symbol === 'shadow') {
       this.drawShadow(index);
+      return;
+    }
+
+    if (symbol === 'collision') {
+      this.drawCollision(index);
       return;
     }
 

@@ -31,7 +31,7 @@ class CyclonePlugin {
       if (!plugin?.status) {
         continue;
       }
-      if (!plugin?.description?.includes(`<pluginName:${ this.pluginName }`)) {
+      if (!plugin?.description?.includes(`<pluginName:${ this.pluginName }`)) { //`
         continue;
       }
 
@@ -61,7 +61,7 @@ class CyclonePlugin {
       try {
         params[key] = this.parseParam(key, paramMap, dataMap);
       } catch(e) {
-        console.error(`CycloneEngine crashed while trying to parse a parameter value (${ key }). Please report the following error to Hudell:`);
+        console.error(`CycloneEngine crashed while trying to parse a parameter value (${ key }). Please report the following error to Hudell:`); //`
         console.log(e);
       }
     }
@@ -188,7 +188,7 @@ class CyclonePlugin {
     return Object.assign({}, parentDescriptors, descriptors);
   }
 
-  static _assignDescriptor(receiver, giver, descriptor, descriptorName) {
+  static _assignDescriptor(receiver, giver, descriptor, descriptorName, autoRename = false) {
     if (this._descriptorIsProperty(descriptor)) {
       if (descriptor.get || descriptor.set) {
         Object.defineProperty(receiver, descriptorName, {
@@ -205,7 +205,14 @@ class CyclonePlugin {
         });
       }
     } else {
-      receiver[descriptorName] = giver[descriptorName];
+      let newName = descriptorName;
+      if (autoRename) {
+        while (newName in receiver) {
+          newName = `_${ newName }`;
+        }
+      }
+
+      receiver[newName] = giver[descriptorName];
     }
   }
 
@@ -225,7 +232,7 @@ class CyclonePlugin {
       if (methodName in baseMethods) {
         anyOverride = true;
         const baseDescriptor = baseMethods[methodName];
-        this._assignDescriptor($super, baseClassOrPrototype, baseDescriptor, methodName);
+        this._assignDescriptor($super, baseClassOrPrototype, baseDescriptor, methodName, true);
       }
 
       const descriptor = descriptors[methodName];
@@ -236,17 +243,17 @@ class CyclonePlugin {
   }
 
   static patchClass(baseClass, patchFn) {
-    const $super = {};
+    const $super = this.superClasses[baseClass.name] || {};
     const $prototype = {};
     const $dynamicSuper = {};
     const patchClass = patchFn($dynamicSuper, $prototype);
 
     if (typeof patchClass !== 'function') {
-      throw new Error(`Invalid class patch for ${ baseClass.name }`);
+      throw new Error(`Invalid class patch for ${ baseClass.name }`); //`
     }
 
-    const ignoredStaticNames = Object.getOwnPropertyNames(class {});
-    const ignoredNames = Object.getOwnPropertyNames((class {}).prototype);
+    const ignoredStaticNames = Object.getOwnPropertyNames(class Test{});
+    const ignoredNames = Object.getOwnPropertyNames((class Test{}).prototype);
     const anyStaticOverride = this._applyPatch(baseClass, patchClass, $super, ignoredStaticNames);
     const anyNonStaticOverride = this._applyPatch(baseClass, patchClass, $prototype, ignoredNames, true);
 
@@ -289,7 +296,7 @@ class CyclonePlugin {
       return result;
     } catch(e) {
       if (value !== '') {
-        console.error(`Cyclone Engine plugin ${ this.pluginName }: Param is expected to be an integer number, but the received value was '${ value }'.`);
+        console.error(`Cyclone Engine plugin ${ this.pluginName }: Param is expected to be an integer number, but the received value was '${ value }'.`); //`
       }
       return defaultValue;
     }
@@ -306,7 +313,7 @@ class CyclonePlugin {
       return result;
     } catch(e) {
       if (value !== '') {
-        console.error(`Cyclone Engine plugin ${ this.pluginName }: Param is expected to be a number, but the received value was '${ value }'.`);
+        console.error(`Cyclone Engine plugin ${ this.pluginName }: Param is expected to be a number, but the received value was '${ value }'.`); //`
       }
 
       return defaultValue;
@@ -319,7 +326,7 @@ class CyclonePlugin {
         return parseInt(item.trim());
       } catch(e) {
         if (item !== '') {
-          console.error(`Cyclone Engine plugin ${ this.pluginName }: Param is expected to be a list of integer numbers, but one of the items was '${ item }'.`);
+          console.error(`Cyclone Engine plugin ${ this.pluginName }: Param is expected to be a list of integer numbers, but one of the items was '${ item }'.`); //`
         }
         return 0;
       }
@@ -344,7 +351,7 @@ class CyclonePlugin {
         return parseFloat(item.trim());
       } catch(e) {
         if (item !== '') {
-          console.error(`Cyclone Engine plugin ${ this.pluginName }: Param ${ name } is expected to be a list of numbers, but one of the items was '${ item }'.`);
+          console.error(`Cyclone Engine plugin ${ this.pluginName }: Param ${ name } is expected to be a list of numbers, but one of the items was '${ item }'.`); //`
         }
         return 0;
       }
@@ -454,13 +461,13 @@ class CyclonePlugin {
 
     const structTypeName = this.getRegexMatch(type, /struct<(.*)>/i, 1);
     if (!structTypeName) {
-      console.error(`Unknown plugin param type: ${ type }`);
+      console.error(`Unknown plugin param type: ${ type }`); //`
       return data;
     }
 
     const structType = this.structs.get(structTypeName);
     if (!structType) {
-      console.error(`Unknown param structure type: ${ structTypeName }`);
+      console.error(`Unknown param structure type: ${ structTypeName }`); //`
       return data;
     }
 
@@ -554,7 +561,7 @@ class CyclonePlugin {
     if (value.startsWith('$')) {
       const variableId = parseInt(value.slice(1));
       if (isNaN(variableId)) {
-        throw new Error(`Invalid Variable ID: ${ variableId }`);
+        throw new Error(`Invalid Variable ID: ${ variableId }`); //`
       }
 
       if (variableId === 0) {
@@ -586,14 +593,14 @@ class CyclonePlugin {
           Object.defineProperty(this, propName, { value });
           return value;
         },
-        set: setterFn === true ? (function(value) {this[`_${ propName }`] = value; }) : undefined,
+        set: setterFn === true ? (function(value) {this[`_${ propName }`] = value; }) : undefined, //`
         configurable: true,
       });
     }
 
     return Object.defineProperty(classObj, propName, {
-      get: getterFn ?? (function() { return this[`_${ propName }`]; }),
-      set: setterFn === false ? undefined : (typeof setterFn === 'function' ? setterFn : (function(value) {this[`_${ propName }`] = value; })),
+      get: getterFn ?? (function() { return this[`_${ propName }`]; }), //`
+      set: setterFn === false ? undefined : (typeof setterFn === 'function' ? setterFn : (function(value) {this[`_${ propName }`] = value; })), //`
       configurable: false,
     });
   }

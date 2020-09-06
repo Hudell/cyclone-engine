@@ -74,6 +74,7 @@ globals:
   CycloneMapEditor: true
   CycloneMaps: true
   CycloneTime: true
+  CycloneMovement: true
 rules:
   indent:
     - warn

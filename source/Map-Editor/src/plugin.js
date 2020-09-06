@@ -1,11 +1,13 @@
 import { CyclonePlugin } from '../../Core/main';
 import { Layers } from './constants';
 import { MapshotTileMap } from './mapshot/MapshotTileMap';
+import { LZString } from '../../Libs/lz-string.min';
 
 const layerVisibility = [true, true, true, true, true, false, false, false, false, false];
 let editorActive = true;
 let windowWidth = 408;
 const mapCaches = {};
+let customCollisionTable = {};
 
 let currentLayer = 7;
 let currentTab = 'A';
@@ -250,6 +252,7 @@ class CycloneMapEditor extends CyclonePlugin {
   static get statusCounter() { return statusCounter; }
   static get statusDamage() { return statusDamage; }
   static get statusLadder() { return statusLadder; }
+  static get customCollisionTable() { return customCollisionTable; }
 
   static get mapCaches() { return mapCaches; }
 
@@ -343,13 +346,24 @@ class CycloneMapEditor extends CyclonePlugin {
         }
       }
     }
+  }
 
-    this.addMenuBar();
+  static makeMenuEvent(fn) {
+    return () => {
+      if (TouchInput.isPressed()) {
+        return;
+      }
+
+      fn();
+    };
   }
 
   static addMenuBar() {
     if (!Utils.isNwjs()) {
       return;
+    }
+    if (this.menu) {
+      return this.refreshMenuVisibility();
     }
 
     const menu = new nw.Menu({ type: 'menubar' });
@@ -359,23 +373,23 @@ class CycloneMapEditor extends CyclonePlugin {
       label: 'Save',
       key: 's',
       modifiers: 'ctrl',
-      click: () => {
+      click: this.makeMenuEvent(() => {
         CycloneMapEditor.saveButton();
-      }
+      })
     }));
     fileMenu.append(new nw.MenuItem( {
       label: 'Reload',
       key: 'r',
       modifiers: 'ctrl',
-      click: () => {
+      click: this.makeMenuEvent(() => {
         CycloneMapEditor.reloadButton();
-      }
+      })
     }));
 
     fileMenu.append(new nw.MenuItem( {type: 'separator'}));
-    fileMenu.append(new nw.MenuItem( {label: 'Exit', click: () => {
+    fileMenu.append(new nw.MenuItem( {label: 'Exit', click: this.makeMenuEvent(() => {
       window.close();
-    }}));
+    })}));
 
     menu.append(new nw.MenuItem({
       label: 'File',
@@ -387,17 +401,17 @@ class CycloneMapEditor extends CyclonePlugin {
       label: 'Undo',
       key: 'z',
       modifiers: 'ctrl',
-      click: () => {
+      click: this.makeMenuEvent(() => {
         CycloneMapEditor.undoButton();
-      }
+      })
     }));
     editMenu.append(new nw.MenuItem( {
       label: 'Redo',
       key: 'y',
       modifiers: 'ctrl',
-      click: () => {
+      click: this.makeMenuEvent(() => {
         CycloneMapEditor.redoButton();
-      }
+      })
     }));
     editMenu.append(new nw.MenuItem( {type: 'separator'}));
     this.showGridMenu = new nw.MenuItem( {
@@ -406,9 +420,9 @@ class CycloneMapEditor extends CyclonePlugin {
       checked: showGrid,
       key: 'g',
       modifiers: 'ctrl',
-      click: () => {
+      click: this.makeMenuEvent(() => {
         CycloneMapEditor.showGridButton();
-      }
+      })
     });
     editMenu.append(this.showGridMenu);
 
@@ -417,70 +431,70 @@ class CycloneMapEditor extends CyclonePlugin {
     //   label: '30%',
     //   type: 'checkbox',
     //   checked: currentZoom === 0.3,
-    //   click: () => {
+    //   click: this.makeMenuEvent(() => {
     //     this.currentZoom = 0.3;
 
-    //   },
+    //   }),
     // });
     // zoomMenu.append(this.zoom30Menu);
     // this.zoom50Menu = new nw.MenuItem({
     //   label: '50%',
     //   type: 'checkbox',
     //   checked: currentZoom === 0.5,
-    //   click: () => {
+    //   click: this.makeMenuEvent(() => {
     //     this.currentZoom = 0.5;
 
-    //   },
+    //   }),
     // });
     // zoomMenu.append(this.zoom50Menu);
     // this.zoom67Menu = new nw.MenuItem({
     //   label: '67%',
     //   type: 'checkbox',
     //   checked: currentZoom === 0.67,
-    //   click: () => {
+    //   click: this.makeMenuEvent(() => {
     //     this.currentZoom = 0.67;
 
-    //   },
+    //   }),
     // });
     // zoomMenu.append(this.zoom67Menu);
     // this.zoom75Menu = new nw.MenuItem({
     //   label: '75%',
     //   type: 'checkbox',
     //   checked: currentZoom === 0.75,
-    //   click: () => {
+    //   click: this.makeMenuEvent(() => {
     //     this.currentZoom = 0.75;
 
-    //   },
+    //   }),
     // });
     // zoomMenu.append(this.zoom75Menu);
     // this.zoom90Menu = new nw.MenuItem({
     //   label: '90%',
     //   type: 'checkbox',
     //   checked: currentZoom === 0.9,
-    //   click: () => {
+    //   click: this.makeMenuEvent(() => {
     //     this.currentZoom = 0.9;
 
-    //   },
+    //   }),
     // });
     // zoomMenu.append(this.zoom90Menu);
     // this.zoom100Menu = new nw.MenuItem({
     //   label: '100%',
     //   type: 'checkbox',
     //   checked: currentZoom === 1,
-    //   click: () => {
+    //   click: this.makeMenuEvent(() => {
     //     this.currentZoom = 1;
 
-    //   },
+    //   }),
     // });
     // zoomMenu.append(this.zoom100Menu);
     // this.zoom150Menu = new nw.MenuItem({
     //   label: '150%',
     //   type: 'checkbox',
     //   checked: currentZoom === 1.5,
-    //   click: () => {
+    //   click: this.makeMenuEvent(() => {
     //     this.currentZoom = 1.5;
 
-    //   },
+    //   }),
     // });
     // zoomMenu.append(this.zoom150Menu);
 
@@ -500,9 +514,9 @@ class CycloneMapEditor extends CyclonePlugin {
       type: 'checkbox',
       checked: currentTool === 'pencil',
       key: 'p',
-      click: () => {
+      click: this.makeMenuEvent(() => {
         CycloneMapEditor.pencilButton();
-      }
+      })
     });
     drawMenu.append(this.pencilMenu);
     this.rectangleMenu = new nw.MenuItem( {
@@ -510,9 +524,9 @@ class CycloneMapEditor extends CyclonePlugin {
       type: 'checkbox',
       checked: currentTool === 'rectangle',
       key: 'r',
-      click: () => {
+      click: this.makeMenuEvent(() => {
         CycloneMapEditor.rectangleButton();
-      }
+      })
     });
     drawMenu.append(this.rectangleMenu);
     this.fillMenu = new nw.MenuItem( {
@@ -520,9 +534,9 @@ class CycloneMapEditor extends CyclonePlugin {
       type: 'checkbox',
       checked: currentTool === 'fill',
       key: 'f',
-      click: () => {
+      click: this.makeMenuEvent(() => {
         CycloneMapEditor.fillButton();
-      }
+      })
     });
     drawMenu.append(this.fillMenu);
     drawMenu.append(new nw.MenuItem( {type: 'separator'}));
@@ -531,9 +545,9 @@ class CycloneMapEditor extends CyclonePlugin {
       type: 'checkbox',
       checked: currentTool === 'eraser',
       key: 'e',
-      click: () => {
+      click: this.makeMenuEvent(() => {
         CycloneMapEditor.eraserButton();
-      }
+      })
     });
     drawMenu.append(this.eraserMenu);
 
@@ -548,45 +562,45 @@ class CycloneMapEditor extends CyclonePlugin {
       type: 'checkbox',
       checked: currentLayer === 7,
       key: '0',
-      click: () => {
+      click: this.makeMenuEvent(() => {
         CycloneMapEditor.changeCurrentLayer(7);
-      }
+      })
     });
     this.layer1Button = new nw.MenuItem( {
       label: 'Layer 1',
       type: 'checkbox',
       checked: currentLayer === 0,
       key: '1',
-      click: () => {
+      click: this.makeMenuEvent(() => {
         CycloneMapEditor.changeCurrentLayer(0);
-      }
+      })
     });
     this.layer2Button = new nw.MenuItem( {
       label: 'Layer 2',
       type: 'checkbox',
       checked: currentLayer === 1,
       key: '2',
-      click: () => {
+      click: this.makeMenuEvent(() => {
         CycloneMapEditor.changeCurrentLayer(1);
-      }
+      })
     });
     this.layer3Button = new nw.MenuItem( {
       label: 'Layer 3',
       type: 'checkbox',
       checked: currentLayer === 2,
       key: '3',
-      click: () => {
+      click: this.makeMenuEvent(() => {
         CycloneMapEditor.changeCurrentLayer(2);
-      }
+      })
     });
     this.layer4Button = new nw.MenuItem( {
       label: 'Layer 4',
       type: 'checkbox',
       checked: currentLayer === 3,
       key: '4',
-      click: () => {
+      click: this.makeMenuEvent(() => {
         CycloneMapEditor.changeCurrentLayer(3);
-      }
+      })
     });
     layerMenu.append(this.autoLayerButton);
     layerMenu.append(this.layer1Button);
@@ -600,9 +614,9 @@ class CycloneMapEditor extends CyclonePlugin {
       type: 'checkbox',
       checked: currentLayer === 4,
       key: '5',
-      click: () => {
+      click: this.makeMenuEvent(() => {
         CycloneMapEditor.changeCurrentLayer(4);
-      }
+      })
     });
     layerMenu.append(this.shadowsButton);
     this.regionsButton = new nw.MenuItem( {
@@ -610,9 +624,9 @@ class CycloneMapEditor extends CyclonePlugin {
       type: 'checkbox',
       checked: currentLayer === 5,
       key: '6',
-      click: () => {
+      click: this.makeMenuEvent(() => {
         CycloneMapEditor.changeCurrentLayer(5);
-      }
+      })
     });
     layerMenu.append(this.regionsButton);
     layerMenu.append(new nw.MenuItem( {type: 'separator'}));
@@ -621,9 +635,9 @@ class CycloneMapEditor extends CyclonePlugin {
       type: 'checkbox',
       checked: currentLayer === 8,
       key: '8',
-      click: () => {
+      click: this.makeMenuEvent(() => {
         CycloneMapEditor.changeCurrentLayer(8);
-      }
+      })
     });
     layerMenu.append(this.collisionsButton);
     this.tagsButton = new nw.MenuItem( {
@@ -631,9 +645,9 @@ class CycloneMapEditor extends CyclonePlugin {
       type: 'checkbox',
       checked: currentLayer === 9,
       key: '9',
-      click: () => {
+      click: this.makeMenuEvent(() => {
         CycloneMapEditor.changeCurrentLayer(9);
-      }
+      })
     });
     layerMenu.append(this.tagsButton);
 
@@ -645,72 +659,72 @@ class CycloneMapEditor extends CyclonePlugin {
     const exportMenu = new nw.Menu();
     exportMenu.append(new nw.MenuItem({
       label: 'Layer 1',
-      click: () => {
+      click: this.makeMenuEvent(() => {
         CycloneMapEditor.exportSingleLayer(0);
-      },
+      }),
     }));
     exportMenu.append(new nw.MenuItem({
       label: 'Layer 2',
-      click: () => {
+      click: this.makeMenuEvent(() => {
         CycloneMapEditor.exportSingleLayer(1);
-      },
+      }),
     }));
     exportMenu.append(new nw.MenuItem({
       label: 'Layer 3',
-      click: () => {
+      click: this.makeMenuEvent(() => {
         CycloneMapEditor.exportSingleLayer(2);
-      },
+      }),
     }));
     exportMenu.append(new nw.MenuItem({
       label: 'Layer 4',
-      click: () => {
+      click: this.makeMenuEvent(() => {
         CycloneMapEditor.exportSingleLayer(3);
-      },
+      }),
     }));
     exportMenu.append(new nw.MenuItem( {type: 'separator'}));
     exportMenu.append(new nw.MenuItem({
       label: 'Lower Tiles',
-      click: () => {
+      click: this.makeMenuEvent(() => {
         CycloneMapEditor.exportLowerTiles();
-      },
+      }),
     }));
     exportMenu.append(new nw.MenuItem({
       label: 'Upper Tiles',
-      click: () => {
+      click: this.makeMenuEvent(() => {
         CycloneMapEditor.exportUpperTiles();
-      },
+      }),
     }));
     exportMenu.append(new nw.MenuItem( {type: 'separator'}));
     exportMenu.append(new nw.MenuItem({
       label: 'Whole Map',
-      click: () => {
+      click: this.makeMenuEvent(() => {
         CycloneMapEditor.exportWholeMap();
-      },
+      }),
     }));
     exportMenu.append(new nw.MenuItem( {type: 'separator'}));
     exportMenu.append(new nw.MenuItem({
       label: 'Low Events',
-      click: () => {
+      click: this.makeMenuEvent(() => {
         CycloneMapEditor.exportLowEvents();
-      },
+      }),
     }));
     exportMenu.append(new nw.MenuItem({
       label: 'Normal Events',
-      click: () => {
+      click: this.makeMenuEvent(() => {
         CycloneMapEditor.exportNormalEvents();
-      },
+      }),
     }));
     exportMenu.append(new nw.MenuItem({
       label: 'High Events',
-      click: () => {
+      click: this.makeMenuEvent(() => {
         CycloneMapEditor.exportHighEvents();
-      },
+      }),
     }));
     exportMenu.append(new nw.MenuItem({
       label: 'All Events',
-      click: () => {
+      click: this.makeMenuEvent(() => {
         CycloneMapEditor.exportAllEvents();
-      },
+      }),
     }));
 
     menu.append(new nw.MenuItem({
@@ -718,17 +732,36 @@ class CycloneMapEditor extends CyclonePlugin {
       submenu: exportMenu,
     }));
 
+    // const pluginsMenu = new nw.Menu();
+    // let anyPlugin = false;
+    // if (globalThis.CycloneMovement) {
+    //   pluginsMenu.append(new nw.MenuItem({
+    //     label: 'Custom Collision',
+    //     click: this.makeMenuEvent(() => {
+
+    //     }),
+    //   }));
+    //   anyPlugin = true;
+    // }
+
+    // if (anyPlugin) {
+    //   menu.append(new nw.MenuItem({
+    //     label: 'Plugins',
+    //     submenu: pluginsMenu,
+    //   }));
+    // }
+
     const helpMenu = new nw.Menu();
     helpMenu.append(new nw.MenuItem( {
       label: 'Plugin Page',
       key: 'F1',
-      click: () => {
+      click: this.makeMenuEvent(() => {
         if (!globalThis.require) {
           return;
         }
 
         require('nw.gui').Shell.openExternal('https://makerdevs.com/plugin/cyclone-map-editor');
-      },
+      }),
     }));
 
     menu.append(new nw.MenuItem({
@@ -737,6 +770,7 @@ class CycloneMapEditor extends CyclonePlugin {
     }));
 
     this.menu = menu;
+    this.refreshMenuVisibility();
   }
 
   static clearAllData() {
@@ -752,6 +786,105 @@ class CycloneMapEditor extends CyclonePlugin {
     rectangleBackHeight = 0;
 
     this.clearSelection();
+  }
+
+  static applyExtraData(data) {
+    customCollisionTable = {};
+    if (data?.collision) {
+      for (let i = 0; i < data.collision.length; i++) {
+        const col = Number(data.collision[i] || 0);
+        if (col) {
+          customCollisionTable[i] = col;
+        }
+      }
+    }
+  }
+
+  static parseExtraData(note) {
+    let json;
+    try {
+      json = LZString.decompress(note);
+    } catch(e) {
+      console.error('Failed to decompress data from CycloneMapEditor event.');
+      console.log(note);
+      console.log(e);
+      return;
+    }
+
+    let data;
+    try {
+      data = JSON.parse(json);
+
+    } catch(e) {
+      console.error('Failed to parse extra data.');
+      console.log(json);
+      console.log(e);
+      return;
+    }
+
+    this.applyExtraData(data);
+  }
+
+  static loadExtraData() {
+    // Check if there's any event called CycloneMapEditor
+    for (const event of $dataMap.events) {
+      if (!event) {
+        continue;
+      }
+
+      if (event.name !== 'CycloneMapEditor') {
+        continue;
+      }
+
+      this.parseExtraData(event.note);
+      return;
+    }
+  }
+
+  static getExtraData() {
+    const collision = new Array($dataMap.width * $dataMap.height * 16);
+    for (let i = 0; i < collision.length; i++) {
+      if (customCollisionTable[i]) {
+        collision[i] = customCollisionTable[i];
+      } else {
+        collision[i] = 0;
+      }
+    }
+
+    return {
+      collision: collision.join(''),
+    };
+  }
+
+  static getExtraDataJson() {
+    return LZString.compress(JSON.stringify(this.getExtraData(), null, 0));
+  }
+
+  static saveExtraData() {
+    const data = this.getExtraDataJson();
+    // Check if there's any event called CycloneMapEditor
+    for (const event of $dataMap.events) {
+      if (!event) {
+        continue;
+      }
+
+      if (event.name !== 'CycloneMapEditor') {
+        continue;
+      }
+
+      event.note = data;
+      return;
+    }
+
+    // Create a new event then
+    $dataMap.events.push({
+      id: $dataMap.events.length,
+      name: 'CycloneMapEditor',
+      note: data,
+      pages: [],
+      x: $dataMap.width,
+      y: $dataMap.height,
+    });
   }
 
   static clearSelection() {
@@ -1220,6 +1353,10 @@ class CycloneMapEditor extends CyclonePlugin {
   }
 
   static selectHigherLayer(x, y) {
+    if (currentLayer === Layers.collisions) {
+      return;
+    }
+
     for (let z = 3; z >= 0; z--) {
       const tileIndex = this.tileIndex(x, y, z);
       const tileId = $dataMap.data[tileIndex];
@@ -1317,6 +1454,8 @@ class CycloneMapEditor extends CyclonePlugin {
   }
 
   static _doSave() {
+    this.saveExtraData();
+
     const fileName = `Map${ $gameMap._mapId.padZero(3) }.json`;
     const json = JSON.stringify($dataMap, null, 0);
 
@@ -1802,10 +1941,20 @@ class CycloneMapEditor extends CyclonePlugin {
     }
 
     const lastChange = changeHistory.pop();
-    currentChange = {};
-    for (const tileIndex in lastChange) {
-      currentChange[tileIndex] = $dataMap.data[tileIndex];
-      $dataMap.data[tileIndex] = lastChange[tileIndex];
+    currentChange = {
+      type: lastChange.type,
+      data: {},
+    };
+
+    for (const tileIndex in lastChange.data) {
+      if (lastChange.type === 'collision') {
+        currentChange.data[tileIndex] = customCollisionTable[tileIndex];
+        customCollisionTable[tileIndex] = lastChange.data[tileIndex];
+        continue;
+      }
+
+      currentChange.data[tileIndex] = $dataMap.data[tileIndex];
+      $dataMap.data[tileIndex] = lastChange.data[tileIndex];
     }
 
     undoHistory.push(currentChange);
@@ -1825,20 +1974,31 @@ class CycloneMapEditor extends CyclonePlugin {
 
     const lastChange = undoHistory.pop();
     currentChange = {};
-    for (const tileIndex in lastChange) {
+    for (const tileIndex in lastChange.data) {
+      if (lastChange.type === 'collision') {
+        currentChange[tileIndex] = customCollisionTable[tileIndex];
+        customCollisionTable[tileIndex] = lastChange.data[tileIndex];
+        continue;
+      }
+
       currentChange[tileIndex] = $dataMap.data[tileIndex];
-      $dataMap.data[tileIndex] = lastChange[tileIndex];
+      $dataMap.data[tileIndex] = lastChange.data[tileIndex];
     }
 
-    this.logChange(false);
+    this.logChange(false, lastChange.type);
     this.refreshTilemap();
   }
 
-  static logChange(clearUndo = true) {
+  static logChange(clearUndo = true, type = undefined) {
     const hasChanges = Object.keys(currentChange).length > 0;
 
+    type = type || currentLayer === Layers.collisions ? 'collision' : 'tile';
+
     if (hasChanges) {
-      changeHistory.push(currentChange);
+      changeHistory.push({
+        type,
+        data: currentChange
+      });
       if (clearUndo) {
         undoHistory = [];
       }
@@ -1976,33 +2136,76 @@ class CycloneMapEditor extends CyclonePlugin {
     return false;
   }
 
+  static _eraseSingleLayerTile(x, y, z, updateNeighbors = true, previewOnly = false) {
+    if (!this.canEraseLayer(z)) {
+      return;
+    }
+
+    const tileIndex = this.tileIndex(x, y, z);
+    if (previewOnly) {
+      previewChanges[tileIndex] = 0;
+    } else {
+      const oldTile = $dataMap.data[tileIndex];
+      if (currentChange[tileIndex] === undefined && oldTile !== 0) {
+        currentChange[tileIndex] = oldTile;
+      }
+
+      $dataMap.data[tileIndex] = 0;
+    }
+  }
+
   static _eraseSingleMapTile(x, y, z, updateNeighbors = true, previewOnly = false) {
+    if (z > 3 && z !== Layers.auto) {
+      this._eraseSingleLayerTile(x, y, z, updateNeighbors, previewOnly);
+      return;
+    }
+
     for (let newZ = 0; newZ <= 3; newZ++) {
       if (newZ !== z && z !== Layers.auto) {
         continue;
       }
 
-      if (!this.canEraseLayer(newZ)) {
-        continue;
-      }
-
-      const tileIndex = this.tileIndex(x, y, newZ);
-      if (previewOnly) {
-        previewChanges[tileIndex] = 0;
-      } else {
-        const oldTile = $dataMap.data[tileIndex];
-        if (currentChange[tileIndex] === undefined && oldTile !== 0) {
-          currentChange[tileIndex] = oldTile;
-        }
-
-        $dataMap.data[tileIndex] = 0;
-      }
-
+      this._eraseSingleLayerTile(x, y, newZ, updateNeighbors, previewOnly);
       this.maybeUpdateTileNeighbors(x, y, z, updateNeighbors, previewOnly);
     }
   }
 
+  static _applySingleCollision(x, y, tileId, previewOnly = false) {
+    if (previewOnly) {
+      return;
+    }
+
+    const gridRatio = this.getGridRatio();
+    const count = 4 / gridRatio;
+
+    for (let i = 0; i < count; i++) {
+      for (let j = 0; j < count; j++) {
+        const intX = Math.floor(x * 4) + i;
+        const intY = Math.floor(y * 4) + j;
+        const height = $gameMap.height() * 4;
+        const width = $gameMap.width() * 4;
+        const index = (intY % height) * width + (intX % width);
+
+        const oldTile = customCollisionTable[index] || 0;
+        if (currentChange[index] === undefined && oldTile !== tileId) {
+          currentChange[index] = oldTile;
+        }
+
+        if (!tileId) {
+          delete customCollisionTable[index];
+          continue;
+        }
+
+        customCollisionTable[index] = tileId;
+      }
+    }
+  }
+
   static _applySingleMapTile(x, y, z, tileId, updateNeighbors = true, previewOnly = false) {
+    if (z === Layers.collisions) {
+      return this._applySingleCollision(x, y, tileId, previewOnly);
+    }
+
     if (!tileId) {
       this._eraseSingleMapTile(x, y, z, updateNeighbors, previewOnly);
       return;
@@ -2134,18 +2337,19 @@ class CycloneMapEditor extends CyclonePlugin {
     }
 
     this.ensureLayerVisibility();
+    const gridRatio = this.getGridRatio();
     let initialRow = 0;
     let initialCol = 0;
     let rowIncrement = 1;
     let colIncrement = 1;
 
     if (rectangleBackWidth > 0) {
-      initialCol = width - 1;
+      initialCol = (width * gridRatio) - 1;
       colIncrement *= -1;
     }
 
     if (rectangleBackHeight > 0) {
-      initialRow = height - 1;
+      initialRow = (height * gridRatio) - 1;
       rowIncrement *= -1;
     }
 
@@ -2163,9 +2367,11 @@ class CycloneMapEditor extends CyclonePlugin {
       effectiveLayer = this.getHighestLayerOnArea(startX, startY, width, height);
     }
 
-    for (let tileY = startY; tileY < startY + height; tileY++) {
+    const tileIncrement = 1 / gridRatio;
+
+    for (let tileY = startY; tileY < startY + height; tileY += tileIncrement) {
       selectionCol = initialCol;
-      for (let tileX = startX; tileX < startX + width; tileX++) {
+      for (let tileX = startX; tileX < startX + width; tileX += tileIncrement) {
         this.setSelectionTileMaybeMultiLayer(tileX, tileY, selectionCol, selectionRow, previewOnly, effectiveLayer);
         selectionCol += colIncrement;
       }
@@ -2206,6 +2412,11 @@ class CycloneMapEditor extends CyclonePlugin {
 
   static refreshTilemap() {
     previewChanges = {};
+    this.saveExtraData();
+    if (window.CycloneMovement) {
+      window.CycloneMovement.setupCollision();
+    }
+
     SceneManager._scene._spriteset._tilemap.refresh();
     SceneManager._scene._mapEditorGrid.refresh();
   }
@@ -2318,9 +2529,13 @@ class CycloneMapEditor extends CyclonePlugin {
     if (!wasRightButtonDown) {
       return;
     }
+    if (currentLayer === Layers.collisions) {
+      return;
+    }
 
+    const gridRatio = this.getGridRatio();
     multiLayerSelection = [];
-    selectedTileList = Array(width * height);
+    selectedTileList = Array((width * gridRatio) * (height * gridRatio));
     currentTileId = undefined;
 
     if (currentLayer === 7) {
@@ -2480,8 +2695,10 @@ class CycloneMapEditor extends CyclonePlugin {
 
     this.ensureLayerVisibility();
     let index = 0;
-    for (let y = mapY; y < mapY + tileRows; y++) {
-      for (let x = mapX; x < mapX + tileCols; x++) {
+    const gridRatio = this.getGridRatio();
+    const increment = 1 / gridRatio;
+    for (let y = mapY; y < mapY + tileRows; y += increment) {
+      for (let x = mapX; x < mapX + tileCols; x += increment) {
         if (!$gameMap.isValid(x, y)) {
           continue;
         }
@@ -2510,28 +2727,30 @@ class CycloneMapEditor extends CyclonePlugin {
         CycloneMapEditor.rectangleStartMouseY = TouchInput.y;
       }
 
-      CycloneMapEditor.rectangleWidth = (x - CycloneMapEditor.rectangleStartX + 1).clamp(0, 30);
-      CycloneMapEditor.rectangleHeight = (y - CycloneMapEditor.rectangleStartY + 1).clamp(0, 30);
-      CycloneMapEditor.rectangleBackWidth = (CycloneMapEditor.rectangleStartX - x).clamp(0, 30);
-      CycloneMapEditor.rectangleBackHeight = (CycloneMapEditor.rectangleStartY - y).clamp(0, 30);
+      const gridRatio = CycloneMapEditor.getGridRatio();
+
+      CycloneMapEditor.rectangleWidth = (x - CycloneMapEditor.rectangleStartX + (1 / gridRatio)).clamp(0, 30) * gridRatio;
+      CycloneMapEditor.rectangleHeight = (y - CycloneMapEditor.rectangleStartY + (1 / gridRatio)).clamp(0, 30) * gridRatio;
+      CycloneMapEditor.rectangleBackWidth = (CycloneMapEditor.rectangleStartX - x).clamp(0, 30) * gridRatio;
+      CycloneMapEditor.rectangleBackHeight = (CycloneMapEditor.rectangleStartY - y).clamp(0, 30) * gridRatio;
 
       if (this.crossedHorizontalLoop()) {
         // moved right through the edge, limit the width to it
         if (CycloneMapEditor.rectangleStartX > x) {
-          CycloneMapEditor.rectangleWidth = $gameMap.width() - CycloneMapEditor.rectangleStartX;
+          CycloneMapEditor.rectangleWidth = ($gameMap.width() - CycloneMapEditor.rectangleStartX) * gridRatio;
           CycloneMapEditor.rectangleBackWidth = 0;
         } else if (x > CycloneMapEditor.rectangleStartX) {
-          CycloneMapEditor.rectangleBackWidth = CycloneMapEditor.rectangleStartX;
+          CycloneMapEditor.rectangleBackWidth = CycloneMapEditor.rectangleStartX * gridRatio;
           CycloneMapEditor.rectangleWidth = 0;
         }
       }
 
       if (this.crossedVerticalLoop()) {
         if (CycloneMapEditor.rectangleStartY > y) {
-          CycloneMapEditor.rectangleHeight = $gameMap.height() - CycloneMapEditor.rectangleStartY;
+          CycloneMapEditor.rectangleHeight = ($gameMap.height() - CycloneMapEditor.rectangleStartY) * gridRatio;
           CycloneMapEditor.rectangleBackHeight = 0;
         } else if (y > CycloneMapEditor.rectangleStartY) {
-          CycloneMapEditor.rectangleBackHeight = CycloneMapEditor.rectangleStartY;
+          CycloneMapEditor.rectangleBackHeight = CycloneMapEditor.rectangleStartY * gridRatio;
           CycloneMapEditor.rectangleHeight = 0;
         }
       }
@@ -2567,19 +2786,20 @@ class CycloneMapEditor extends CyclonePlugin {
     let startY = CycloneMapEditor.rectangleStartY;
     let applyWidth = 0;
     let applyHeight = 0;
+    const gridRatio = CycloneMapEditor.getGridRatio();
 
     if (CycloneMapEditor.rectangleWidth > 0) {
-      applyWidth = CycloneMapEditor.rectangleWidth;
+      applyWidth = CycloneMapEditor.rectangleWidth / gridRatio;
     } else if (CycloneMapEditor.rectangleBackWidth > 0) {
-      startX -= CycloneMapEditor.rectangleBackWidth;
-      applyWidth = CycloneMapEditor.rectangleBackWidth +1;
+      startX -= CycloneMapEditor.rectangleBackWidth / gridRatio;
+      applyWidth = (CycloneMapEditor.rectangleBackWidth + 1) / gridRatio;
     }
 
     if (CycloneMapEditor.rectangleHeight > 0) {
-      applyHeight = CycloneMapEditor.rectangleHeight;
+      applyHeight = CycloneMapEditor.rectangleHeight / gridRatio;
     } else if (CycloneMapEditor.rectangleBackHeight > 0) {
-      startY -= CycloneMapEditor.rectangleBackHeight;
-      applyHeight = CycloneMapEditor.rectangleBackHeight + 1;
+      startY -= CycloneMapEditor.rectangleBackHeight / gridRatio;
+      applyHeight = (CycloneMapEditor.rectangleBackHeight + 1) / gridRatio;
     }
 
     if (applyWidth > 0 && applyHeight > 0) {
@@ -2645,28 +2865,29 @@ class CycloneMapEditor extends CyclonePlugin {
         CycloneMapEditor.rectangleStartMouseY = TouchInput.y;
       }
 
-      CycloneMapEditor.rectangleWidth = (x - CycloneMapEditor.rectangleStartX + 1).clamp(0, 30);
-      CycloneMapEditor.rectangleHeight = (y - CycloneMapEditor.rectangleStartY + 1).clamp(0, 30);
-      CycloneMapEditor.rectangleBackWidth = (CycloneMapEditor.rectangleStartX - x).clamp(0, 30);
-      CycloneMapEditor.rectangleBackHeight = (CycloneMapEditor.rectangleStartY - y).clamp(0, 30);
+      const gridRatio = CycloneMapEditor.getGridRatio();
+      CycloneMapEditor.rectangleWidth = (x - CycloneMapEditor.rectangleStartX + (1 / gridRatio)).clamp(0, 30) * gridRatio;
+      CycloneMapEditor.rectangleHeight = (y - CycloneMapEditor.rectangleStartY + (1 / gridRatio)).clamp(0, 30) * gridRatio;
+      CycloneMapEditor.rectangleBackWidth = (CycloneMapEditor.rectangleStartX - x).clamp(0, 30) * gridRatio;
+      CycloneMapEditor.rectangleBackHeight = (CycloneMapEditor.rectangleStartY - y).clamp(0, 30) * gridRatio;
 
       if (this.crossedHorizontalLoop()) {
         // moved right through the edge, limit the width to it
         if (CycloneMapEditor.rectangleStartX > x) {
-          CycloneMapEditor.rectangleWidth = $gameMap.width() - CycloneMapEditor.rectangleStartX;
+          CycloneMapEditor.rectangleWidth = ($gameMap.width() - CycloneMapEditor.rectangleStartX) * gridRatio;
           CycloneMapEditor.rectangleBackWidth = 0;
         } else if (x > CycloneMapEditor.rectangleStartX) {
-          CycloneMapEditor.rectangleBackWidth = CycloneMapEditor.rectangleStartX;
+          CycloneMapEditor.rectangleBackWidth = CycloneMapEditor.rectangleStartX * gridRatio;
           CycloneMapEditor.rectangleWidth = 0;
         }
       }
 
       if (this.crossedVerticalLoop()) {
         if (CycloneMapEditor.rectangleStartY > y) {
-          CycloneMapEditor.rectangleHeight = $gameMap.height() - CycloneMapEditor.rectangleStartY;
+          CycloneMapEditor.rectangleHeight = ($gameMap.height() - CycloneMapEditor.rectangleStartY) * gridRatio;
           CycloneMapEditor.rectangleBackHeight = 0;
         } else if (y > CycloneMapEditor.rectangleStartY) {
-          CycloneMapEditor.rectangleBackHeight = CycloneMapEditor.rectangleStartY;
+          CycloneMapEditor.rectangleBackHeight = CycloneMapEditor.rectangleStartY * gridRatio;
           CycloneMapEditor.rectangleHeight = 0;
         }
       }
@@ -2706,6 +2927,48 @@ class CycloneMapEditor extends CyclonePlugin {
 
     if (wasPressing) {
       CycloneMapEditor.logChange();
+    }
+  }
+
+  static getGridRatio() {
+    if (currentLayer === Layers.collisions) {
+      if (window.CycloneMovement) {
+        return window.CycloneMovement.collisionStepCount;
+      }
+
+      return 1;
+    }
+
+    return 1;
+  }
+
+  static canvasToMapX(x) {
+    const gridRatio = this.getGridRatio();
+    const originX = $gameMap._displayX * tileWidth;
+    const mapX = (originX + x) / tileWidth;
+    return Math.floor(mapX * gridRatio) / gridRatio;
+  }
+
+  static canvasToMapY(y) {
+    const gridRatio = this.getGridRatio();
+
+
+    const originY = $gameMap._displayY * tileHeight;
+    const mapY = (originY + y) / tileHeight;
+    return Math.floor(mapY * gridRatio) / gridRatio;
+  }
+
+  static requestCollisionRefresh() {
+    if (!this.active) {
+      return;
+    }
+
+    if (currentLayer !== Layers.collisions) {
+      return;
+    }
+
+    if (SceneManager._scene instanceof Scene_Map) {
+      SceneManager._scene._mapEditorGrid.requestRefresh();
     }
   }
 }

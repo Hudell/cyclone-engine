@@ -39,11 +39,11 @@ class SpriteMapEditorCursor extends Sprite {
   }
 
   getNewBitmapWidth() {
-    return (CycloneMapEditor.tileWidth * (CycloneMapEditor.rectangleWidth || (CycloneMapEditor.rectangleBackWidth + 1))) || 1;
+    return ((CycloneMapEditor.tileWidth * (CycloneMapEditor.rectangleWidth || (CycloneMapEditor.rectangleBackWidth + 1))) || 1) / CycloneMapEditor.getGridRatio();
   }
 
   getNewBitmapHeight() {
-    return (CycloneMapEditor.tileHeight * (CycloneMapEditor.rectangleHeight || (CycloneMapEditor.rectangleBackHeight + 1))) || 1;
+    return ((CycloneMapEditor.tileHeight * (CycloneMapEditor.rectangleHeight || (CycloneMapEditor.rectangleBackHeight + 1))) || 1) / CycloneMapEditor.getGridRatio();
   }
 
   updateRectangle() {
@@ -148,6 +148,8 @@ class SpriteMapEditorCursor extends Sprite {
         this.bitmap.drawRegion(tileId, x, y);
       } else if (CycloneMapEditor.currentLayer === 4) {
         this.bitmap.drawShadow(tileId, x, y);
+      } else if (CycloneMapEditor.currentLayer === 8) {
+        this.drawCollision(tileId, x, y);
       } else {
         this.bitmap.drawTile(tileId, x, y);
       }
@@ -155,9 +157,35 @@ class SpriteMapEditorCursor extends Sprite {
     }
   }
 
+  drawCollision(tileId, x, y) {
+    const drawWidth = CycloneMapEditor.tileWidth;
+    const drawHeight = CycloneMapEditor.tileHeight;
+
+    if (tileId === 0) {
+      return;
+    }
+
+    const color = ['#00FF00', '#FF0000', '#FF00FF'][(tileId -1) % 3];
+    this.bitmap.fillRect(x, y, drawWidth, drawHeight, color);
+
+    const context = this.bitmap.context;
+    context.save();
+    context.strokeStyle = '#000000';
+    context.beginPath();
+    context.moveTo(x, y);
+    context.lineTo(x + drawWidth, y);
+    context.stroke();
+    context.beginPath();
+    context.moveTo(x, y);
+    context.lineTo(x, y + drawHeight);
+    context.stroke();
+  }
+
   updateTiles() {
-    const width = CycloneMapEditor.tileWidth * CycloneMapEditor.tileCols;
-    const height = CycloneMapEditor.tileHeight * CycloneMapEditor.tileRows;
+    const gridRatio = CycloneMapEditor.getGridRatio();
+
+    const width = CycloneMapEditor.tileWidth * CycloneMapEditor.tileCols / gridRatio;
+    const height = CycloneMapEditor.tileHeight * CycloneMapEditor.tileRows / gridRatio;
 
     if (width !== this.bitmap.width || height !== this.bitmap.height) {
       this.bitmap = new Bitmap(width, height);
@@ -186,17 +214,17 @@ class SpriteMapEditorCursor extends Sprite {
         return CycloneMapEditor.rectangleStartX;
       }
       if (CycloneMapEditor.rectangleBackWidth > 0) {
-        return CycloneMapEditor.rectangleStartX - CycloneMapEditor.rectangleBackWidth;
+        return CycloneMapEditor.rectangleStartX - CycloneMapEditor.rectangleBackWidth / CycloneMapEditor.getGridRatio();
       }
     }
 
     if (SceneManager._scene._mapEditorWindow) {
       if (TouchInput.x >= SceneManager._scene._mapEditorWindow.x) {
-        return $gameMap.canvasToMapX(SceneManager._scene._mapEditorWindow.x);
+        return CycloneMapEditor.canvasToMapX(SceneManager._scene._mapEditorWindow.x);
       }
     }
 
-    return $gameMap.canvasToMapX(TouchInput.x);
+    return CycloneMapEditor.canvasToMapX(TouchInput.x);
   }
 
   getCursorTileY() {
@@ -205,11 +233,11 @@ class SpriteMapEditorCursor extends Sprite {
         return CycloneMapEditor.rectangleStartY;
       }
       if (CycloneMapEditor.rectangleBackHeight > 0) {
-        return CycloneMapEditor.rectangleStartY - CycloneMapEditor.rectangleBackHeight;
+        return CycloneMapEditor.rectangleStartY - CycloneMapEditor.rectangleBackHeight / CycloneMapEditor.getGridRatio();
       }
     }
 
-    return $gameMap.canvasToMapY(TouchInput.y);
+    return CycloneMapEditor.canvasToMapY(TouchInput.y);
   }
 
   updatePosition() {
