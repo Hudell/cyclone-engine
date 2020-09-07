@@ -1,6 +1,52 @@
 import './CharacterOverride';
 
+let tryToLeaveVehicleDelay = 0;
+
 CycloneMovement.patchClass(Game_Player, $super => class {
+  get defaultWidth() {
+    return 0.75;
+  }
+  get defaultHeight() {
+    return 0.375;
+  }
+  get defaultHitboxX() {
+    return 0.125;
+  }
+  get defaultHitboxY() {
+    return 0.5;
+  }
+
+  get width() {
+    if (this.isInVehicle()) {
+      return 1;
+    }
+
+    return this.defaultWidth;
+  }
+  get height() {
+    if (this.isInVehicle()) {
+      return 1;
+    }
+
+    return this.defaultHeight;
+  }
+
+  get hitboxX() {
+    if (this.isInVehicle()) {
+      return 0;
+    }
+
+    return this.defaultHitboxX;
+  }
+
+  get hitboxY() {
+    if (this.isInVehicle()) {
+      return 0;
+    }
+
+    return this.defaultHitboxY;
+  }
+
   // eslint-disable-next-line complexity
   moveByInput() {
     if (this.isMoving() || !this.canMove()) {
@@ -61,9 +107,14 @@ CycloneMovement.patchClass(Game_Player, $super => class {
   }
 
   onBeforeMove() {
+    tryToLeaveVehicleDelay = 20;
   }
 
   tryOtherMovementOptions(direction) {
+    if (this.tryToLeaveVehicle(direction)) {
+      return true;
+    }
+
     if (this.tryToAvoidDiagonally(direction)) {
       return true;
     }
@@ -73,6 +124,23 @@ CycloneMovement.patchClass(Game_Player, $super => class {
     }
 
     return false;
+  }
+
+  tryToLeaveVehicle(direction) {
+    if (!CycloneMovement.autoLeaveVehicles) {
+      return false;
+    }
+
+    if (tryToLeaveVehicleDelay > 0) {
+      tryToLeaveVehicleDelay--;
+      return false;
+    }
+
+    if (!this.isInBoat() && !this.isInShip()) {
+      return false;
+    }
+
+    return this.getOffVehicle(direction);
   }
 
   tryToAvoid(direction, maxOffset) {
@@ -287,6 +355,59 @@ CycloneMovement.patchClass(Game_Player, $super => class {
     }
   }
 
+  shouldTriggerEvent(event, triggers, normal) {
+    if (!event) {
+      return false;
+    }
+
+    if (!event.isTriggerIn(triggers)) {
+      return false;
+    }
+
+    if (event.isNormalPriority() !== normal) {
+      return false;
+    }
+
+    if (!event.hasAnythingToRun()) {
+      return false;
+    }
+
+    return true;
+  }
+
+  startMapTileEvent(tileX, tileY, triggers, normal) {
+    if (!CycloneMovement.triggerAllEvents && $gameMap.isEventRunning()) {
+      return;
+    }
+
+    if (!CycloneMovement.blockRepeatedTouchEvents) {
+      return $super.startMapEvent.call(this, tileX, tileY, triggers, normal);
+    }
+
+    if (CycloneMovement.isTileChecked(tileX, tileY)) {
+      return;
+    }
+
+    let anyStarted = false;
+
+    for (const event of $gameMap.eventsXy(tileX, tileY)) {
+      if (!this.shouldTriggerEvent(event, triggers, normal)) {
+        continue;
+      }
+
+      CycloneMovement.markEventAsChecked(event);
+
+      event.start();
+      anyStarted = true;
+
+      if (!CycloneMovement.triggerAllEvents) {
+        return true;
+      }
+    }
+
+    return anyStarted;
+  }
+
   startMapEvent(x, y, triggers, normal) {
     if ($gameMap.isEventRunning()) {
       return;
@@ -304,12 +425,286 @@ CycloneMovement.patchClass(Game_Player, $super => class {
 
     for (let newX = firstX; newX <= lastX; newX++) {
       for (let newY = firstY; newY <= lastY; newY++) {
-        if ($super.startMapEvent.call(this, newX, newY, triggers, normal) === true) {
+        if (this.startMapTileEvent(newX, newY, triggers, normal) === true) {
           return true;
         }
       }
     }
 
     return false;
+  }
+
+  updateNonmoving(wasMoving, sceneActive) {
+    $super.updateNonmoving.call(this, wasMoving, sceneActive);
+
+    if (wasMoving || Input.dir4 !== 0) {
+      if (!$gameMap.isEventRunning()) {
+        this.checkEventTriggerThere([1, 2]);
+        $gameMap.setupStartingEvent();
+      }
+    }
+  }
+
+  _isSamePos(x1, y1, destX, destY) {
+    if (Math.floor(x1) !== destX && Math.ceil(x1) !== destX) {
+      return false;
+    }
+
+    if (Math.floor(y1) !== destY && Math.ceil(y1) !== destY) {
+      return false;
+    }
+
+    return true;
+  }
+
+  triggerTouchAction() {
+    if (!$gameTemp.isDestinationValid()) {
+      return false;
+    }
+
+    const direction = this.direction();
+    const x1 = this.x;
+    const y1 = this.y;
+    const destX = $gameTemp.destinationX();
+    const destY = $gameTemp.destinationY();
+
+    if (this._isSamePos(x1, y1, destX, destY)) {
+      return this.triggerTouchActionD1(x1, y1);
+    }
+
+    const x2 = CycloneMovement.roundXWithDirection(x1, direction);
+    const y2 = CycloneMovement.roundYWithDirection(y1, direction);
+
+    if (this._isSamePos(x2, y2, destX, destY)) {
+      return this.triggerTouchActionD2(x2, y2);
+    }
+
+    const x3 = CycloneMovement.roundXWithDirection(x2, direction);
+    const y3 = CycloneMovement.roundYWithDirection(y2, direction);
+
+    if (this._isSamePos(x3, y3, destX, destY)) {
+      return this.triggerTouchActionD3(x3, y3);
+    }
+
+    return false;
+  }
+
+  isTouchingAirship() {
+    const airship = $gameMap.airship();
+    if (!airship) {
+      return false;
+    }
+
+    return this.isTouchingCharacter(airship);
+  }
+
+  isFacingVehicle(vehicle) {
+    if (!vehicle) {
+      return false;
+    }
+
+    let { x, y } = this;
+    switch (this._direction) {
+      case 2:
+        y++;
+        break;
+      case 4:
+        x--;
+        break;
+      case 6:
+        x++;
+        break;
+      case 8:
+        y--;
+        break;
+    }
+
+    return this.wouldTouchCharacterAt(vehicle, x, y);
+  }
+
+  getOnVehicle() {
+    if (this.isTouchingAirship()) {
+      this._vehicleType = 'airship';
+    } else if (this.isFacingVehicle($gameMap.ship())) {
+      this._vehicleType = 'ship';
+    } else if (this.isFacingVehicle($gameMap.boat())) {
+      this._vehicleType = 'boat';
+    }
+
+    if (this.isInVehicle()) {
+      this._vehicleGettingOn = true;
+
+      if (!this.isInAirship()) {
+        const vehicle = this.vehicle();
+        if (vehicle) {
+          this._x = vehicle._x;
+          this._y = vehicle._y;
+
+          this.updateAnimationCount();
+        }
+      }
+
+      this.gatherFollowers();
+    }
+    return this._vehicleGettingOn;
+  }
+
+  checkDistanceToLand(direction, targetX, targetY) {
+    switch (direction) {
+      case 2:
+        if (Math.abs(targetY - this.bottom) > 0.5) {
+          return false;
+        }
+        break;
+      case 4:
+        if (Math.abs(targetX - this.left) > 1) {
+          return false;
+        }
+        break;
+      case 6:
+        if (Math.abs(targetX - this.right) > 0.5) {
+          return false;
+        }
+        break;
+      case 8:
+        if (Math.abs(targetY - this.top) > 1) {
+          return false;
+        }
+        break;
+    }
+
+    return true;
+  }
+
+  getBestLandingPosition(vehicle, direction) {
+    let x;
+    let y;
+
+    switch(direction) {
+      case 2:
+        x = this.x;
+        y = this.y + this.defaultHitboxY + this.defaultHeight;
+        break;
+      case 4:
+        x = this.x - this.defaultHitboxX - this.defaultWidth;
+        y = this.y;
+        break;
+      case 6:
+        x = this.x + this.defaultHitboxX + this.defaultWidth;
+        y = this.y;
+        break;
+      case 8:
+        x = this.x;
+        y = this.y - this.defaultHitboxY - this.defaultHeight;
+        break;
+    }
+
+    if (!this.canLandOn(x, y)) {
+      return false;
+    }
+
+    if (this.isCollidedWithCharacters(x, y)) {
+      return false;
+    }
+
+    if (!vehicle.isLandOk(x, y, direction)) {
+      return false;
+    }
+
+    return {
+      x,
+      y,
+    };
+  }
+
+  getOffVehicle(direction = undefined) {
+    direction = direction || this.direction();
+    const vehicle = this.vehicle();
+    if (!vehicle) {
+      return this._vehicleGettingOff;
+    }
+
+    const target = this.getBestLandingPosition(vehicle, direction);
+    if (!target) {
+      return this._vehicleGettingOff;
+    }
+
+    if (this.isInAirship()) {
+      this.setDirection(2);
+    }
+
+    this._followers.synchronize(this.x, this.y, direction);
+    this.vehicle().getOff();
+
+    if (!this.isInAirship()) {
+      this._x = target.x;
+      this._y = target.y;
+
+      this._positionHistory = [];
+
+      this.updateAnimationCount();
+      this.setTransparent(false);
+    }
+
+    this._vehicleGettingOff = true;
+    this.setMoveSpeed(4);
+    this.setThrough(false);
+    this.makeEncounterCount();
+    this.gatherFollowers();
+  }
+
+  isPositionPassable(x, y, d) {
+    const vehicle = this.vehicle();
+    if (vehicle) {
+      return vehicle.checkPassage(Math.floor(x), Math.floor(y));
+    }
+
+    return $super.isPositionPassable.call(this, x, y, d);
+  }
+
+  shouldSkipExtraPassabilityTests() {
+    const vehicle = this.vehicle();
+
+    if (vehicle) {
+      return true;
+    }
+
+    return false;
+  }
+
+  // Check if there's enough room for the player on that position
+  canLandOn(x, y) {
+    const x1 = Math.floor(x + this.defaultHitboxX);
+    const y1 = Math.floor(y + this.defaultHitboxY);
+
+    if (!$gameMap.isTileClear(x1, y1)) {
+      return false;
+    }
+
+    const x2 = x + this.defaultHitboxX + this.defaultWidth;
+    const x2f = CycloneMovement.isRoundNumber(x2) ? x2 -1 : Math.floor(x2);
+
+    if (x1 !== x2f) {
+      if (!$gameMap.isTileClear(x2f, y1)) {
+        return false;
+      }
+    }
+
+    const y2 = y + this.defaultHitboxY + this.defaultHeight;
+    const y2f = CycloneMovement.isRoundNumber(y2) ? y2 - 1 : Math.floor(y2);
+
+    if (y1 !== y2f) {
+      if (!$gameMap.isTileClear(x1, y2f)) {
+        return false;
+      }
+
+      if (x1 !== x2f) {
+        if (!$gameMap.isTileClear(x2f, y2f)) {
+          return false;
+        }
+      }
+    }
+
+    return true;
   }
 });

@@ -66,6 +66,7 @@ globals:
   $gameVariables: false
   $gameSwitches: false
   $gameScreen: false
+  $gameParty: false
 
   $dataCommonEvents: false
   $dataMap: false

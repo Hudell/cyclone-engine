@@ -97,4 +97,10 @@
  * @text Ignore Empty Events
  * @desc if true, the game won't try to trigger events that have no commands
  * @default true
+ *
+ * @param autoLeaveVehicles
+ * @text Leave Vehicles Automatically
+ * @desc If true, the player will leave boats and ships automatically when they reach land
+ * @default false
+ *
  **/

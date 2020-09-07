@@ -732,6 +732,7 @@ class CyclonePlugin {
 var LZString=function(){function o(o,r){if(!t[o]){t[o]={};for(var n=0;n<o.length;n++)t[o][o.charAt(n)]=n;}return t[o][r]}var r=String.fromCharCode,n="ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/=",e="ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+-$",t={},i={compressToBase64:function(o){if(null==o)return "";var r=i._compress(o,6,function(o){return n.charAt(o)});switch(r.length%4){default:case 0:return r;case 1:return r+"===";case 2:return r+"==";case 3:return r+"="}},decompressFromBase64:function(r){return null==r?"":""==r?null:i._decompress(r.length,32,function(e){return o(n,r.charAt(e))})},compressToUTF16:function(o){return null==o?"":i._compress(o,15,function(o){return r(o+32)})+" "},decompressFromUTF16:function(o){return null==o?"":""==o?null:i._decompress(o.length,16384,function(r){return o.charCodeAt(r)-32})},compressToUint8Array:function(o){for(var r=i.compress(o),n=new Uint8Array(2*r.length),e=0,t=r.length;t>e;e++){var s=r.charCodeAt(e);n[2*e]=s>>>8,n[2*e+1]=s%256;}return n},decompressFromUint8Array:function(o){if(null===o||void 0===o)return i.decompress(o);for(var n=new Array(o.length/2),e=0,t=n.length;t>e;e++)n[e]=256*o[2*e]+o[2*e+1];var s=[];return n.forEach(function(o){s.push(r(o));}),i.decompress(s.join(""))},compressToEncodedURIComponent:function(o){return null==o?"":i._compress(o,6,function(o){return e.charAt(o)})},decompressFromEncodedURIComponent:function(r){return null==r?"":""==r?null:(r=r.replace(/ /g,"+"),i._decompress(r.length,32,function(n){return o(e,r.charAt(n))}))},compress:function(o){return i._compress(o,16,function(o){return r(o)})},_compress:function(o,r,n){if(null==o)return "";var e,t,i,s={},p={},u="",c="",a="",l=2,f=3,h=2,d=[],m=0,v=0;for(i=0;i<o.length;i+=1)if(u=o.charAt(i),Object.prototype.hasOwnProperty.call(s,u)||(s[u]=f++,p[u]=!0),c=a+u,Object.prototype.hasOwnProperty.call(s,c))a=c;else {if(Object.prototype.hasOwnProperty.call(p,a)){if(a.charCodeAt(0)<256){for(e=0;h>e;e++)m<<=1,v==r-1?(v=0,d.push(n(m)),m=0):v++;for(t=a.charCodeAt(0),e=0;8>e;e++)m=m<<1|1&t,v==r-1?(v=0,d.push(n(m)),m=0):v++,t>>=1;}else {for(t=1,e=0;h>e;e++)m=m<<1|t,v==r-1?(v=0,d.push(n(m)),m=0):v++,t=0;for(t=a.charCodeAt(0),e=0;16>e;e++)m=m<<1|1&t,v==r-1?(v=0,d.push(n(m)),m=0):v++,t>>=1;}l--,0==l&&(l=Math.pow(2,h),h++),delete p[a];}else for(t=s[a],e=0;h>e;e++)m=m<<1|1&t,v==r-1?(v=0,d.push(n(m)),m=0):v++,t>>=1;l--,0==l&&(l=Math.pow(2,h),h++),s[c]=f++,a=String(u);}if(""!==a){if(Object.prototype.hasOwnProperty.call(p,a)){if(a.charCodeAt(0)<256){for(e=0;h>e;e++)m<<=1,v==r-1?(v=0,d.push(n(m)),m=0):v++;for(t=a.charCodeAt(0),e=0;8>e;e++)m=m<<1|1&t,v==r-1?(v=0,d.push(n(m)),m=0):v++,t>>=1;}else {for(t=1,e=0;h>e;e++)m=m<<1|t,v==r-1?(v=0,d.push(n(m)),m=0):v++,t=0;for(t=a.charCodeAt(0),e=0;16>e;e++)m=m<<1|1&t,v==r-1?(v=0,d.push(n(m)),m=0):v++,t>>=1;}l--,0==l&&(l=Math.pow(2,h),h++),delete p[a];}else for(t=s[a],e=0;h>e;e++)m=m<<1|1&t,v==r-1?(v=0,d.push(n(m)),m=0):v++,t>>=1;l--,0==l&&(l=Math.pow(2,h),h++);}for(t=2,e=0;h>e;e++)m=m<<1|1&t,v==r-1?(v=0,d.push(n(m)),m=0):v++,t>>=1;for(;;){if(m<<=1,v==r-1){d.push(n(m));break}v++;}return d.join("")},decompress:function(o){return null==o?"":""==o?null:i._decompress(o.length,32768,function(r){return o.charCodeAt(r)})},_decompress:function(o,n,e){var t,i,s,p,u,c,a,l,f=[],h=4,d=4,m=3,v="",w=[],A={val:e(0),position:n,index:1};for(i=0;3>i;i+=1)f[i]=i;for(p=0,c=Math.pow(2,2),a=1;a!=c;)u=A.val&A.position,A.position>>=1,0==A.position&&(A.position=n,A.val=e(A.index++)),p|=(u>0?1:0)*a,a<<=1;switch(t=p){case 0:for(p=0,c=Math.pow(2,8),a=1;a!=c;)u=A.val&A.position,A.position>>=1,0==A.position&&(A.position=n,A.val=e(A.index++)),p|=(u>0?1:0)*a,a<<=1;l=r(p);break;case 1:for(p=0,c=Math.pow(2,16),a=1;a!=c;)u=A.val&A.position,A.position>>=1,0==A.position&&(A.position=n,A.val=e(A.index++)),p|=(u>0?1:0)*a,a<<=1;l=r(p);break;case 2:return ""}for(f[3]=l,s=l,w.push(l);;){if(A.index>o)return "";for(p=0,c=Math.pow(2,m),a=1;a!=c;)u=A.val&A.position,A.position>>=1,0==A.position&&(A.position=n,A.val=e(A.index++)),p|=(u>0?1:0)*a,a<<=1;switch(l=p){case 0:for(p=0,c=Math.pow(2,8),a=1;a!=c;)u=A.val&A.position,A.position>>=1,0==A.position&&(A.position=n,A.val=e(A.index++)),p|=(u>0?1:0)*a,a<<=1;f[d++]=r(p),l=d-1,h--;break;case 1:for(p=0,c=Math.pow(2,16),a=1;a!=c;)u=A.val&A.position,A.position>>=1,0==A.position&&(A.position=n,A.val=e(A.index++)),p|=(u>0?1:0)*a,a<<=1;f[d++]=r(p),l=d-1,h--;break;case 2:return w.join("")}if(0==h&&(h=Math.pow(2,m),m++),f[l])v=f[l];else {if(l!==d)return null;v=s+s.charAt(0);}w.push(v),f[d++]=s+v.charAt(0),h--,s=v,0==h&&(h=Math.pow(2,m),m++);}}};return i}();"function"==typeof define&&define.amd?define(function(){return LZString}):"undefined"!=typeof module&&null!=module&&(module.exports=LZString);
 
 let currentMapCollisionTable = false;
+const checkedTiles = new Set();
 
 class CycloneMovement$1 extends CyclonePlugin {
   static register() {
@@ -756,6 +757,7 @@ class CycloneMovement$1 extends CyclonePlugin {
         type: 'boolean',
         defaultValue: true,
       },
+      autoLeaveVehicles: 'boolean',
     });
 
     this.stepCount = [1, 2, 4, 8].includes(this.params.stepCount) ? this.params.stepCount : 8;
@@ -764,6 +766,7 @@ class CycloneMovement$1 extends CyclonePlugin {
     this.collisionSize = 1 / this.collisionStepCount;
     this.followerStepsBehind = Number(this.params.followerStepsBehind || 1).clamp(1, this.stepCount);
     this.triggerAllEvents = this.params.triggerAllEvents === true;
+    this.autoLeaveVehicles = this.params.autoLeaveVehicles === true;
     this.triggerTouchEventAfterTeleport = this.params.triggerTouchEventAfterTeleport === true;
     this.blockRepeatedTouchEvents = this.params.blockRepeatedTouchEvents !== false;
     this.ignoreEmptyEvents = this.params.ignoreEmptyEvents !== false;
@@ -793,36 +796,40 @@ class CycloneMovement$1 extends CyclonePlugin {
     return d >= 1 && d <= 3;
   }
 
-  static xWithDirection(x, d) {
+  static xWithDirection(x, d, stepSize = undefined) {
+    stepSize = stepSize ?? this.stepSize;
+
     if (this.goesLeft(d)) {
-      return x - this.stepSize;
+      return x - stepSize;
     }
 
     if (this.goesRight(d)) {
-      return x + this.stepSize;
+      return x + stepSize;
     }
 
     return x;
   }
 
-  static yWithDirection(y, d) {
+  static yWithDirection(y, d, stepSize = undefined) {
+    stepSize = stepSize ?? this.stepSize;
+
     if (this.goesDown(d)) {
-      return y + this.stepSize;
+      return y + stepSize;
     }
 
     if (this.goesUp(d)) {
-      return y - this.stepSize;
+      return y - stepSize;
     }
 
     return y;
   }
 
-  static roundXWithDirection(x, d) {
-    return $gameMap.roundX(this.xWithDirection(x, d));
+  static roundXWithDirection(x, d, stepSize = undefined) {
+    return $gameMap.roundX(this.xWithDirection(x, d, stepSize));
   }
 
-  static roundYWithDirection(y, d) {
-    return $gameMap.roundY(this.yWithDirection(y, d));
+  static roundYWithDirection(y, d, stepSize = undefined) {
+    return $gameMap.roundY(this.yWithDirection(y, d, stepSize));
   }
 
   static parseCollisionData(note) {
@@ -851,6 +858,10 @@ class CycloneMovement$1 extends CyclonePlugin {
   }
 
   static setupCollision() {
+    if (!$gameMap._loaded) {
+      return;
+    }
+
     const stepCount = Math.min(this.stepCount, 4);
     currentMapCollisionTable = new Array($dataMap.width * $dataMap.height * stepCount * stepCount);
     this.loadDefaultCollisionTable();
@@ -981,6 +992,31 @@ class CycloneMovement$1 extends CyclonePlugin {
       this.applyTileDirectionCollision(x, y, 8, 2);
     }
   }
+
+  static tileIdx(x, y) {
+    const width = $dataMap.width;
+    return y * width + x || 0;
+  }
+
+  static markTileAsChecked(x, y) {
+    const idx = this.tileIdx(x, y);
+    checkedTiles.add(idx);
+  }
+
+  static isTileChecked(x, y) {
+    const idx = this.tileIdx(x, y);
+    return checkedTiles.has(idx);
+  }
+
+  static clearCheckedTiles() {
+    checkedTiles.clear();
+  }
+
+  static markEventAsChecked(event) {
+    if (this.blockRepeatedTouchEvents && event.isTriggerIn([1, 2])) {
+      this.markTileAsChecked(event.x, event.y);
+    }
+  }
 }
 
 globalThis.CycloneMovement = CycloneMovement$1;
@@ -988,12 +1024,33 @@ CycloneMovement$1.register();
 
 CycloneMovement.patchClass(Game_Map, $super => class {
   isValid(x, y) {
-    return x >= 0 && y >= 0 && Math.ceil(x) < this.width() && Math.ceil(y) < this.height();
+    return x >= 0 && y >= 0 && Math.floor(x) < this.width() && Math.floor(y) < this.height();
   }
 
   setup(mapId) {
     $super.setup.call(this, mapId);
+    this._loaded = true;
     CycloneMovement.setupCollision();
+  }
+
+  isTileClear(x, y) {
+    if (!this.checkPassage(x, y, 2)) {
+      return false;
+    }
+
+    if (!this.checkPassage(x, y, 4)) {
+      return false;
+    }
+
+    if (!this.checkPassage(x, y, 6)) {
+      return false;
+    }
+
+    if (!this.checkPassage(x, y, 8)) {
+      return false;
+    }
+
+    return true;
   }
 });
 
@@ -1094,6 +1151,18 @@ const addPixelMovementToClass = (classRef) => {
       return Math.floor(bottom) / count;
     }
 
+    shouldSkipExtraPassabilityTests() {
+      return false;
+    }
+
+    shouldPassThrough() {
+      if (this.isThrough() || this.isDebugThrough()) {
+        return true;
+      }
+
+      return false;
+    }
+
     canPass(x, y, d) {
       const x2 = CycloneMovement.roundXWithDirection(x, d);
       const y2 = CycloneMovement.roundYWithDirection(y, d);
@@ -1102,7 +1171,7 @@ const addPixelMovementToClass = (classRef) => {
         return false;
       }
 
-      if (this.isThrough() || this.isDebugThrough()) {
+      if (this.shouldPassThrough()) {
         return true;
       }
 
@@ -1110,13 +1179,9 @@ const addPixelMovementToClass = (classRef) => {
         return false;
       }
 
-      // if (this instanceof Game_Player) {
-      //   const vehicle = this.vehicle();
-
-      //   if (vehicle) {
-      //     return true;
-      //   }
-      // }
+      if (this.shouldSkipExtraPassabilityTests()) {
+        return true;
+      }
 
       if (!this.isMapPassable(x2, y2, this.reverseDir(d))) {
         return false;
@@ -1138,7 +1203,6 @@ const addPixelMovementToClass = (classRef) => {
       }
 
       const y2 = CycloneMovement.roundYWithDirection(y, vert);
-
       if (!this.canPass(x, y2, horz)) {
         return false;
       }
@@ -1191,16 +1255,11 @@ const addPixelMovementToClass = (classRef) => {
       return true;
     }
 
-    // eslint-disable-next-line complexity
-    checkLeftPassage(left, y, destinationLeft) {
-      // if (this instanceof Game_Player) {
-      //   var vehicle = this.vehicle();
-      //   if (vehicle !== undefined && vehicle !== null) {
-      //     return vehicle.check_vehicle_passage(theX.floor(), newY) && vehicle.check_vehicle_passage(destination_x.floor(), newY);
-      //   }
-      // }
+    isPositionPassable(x, y, d) {
+      return CycloneMovement.isPositionPassable(x, y, d);
+    }
 
-      // #ToDo: we may need additional tests for larger sprites
+    checkLeftPassage(left, y, destinationLeft) {
       const count = CycloneMovement.collisionStepCount;
       const leftFloor = Math.floor(left * count) / count;
       const destinationLeftFloor = Math.floor(destinationLeft * count) / count;
@@ -1208,12 +1267,12 @@ const addPixelMovementToClass = (classRef) => {
       // if we're entering a new left tile
       if (destinationLeftFloor < leftFloor) {
         // check if the current left-most tile allows moving left
-        if (!CycloneMovement.isPositionPassable(leftFloor, y, 4)) {
+        if (!this.isPositionPassable(leftFloor, y, 4)) {
           return false;
         }
 
         // and check if the new left-most tile allows moving right
-        if (!CycloneMovement.isPositionPassable(destinationLeftFloor, y, 6)) {
+        if (!this.isPositionPassable(destinationLeftFloor, y, 6)) {
           return false;
         }
       }
@@ -1237,25 +1296,18 @@ const addPixelMovementToClass = (classRef) => {
     }
 
     checkRightPassage(right, y, destinationRight) {
-      // if (this instanceof Game_Player) {
-      //   var vehicle = this.vehicle();
-      //   if (vehicle !== undefined && vehicle !== null) {
-      //     return vehicle.check_vehicle_passage(endX.floor(), newY) && vehicle.check_vehicle_passage(destinationEndX.floor(), newY);
-      //   }
-      // }
-
       const lastXDestination = this.lastCollisionXAt((destinationRight - this.width - this.hitboxX));
       const lastX = this.lastCollisionXAt((right - this.width - this.hitboxX));
 
       // if we're entering a new right tile
       if (lastXDestination > lastX) {
         // check if the current right-most tile allows moving right
-        if (!CycloneMovement.isPositionPassable(lastX, y, 6)) {
+        if (!this.isPositionPassable(lastX, y, 6)) {
           return false;
         }
 
         // and check if the new right-most tile allows moving left
-        if (!CycloneMovement.isPositionPassable(lastXDestination, y, 4)) {
+        if (!this.isPositionPassable(lastXDestination, y, 4)) {
           return false;
         }
       }
@@ -1278,16 +1330,7 @@ const addPixelMovementToClass = (classRef) => {
       return true;
     }
 
-    // eslint-disable-next-line complexity
     checkUpPassage(x, top, destinationTop) {
-      // if (this instanceof Game_Player) {
-      //   var vehicle = this.vehicle();
-      //   if (vehicle !== undefined && vehicle !== null) {
-      //     return vehicle.check_vehicle_passage(newX, theY.floor()) && vehicle.check_vehicle_passage(newX, destinationY.floor());
-      //   }
-      // }
-
-      // #ToDo: we may need additional tests for larger sprites
       const count = CycloneMovement.collisionStepCount;
       const topFloor = Math.floor(top * count) / count;
       const destinationTopFloor = Math.floor(destinationTop * count) / count;
@@ -1295,12 +1338,12 @@ const addPixelMovementToClass = (classRef) => {
       // if we're entering a new top tile
       if (destinationTopFloor < topFloor) {
         // check if the current top tile allows moving up
-        if (!CycloneMovement.isPositionPassable(x, topFloor, 8)) {
+        if (!this.isPositionPassable(x, topFloor, 8)) {
           return false;
         }
 
         // and check if the new top tile allows moving down
-        if (!CycloneMovement.isPositionPassable(x, destinationTopFloor, 2)) {
+        if (!this.isPositionPassable(x, destinationTopFloor, 2)) {
           return false;
         }
       }
@@ -1324,25 +1367,18 @@ const addPixelMovementToClass = (classRef) => {
     }
 
     checkDownPassage(x, bottom, destinationBottom) {
-      // if (this instanceof Game_Player) {
-      //   var vehicle = this.vehicle();
-      //   if (vehicle !== undefined && vehicle !== null) {
-      //     return vehicle.check_vehicle_passage(newX, endY.floor()) && vehicle.check_vehicle_passage(newX, destinationEndY.floor());
-      //   }
-      // }
-
       const lastYDestination = this.lastCollisionYAt((destinationBottom - this.height - this.hitboxY));
       const lastY = this.lastCollisionYAt((bottom - this.height - this.hitboxY));
 
       // if we're entering a new bottom tile
       if (lastYDestination > lastY) {
         // check if the current bottom tile allows moving down
-        if (!CycloneMovement.isPositionPassable(x, lastY, 2)) {
+        if (!this.isPositionPassable(x, lastY, 2)) {
           return false;
         }
 
         // and check if the new bottom tile allows moving up
-        if (!CycloneMovement.isPositionPassable(x, lastYDestination, 8)) {
+        if (!this.isPositionPassable(x, lastYDestination, 8)) {
           return false;
         }
       }
@@ -1378,8 +1414,10 @@ const addPixelMovementToClass = (classRef) => {
         }
       }
 
-      if (this._positionHistory.length < CycloneMovement.followerStepsBehind - 1) {
-        return false;
+      if (!$gamePlayer.areFollowersGathering()) {
+        if (this._positionHistory.length < CycloneMovement.followerStepsBehind - 1) {
+          return false;
+        }
       }
 
       if (this._positionHistory.length === 0) {
@@ -1448,7 +1486,7 @@ const addPixelMovementToClass = (classRef) => {
       return this._moveDiagonally(horz, vert);
     }
 
-    isTouchingTile(x, y) {
+    isTouchingPos(x, y) {
       if (!(x >= this.firstX && x <= this.lastX)) {
         return false;
       }
@@ -1460,8 +1498,56 @@ const addPixelMovementToClass = (classRef) => {
       return true;
     }
 
+    isTouchingRect(left, top, right, bottom) {
+      return this.wouldTouchRectAt(left, top, right, bottom, this._x, this._y);
+    }
+
+    isTouchingCharacter(character) {
+      return this.wouldTouchCharacterAt(character, this._x, this._y);
+    }
+
+    wouldTouchRectAt(left, top, right, bottom, x, y) {
+      const firstX = this.firstCollisionXAt(x);
+      const lastX = this.lastCollisionXAt(x);
+      const firstY = this.firstCollisionYAt(y);
+      const lastY = this.lastCollisionYAt(y);
+
+      if (right < firstX) {
+        return false;
+      }
+
+      if (left >= lastX) {
+        return false;
+      }
+
+      if (bottom < firstY) {
+        return false;
+      }
+
+      if (top >= lastY) {
+        return false;
+      }
+
+      return true;
+    }
+
+    wouldTouchCharacterAt(character, x, y) {
+      const {
+        left = character.x,
+        right = character.x + 1,
+        top = character.y,
+        bottom = character.y + 1,
+      } = character;
+
+      return this.wouldTouchRectAt(left, top, right, bottom, x, y);
+    }
+
     pos(x, y) {
-      return this.isTouchingTile(x, y);
+      if (this._x === x && this._y === y) {
+        return true;
+      }
+
+      return this.isTouchingPos(x, y);
     }
 
     iterateTiles(callback) {
@@ -1512,7 +1598,7 @@ const addPixelMovementToClass = (classRef) => {
         //because if it did, the player would be locked on it
         //this shouldn't be possible on normal conditions.
 
-        if (this.isTouchingTile(blockX, blockY)) {
+        if (this.isTouchingPos(blockX, blockY)) {
           return false;
         }
 
@@ -1549,14 +1635,83 @@ const addPixelMovementToClass = (classRef) => {
 
       return ladderCount > nonLadderCount;
     }
+
+    isCollidedWithVehicles() {
+      return false;
+    }
+
+    chasePosition(x, y) {
+      const sx = this.deltaXFrom(x);
+      const sy = this.deltaYFrom(y);
+
+      const sxAbs = Math.abs(sx);
+      const syAbs = Math.abs(sy);
+      const { stepSize } = CycloneMovement;
+
+      if (sxAbs >= stepSize && syAbs >= stepSize) {
+        this.moveDiagonally(sx > 0 ? 4 : 6, sy > 0 ? 8 : 2);
+      } else if (sxAbs >= stepSize) {
+        this.moveStraight(sx > 0 ? 4 : 6);
+      } else if (syAbs >= stepSize) {
+        this.moveStraight(sy > 0 ? 8 : 2);
+      }
+
+      this.setMoveSpeed($gamePlayer.realMoveSpeed());
+    }
   });
 };
 
 addPixelMovementToClass(Game_Player);
 addPixelMovementToClass(Game_Follower);
-addPixelMovementToClass(Game_Vehicle);
+// addPixelMovementToClass(Game_Vehicle);
+
+let tryToLeaveVehicleDelay = 0;
 
 CycloneMovement.patchClass(Game_Player, $super => class {
+  get defaultWidth() {
+    return 0.75;
+  }
+  get defaultHeight() {
+    return 0.375;
+  }
+  get defaultHitboxX() {
+    return 0.125;
+  }
+  get defaultHitboxY() {
+    return 0.5;
+  }
+
+  get width() {
+    if (this.isInVehicle()) {
+      return 1;
+    }
+
+    return this.defaultWidth;
+  }
+  get height() {
+    if (this.isInVehicle()) {
+      return 1;
+    }
+
+    return this.defaultHeight;
+  }
+
+  get hitboxX() {
+    if (this.isInVehicle()) {
+      return 0;
+    }
+
+    return this.defaultHitboxX;
+  }
+
+  get hitboxY() {
+    if (this.isInVehicle()) {
+      return 0;
+    }
+
+    return this.defaultHitboxY;
+  }
+
   // eslint-disable-next-line complexity
   moveByInput() {
     if (this.isMoving() || !this.canMove()) {
@@ -1617,9 +1772,14 @@ CycloneMovement.patchClass(Game_Player, $super => class {
   }
 
   onBeforeMove() {
+    tryToLeaveVehicleDelay = 20;
   }
 
   tryOtherMovementOptions(direction) {
+    if (this.tryToLeaveVehicle(direction)) {
+      return true;
+    }
+
     if (this.tryToAvoidDiagonally(direction)) {
       return true;
     }
@@ -1629,6 +1789,23 @@ CycloneMovement.patchClass(Game_Player, $super => class {
     }
 
     return false;
+  }
+
+  tryToLeaveVehicle(direction) {
+    if (!CycloneMovement.autoLeaveVehicles) {
+      return false;
+    }
+
+    if (tryToLeaveVehicleDelay > 0) {
+      tryToLeaveVehicleDelay--;
+      return false;
+    }
+
+    if (!this.isInBoat() && !this.isInShip()) {
+      return false;
+    }
+
+    return this.getOffVehicle(direction);
   }
 
   tryToAvoid(direction, maxOffset) {
@@ -1838,6 +2015,59 @@ CycloneMovement.patchClass(Game_Player, $super => class {
     }
   }
 
+  shouldTriggerEvent(event, triggers, normal) {
+    if (!event) {
+      return false;
+    }
+
+    if (!event.isTriggerIn(triggers)) {
+      return false;
+    }
+
+    if (event.isNormalPriority() !== normal) {
+      return false;
+    }
+
+    if (!event.hasAnythingToRun()) {
+      return false;
+    }
+
+    return true;
+  }
+
+  startMapTileEvent(tileX, tileY, triggers, normal) {
+    if (!CycloneMovement.triggerAllEvents && $gameMap.isEventRunning()) {
+      return;
+    }
+
+    if (!CycloneMovement.blockRepeatedTouchEvents) {
+      return $super.startMapEvent.call(this, tileX, tileY, triggers, normal);
+    }
+
+    if (CycloneMovement.isTileChecked(tileX, tileY)) {
+      return;
+    }
+
+    let anyStarted = false;
+
+    for (const event of $gameMap.eventsXy(tileX, tileY)) {
+      if (!this.shouldTriggerEvent(event, triggers, normal)) {
+        continue;
+      }
+
+      CycloneMovement.markEventAsChecked(event);
+
+      event.start();
+      anyStarted = true;
+
+      if (!CycloneMovement.triggerAllEvents) {
+        return true;
+      }
+    }
+
+    return anyStarted;
+  }
+
   startMapEvent(x, y, triggers, normal) {
     if ($gameMap.isEventRunning()) {
       return;
@@ -1855,13 +2085,287 @@ CycloneMovement.patchClass(Game_Player, $super => class {
 
     for (let newX = firstX; newX <= lastX; newX++) {
       for (let newY = firstY; newY <= lastY; newY++) {
-        if ($super.startMapEvent.call(this, newX, newY, triggers, normal) === true) {
+        if (this.startMapTileEvent(newX, newY, triggers, normal) === true) {
           return true;
         }
       }
     }
 
     return false;
+  }
+
+  updateNonmoving(wasMoving, sceneActive) {
+    $super.updateNonmoving.call(this, wasMoving, sceneActive);
+
+    if (wasMoving || Input.dir4 !== 0) {
+      if (!$gameMap.isEventRunning()) {
+        this.checkEventTriggerThere([1, 2]);
+        $gameMap.setupStartingEvent();
+      }
+    }
+  }
+
+  _isSamePos(x1, y1, destX, destY) {
+    if (Math.floor(x1) !== destX && Math.ceil(x1) !== destX) {
+      return false;
+    }
+
+    if (Math.floor(y1) !== destY && Math.ceil(y1) !== destY) {
+      return false;
+    }
+
+    return true;
+  }
+
+  triggerTouchAction() {
+    if (!$gameTemp.isDestinationValid()) {
+      return false;
+    }
+
+    const direction = this.direction();
+    const x1 = this.x;
+    const y1 = this.y;
+    const destX = $gameTemp.destinationX();
+    const destY = $gameTemp.destinationY();
+
+    if (this._isSamePos(x1, y1, destX, destY)) {
+      return this.triggerTouchActionD1(x1, y1);
+    }
+
+    const x2 = CycloneMovement.roundXWithDirection(x1, direction);
+    const y2 = CycloneMovement.roundYWithDirection(y1, direction);
+
+    if (this._isSamePos(x2, y2, destX, destY)) {
+      return this.triggerTouchActionD2(x2, y2);
+    }
+
+    const x3 = CycloneMovement.roundXWithDirection(x2, direction);
+    const y3 = CycloneMovement.roundYWithDirection(y2, direction);
+
+    if (this._isSamePos(x3, y3, destX, destY)) {
+      return this.triggerTouchActionD3(x3, y3);
+    }
+
+    return false;
+  }
+
+  isTouchingAirship() {
+    const airship = $gameMap.airship();
+    if (!airship) {
+      return false;
+    }
+
+    return this.isTouchingCharacter(airship);
+  }
+
+  isFacingVehicle(vehicle) {
+    if (!vehicle) {
+      return false;
+    }
+
+    let { x, y } = this;
+    switch (this._direction) {
+      case 2:
+        y++;
+        break;
+      case 4:
+        x--;
+        break;
+      case 6:
+        x++;
+        break;
+      case 8:
+        y--;
+        break;
+    }
+
+    return this.wouldTouchCharacterAt(vehicle, x, y);
+  }
+
+  getOnVehicle() {
+    if (this.isTouchingAirship()) {
+      this._vehicleType = 'airship';
+    } else if (this.isFacingVehicle($gameMap.ship())) {
+      this._vehicleType = 'ship';
+    } else if (this.isFacingVehicle($gameMap.boat())) {
+      this._vehicleType = 'boat';
+    }
+
+    if (this.isInVehicle()) {
+      this._vehicleGettingOn = true;
+
+      if (!this.isInAirship()) {
+        const vehicle = this.vehicle();
+        if (vehicle) {
+          this._x = vehicle._x;
+          this._y = vehicle._y;
+
+          this.updateAnimationCount();
+        }
+      }
+
+      this.gatherFollowers();
+    }
+    return this._vehicleGettingOn;
+  }
+
+  checkDistanceToLand(direction, targetX, targetY) {
+    switch (direction) {
+      case 2:
+        if (Math.abs(targetY - this.bottom) > 0.5) {
+          return false;
+        }
+        break;
+      case 4:
+        if (Math.abs(targetX - this.left) > 1) {
+          return false;
+        }
+        break;
+      case 6:
+        if (Math.abs(targetX - this.right) > 0.5) {
+          return false;
+        }
+        break;
+      case 8:
+        if (Math.abs(targetY - this.top) > 1) {
+          return false;
+        }
+        break;
+    }
+
+    return true;
+  }
+
+  getBestLandingPosition(vehicle, direction) {
+    let x;
+    let y;
+
+    switch(direction) {
+      case 2:
+        x = this.x;
+        y = this.y + this.defaultHitboxY + this.defaultHeight;
+        break;
+      case 4:
+        x = this.x - this.defaultHitboxX - this.defaultWidth;
+        y = this.y;
+        break;
+      case 6:
+        x = this.x + this.defaultHitboxX + this.defaultWidth;
+        y = this.y;
+        break;
+      case 8:
+        x = this.x;
+        y = this.y - this.defaultHitboxY - this.defaultHeight;
+        break;
+    }
+
+    if (!this.canLandOn(x, y)) {
+      return false;
+    }
+
+    if (this.isCollidedWithCharacters(x, y)) {
+      return false;
+    }
+
+    if (!vehicle.isLandOk(x, y, direction)) {
+      return false;
+    }
+
+    return {
+      x,
+      y,
+    };
+  }
+
+  getOffVehicle(direction = undefined) {
+    direction = direction || this.direction();
+    const vehicle = this.vehicle();
+    if (!vehicle) {
+      return this._vehicleGettingOff;
+    }
+
+    const target = this.getBestLandingPosition(vehicle, direction);
+    if (!target) {
+      return this._vehicleGettingOff;
+    }
+
+    if (this.isInAirship()) {
+      this.setDirection(2);
+    }
+
+    this._followers.synchronize(this.x, this.y, direction);
+    this.vehicle().getOff();
+
+    if (!this.isInAirship()) {
+      this._x = target.x;
+      this._y = target.y;
+
+      this._positionHistory = [];
+
+      this.updateAnimationCount();
+      this.setTransparent(false);
+    }
+
+    this._vehicleGettingOff = true;
+    this.setMoveSpeed(4);
+    this.setThrough(false);
+    this.makeEncounterCount();
+    this.gatherFollowers();
+  }
+
+  isPositionPassable(x, y, d) {
+    const vehicle = this.vehicle();
+    if (vehicle) {
+      return vehicle.checkPassage(Math.floor(x), Math.floor(y));
+    }
+
+    return $super.isPositionPassable.call(this, x, y, d);
+  }
+
+  shouldSkipExtraPassabilityTests() {
+    const vehicle = this.vehicle();
+
+    if (vehicle) {
+      return true;
+    }
+
+    return false;
+  }
+
+  // Check if there's enough room for the player on that position
+  canLandOn(x, y) {
+    const x1 = Math.floor(x + this.defaultHitboxX);
+    const y1 = Math.floor(y + this.defaultHitboxY);
+
+    if (!$gameMap.isTileClear(x1, y1)) {
+      return false;
+    }
+
+    const x2 = x + this.defaultHitboxX + this.defaultWidth;
+    const x2f = CycloneMovement.isRoundNumber(x2) ? x2 -1 : Math.floor(x2);
+
+    if (x1 !== x2f) {
+      if (!$gameMap.isTileClear(x2f, y1)) {
+        return false;
+      }
+    }
+
+    const y2 = y + this.defaultHitboxY + this.defaultHeight;
+    const y2f = CycloneMovement.isRoundNumber(y2) ? y2 - 1 : Math.floor(y2);
+
+    if (y1 !== y2f) {
+      if (!$gameMap.isTileClear(x1, y2f)) {
+        return false;
+      }
+
+      if (x1 !== x2f) {
+        if (!$gameMap.isTileClear(x2f, y2f)) {
+          return false;
+        }
+      }
+    }
+
+    return true;
   }
 });
 
@@ -1872,29 +2376,185 @@ CycloneMovement.patchClass(Game_Follower, $super => class {
       return;
     }
 
-    const { stepSize } = CycloneMovement;
     const position = character.getPositionToFollow();
     if (!position) {
       return;
     }
 
-    const { x, y} = position;
+    const { x, y } = position;
 
-    const sx = this.deltaXFrom(x);
-    const sy = this.deltaYFrom(y);
+    this.chasePosition(x, y);
+  }
+});
 
-    const sxAbs = Math.abs(sx);
-    const syAbs = Math.abs(sy);
+CycloneMovement.patchClass(Game_Vehicle, $super => class {
+  get width() {
+    return 1;
+  }
+  get height() {
+    return 1;
+  }
 
-    if (sxAbs >= stepSize && syAbs >= stepSize) {
-      this.moveDiagonally(sx > 0 ? 4 : 6, sy > 0 ? 8 : 2);
-    } else if (sxAbs >= stepSize) {
-      this.moveStraight(sx > 0 ? 4 : 6);
-    } else if (syAbs >= stepSize) {
-      this.moveStraight(sy > 0 ? 8 : 2);
+  get hitboxX() {
+    return 0;
+  }
+
+  get hitboxY() {
+    return 0;
+  }
+
+  checkPassage(x, y) {
+    if (this.isBoat()) {
+      return $gameMap.isBoatPassable(x, y);
     }
 
-    this.setMoveSpeed($gamePlayer.realMoveSpeed());
+    if (this.isShip()) {
+      return $gameMap.isShipPassable(x, y);
+    }
+
+    return this.isAirship();
+  }
+
+  shouldPassThrough() {
+    if (this.isAirship()) {
+      return true;
+    }
+
+    return $super.shouldPassThrough.call(this);
+  }
+
+  isAirshipLandOk(x, y) {
+    if (!$gamePlayer.canLandOn(x, y)) {
+      return false;
+    }
+
+    const floorX = Math.floor(x);
+    const floorY = Math.floor(y);
+
+    if (!$gameMap.isAirshipLandOk(floorX, floorY)) {
+      return false;
+    }
+
+    if ($gameMap.eventsXy(floorX, floorY).length > 0) {
+      return false;
+    }
+
+    return true;
+  }
+
+  isLandOk(x, y, d) {
+    if (this.isAirship()) {
+      return this.isAirshipLandOk(x, y);
+    }
+
+    // // const x2 = CycloneMovement.roundXWithDirection(x, d, CycloneMovement.collisionSize);
+    // // const y2 = CycloneMovement.roundYWithDirection(y, d, CycloneMovement.collisionSize);
+
+    // if (!$gameMap.isValid(x, y)) {
+    //   return false;
+    // }
+
+    // if (!$gamePlayer.canLandOn(x, y)) {
+    //   return false;
+    // }
+
+    // // if (!$gameMap.isPassable(x, y, this.reverseDir(d))) {
+    // //   return false;
+    // // }
+
+    // if (this.isCollidedWithCharacters(x, y)) {
+    //   return false;
+    // }
+
+    return true;
+  }
+});
+
+const uselessCommands = Object.freeze([
+  // comments
+  108,
+  408,
+  // label
+  118,
+  // end of list
+  0,
+]);
+
+CycloneMovement.patchClass(Game_Event, $super => class {
+  turnTowardPlayer() {
+    const sx = this.deltaXFrom($gamePlayer.x);
+    const sy = this.deltaYFrom($gamePlayer.y);
+
+    const asx = Math.abs(sx);
+    const asy = Math.abs(sy);
+
+    if (asx < 1 && asy < 1) {
+      this.setDirection(10 - $gamePlayer._direction);
+      return;
+    }
+
+    if (asx > asy) {
+      this.setDirection(sx > 0 ? 4 : 6);
+      return;
+    }
+
+    if (sy !== 0) {
+      this.setDirection(sy > 0 ? 8 : 2);
+    }
+  }
+
+  turnAwayFromPlayer() {
+    const sx = this.deltaXFrom($gamePlayer.x);
+    const sy = this.deltaYFrom($gamePlayer.y);
+    const asx = Math.abs(sx);
+    const asy = Math.abs(sy);
+
+    if (asx < 1 && asy < 1) {
+      this.setDirection($gamePlayer._direction);
+      return;
+    }
+
+    if (asx > asy) {
+      this.setDirection(sx > 0 ? 6 : 4);
+      return;
+    }
+
+    if (sy !== 0) {
+      this.setDirection(sy > 0 ? 2 : 8);
+    }
+  }
+
+  hasAnythingToRun() {
+    if (!CycloneMovement.ignoreEmptyEvents) {
+      return true;
+    }
+
+    for (const command of this.list()) {
+      if (uselessCommands.includes(Number(command.code))) {
+        continue;
+      }
+
+      return true;
+    }
+
+    return false;
+  }
+});
+
+CycloneMovement.patchClass(Game_Interpreter, $super => class {
+  command201() {
+    $super.command201.call(this);
+
+    if ($gameParty.inBattle()) {
+      return;
+    }
+
+    CycloneMovement.clearCheckedTiles();
+    if (!CycloneMovement.triggerTouchEventAfterTeleport) {
+      $gamePlayer.runForAllTiles((x, y) => {
+        CycloneMovement.markTileAsChecked(x, y);
+      });
+    }
   }
 });
 

@@ -2,6 +2,7 @@ import { CyclonePlugin } from '../../Core/main';
 import { LZString } from '../../Libs/lz-string.min';
 
 let currentMapCollisionTable = false;
+const checkedTiles = new Set();
 
 class CycloneMovement extends CyclonePlugin {
   static register() {
@@ -26,6 +27,7 @@ class CycloneMovement extends CyclonePlugin {
         type: 'boolean',
         defaultValue: true,
       },
+      autoLeaveVehicles: 'boolean',
     });
 
     this.stepCount = [1, 2, 4, 8].includes(this.params.stepCount) ? this.params.stepCount : 8;
@@ -34,6 +36,7 @@ class CycloneMovement extends CyclonePlugin {
     this.collisionSize = 1 / this.collisionStepCount;
     this.followerStepsBehind = Number(this.params.followerStepsBehind || 1).clamp(1, this.stepCount);
     this.triggerAllEvents = this.params.triggerAllEvents === true;
+    this.autoLeaveVehicles = this.params.autoLeaveVehicles === true;
     this.triggerTouchEventAfterTeleport = this.params.triggerTouchEventAfterTeleport === true;
     this.blockRepeatedTouchEvents = this.params.blockRepeatedTouchEvents !== false;
     this.ignoreEmptyEvents = this.params.ignoreEmptyEvents !== false;
@@ -63,36 +66,40 @@ class CycloneMovement extends CyclonePlugin {
     return d >= 1 && d <= 3;
   }
 
-  static xWithDirection(x, d) {
+  static xWithDirection(x, d, stepSize = undefined) {
+    stepSize = stepSize ?? this.stepSize;
+
     if (this.goesLeft(d)) {
-      return x - this.stepSize;
+      return x - stepSize;
     }
 
     if (this.goesRight(d)) {
-      return x + this.stepSize;
+      return x + stepSize;
     }
 
     return x;
   }
 
-  static yWithDirection(y, d) {
+  static yWithDirection(y, d, stepSize = undefined) {
+    stepSize = stepSize ?? this.stepSize;
+
     if (this.goesDown(d)) {
-      return y + this.stepSize;
+      return y + stepSize;
     }
 
     if (this.goesUp(d)) {
-      return y - this.stepSize;
+      return y - stepSize;
     }
 
     return y;
   }
 
-  static roundXWithDirection(x, d) {
-    return $gameMap.roundX(this.xWithDirection(x, d));
+  static roundXWithDirection(x, d, stepSize = undefined) {
+    return $gameMap.roundX(this.xWithDirection(x, d, stepSize));
   }
 
-  static roundYWithDirection(y, d) {
-    return $gameMap.roundY(this.yWithDirection(y, d));
+  static roundYWithDirection(y, d, stepSize = undefined) {
+    return $gameMap.roundY(this.yWithDirection(y, d, stepSize));
   }
 
   static parseCollisionData(note) {
@@ -121,6 +128,10 @@ class CycloneMovement extends CyclonePlugin {
   }
 
   static setupCollision() {
+    if (!$gameMap._loaded) {
+      return;
+    }
+
     const stepCount = Math.min(this.stepCount, 4);
     currentMapCollisionTable = new Array($dataMap.width * $dataMap.height * stepCount * stepCount);
     this.loadDefaultCollisionTable();
@@ -249,6 +260,31 @@ class CycloneMovement extends CyclonePlugin {
 
     if (!up) {
       this.applyTileDirectionCollision(x, y, 8, 2);
+    }
+  }
+
+  static tileIdx(x, y) {
+    const width = $dataMap.width;
+    return y * width + x || 0;
+  }
+
+  static markTileAsChecked(x, y) {
+    const idx = this.tileIdx(x, y);
+    checkedTiles.add(idx);
+  }
+
+  static isTileChecked(x, y) {
+    const idx = this.tileIdx(x, y);
+    return checkedTiles.has(idx);
+  }
+
+  static clearCheckedTiles() {
+    checkedTiles.clear();
+  }
+
+  static markEventAsChecked(event) {
+    if (this.blockRepeatedTouchEvents && event.isTriggerIn([1, 2])) {
+      this.markTileAsChecked(event.x, event.y);
     }
   }
 }

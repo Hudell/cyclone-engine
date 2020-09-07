@@ -34,7 +34,7 @@ CycloneMaps.patchClass(Game_Map, $super => class {
     return $gameMap.regionId(x, y) === bushRegionId;
   }
 
-  checkPassage(x, y, bit) {
+  checkRegionPassability(x, y) {
     const blockRegionId = CycloneMaps.blockRegionId;
     const unblockRegionId = CycloneMaps.unblockRegionId;
 
@@ -50,6 +50,15 @@ CycloneMaps.patchClass(Game_Map, $super => class {
           return true;
         }
       }
+    }
+
+    return null;
+  }
+
+  checkPassage(x, y, bit) {
+    const region = this.checkRegionPassability(x, y);
+    if (typeof region === 'boolean') {
+      return region;
     }
 
     return $super.checkPassage.call(this, x, y, bit);

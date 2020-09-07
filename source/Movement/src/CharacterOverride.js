@@ -95,6 +95,18 @@ const addPixelMovementToClass = (classRef) => {
       return Math.floor(bottom) / count;
     }
 
+    shouldSkipExtraPassabilityTests() {
+      return false;
+    }
+
+    shouldPassThrough() {
+      if (this.isThrough() || this.isDebugThrough()) {
+        return true;
+      }
+
+      return false;
+    }
+
     canPass(x, y, d) {
       const x2 = CycloneMovement.roundXWithDirection(x, d);
       const y2 = CycloneMovement.roundYWithDirection(y, d);
@@ -103,7 +115,7 @@ const addPixelMovementToClass = (classRef) => {
         return false;
       }
 
-      if (this.isThrough() || this.isDebugThrough()) {
+      if (this.shouldPassThrough()) {
         return true;
       }
 
@@ -111,13 +123,9 @@ const addPixelMovementToClass = (classRef) => {
         return false;
       }
 
-      // if (this instanceof Game_Player) {
-      //   const vehicle = this.vehicle();
-
-      //   if (vehicle) {
-      //     return true;
-      //   }
-      // }
+      if (this.shouldSkipExtraPassabilityTests()) {
+        return true;
+      }
 
       if (!this.isMapPassable(x2, y2, this.reverseDir(d))) {
         return false;
@@ -139,7 +147,6 @@ const addPixelMovementToClass = (classRef) => {
       }
 
       const y2 = CycloneMovement.roundYWithDirection(y, vert);
-
       if (!this.canPass(x, y2, horz)) {
         return false;
       }
@@ -192,16 +199,11 @@ const addPixelMovementToClass = (classRef) => {
       return true;
     }
 
-    // eslint-disable-next-line complexity
-    checkLeftPassage(left, y, destinationLeft) {
-      // if (this instanceof Game_Player) {
-      //   var vehicle = this.vehicle();
-      //   if (vehicle !== undefined && vehicle !== null) {
-      //     return vehicle.check_vehicle_passage(theX.floor(), newY) && vehicle.check_vehicle_passage(destination_x.floor(), newY);
-      //   }
-      // }
+    isPositionPassable(x, y, d) {
+      return CycloneMovement.isPositionPassable(x, y, d);
+    }
 
-      // #ToDo: we may need additional tests for larger sprites
+    checkLeftPassage(left, y, destinationLeft) {
       const count = CycloneMovement.collisionStepCount;
       const leftFloor = Math.floor(left * count) / count;
       const destinationLeftFloor = Math.floor(destinationLeft * count) / count;
@@ -209,12 +211,12 @@ const addPixelMovementToClass = (classRef) => {
       // if we're entering a new left tile
       if (destinationLeftFloor < leftFloor) {
         // check if the current left-most tile allows moving left
-        if (!CycloneMovement.isPositionPassable(leftFloor, y, 4)) {
+        if (!this.isPositionPassable(leftFloor, y, 4)) {
           return false;
         }
 
         // and check if the new left-most tile allows moving right
-        if (!CycloneMovement.isPositionPassable(destinationLeftFloor, y, 6)) {
+        if (!this.isPositionPassable(destinationLeftFloor, y, 6)) {
           return false;
         }
       }
@@ -238,25 +240,18 @@ const addPixelMovementToClass = (classRef) => {
     }
 
     checkRightPassage(right, y, destinationRight) {
-      // if (this instanceof Game_Player) {
-      //   var vehicle = this.vehicle();
-      //   if (vehicle !== undefined && vehicle !== null) {
-      //     return vehicle.check_vehicle_passage(endX.floor(), newY) && vehicle.check_vehicle_passage(destinationEndX.floor(), newY);
-      //   }
-      // }
-
       const lastXDestination = this.lastCollisionXAt((destinationRight - this.width - this.hitboxX));
       const lastX = this.lastCollisionXAt((right - this.width - this.hitboxX));
 
       // if we're entering a new right tile
       if (lastXDestination > lastX) {
         // check if the current right-most tile allows moving right
-        if (!CycloneMovement.isPositionPassable(lastX, y, 6)) {
+        if (!this.isPositionPassable(lastX, y, 6)) {
           return false;
         }
 
         // and check if the new right-most tile allows moving left
-        if (!CycloneMovement.isPositionPassable(lastXDestination, y, 4)) {
+        if (!this.isPositionPassable(lastXDestination, y, 4)) {
           return false;
         }
       }
@@ -279,16 +274,7 @@ const addPixelMovementToClass = (classRef) => {
       return true;
     }
 
-    // eslint-disable-next-line complexity
     checkUpPassage(x, top, destinationTop) {
-      // if (this instanceof Game_Player) {
-      //   var vehicle = this.vehicle();
-      //   if (vehicle !== undefined && vehicle !== null) {
-      //     return vehicle.check_vehicle_passage(newX, theY.floor()) && vehicle.check_vehicle_passage(newX, destinationY.floor());
-      //   }
-      // }
-
-      // #ToDo: we may need additional tests for larger sprites
       const count = CycloneMovement.collisionStepCount;
       const topFloor = Math.floor(top * count) / count;
       const destinationTopFloor = Math.floor(destinationTop * count) / count;
@@ -296,12 +282,12 @@ const addPixelMovementToClass = (classRef) => {
       // if we're entering a new top tile
       if (destinationTopFloor < topFloor) {
         // check if the current top tile allows moving up
-        if (!CycloneMovement.isPositionPassable(x, topFloor, 8)) {
+        if (!this.isPositionPassable(x, topFloor, 8)) {
           return false;
         }
 
         // and check if the new top tile allows moving down
-        if (!CycloneMovement.isPositionPassable(x, destinationTopFloor, 2)) {
+        if (!this.isPositionPassable(x, destinationTopFloor, 2)) {
           return false;
         }
       }
@@ -325,25 +311,18 @@ const addPixelMovementToClass = (classRef) => {
     }
 
     checkDownPassage(x, bottom, destinationBottom) {
-      // if (this instanceof Game_Player) {
-      //   var vehicle = this.vehicle();
-      //   if (vehicle !== undefined && vehicle !== null) {
-      //     return vehicle.check_vehicle_passage(newX, endY.floor()) && vehicle.check_vehicle_passage(newX, destinationEndY.floor());
-      //   }
-      // }
-
       const lastYDestination = this.lastCollisionYAt((destinationBottom - this.height - this.hitboxY));
       const lastY = this.lastCollisionYAt((bottom - this.height - this.hitboxY));
 
       // if we're entering a new bottom tile
       if (lastYDestination > lastY) {
         // check if the current bottom tile allows moving down
-        if (!CycloneMovement.isPositionPassable(x, lastY, 2)) {
+        if (!this.isPositionPassable(x, lastY, 2)) {
           return false;
         }
 
         // and check if the new bottom tile allows moving up
-        if (!CycloneMovement.isPositionPassable(x, lastYDestination, 8)) {
+        if (!this.isPositionPassable(x, lastYDestination, 8)) {
           return false;
         }
       }
@@ -379,8 +358,10 @@ const addPixelMovementToClass = (classRef) => {
         }
       }
 
-      if (this._positionHistory.length < CycloneMovement.followerStepsBehind - 1) {
-        return false;
+      if (!$gamePlayer.areFollowersGathering()) {
+        if (this._positionHistory.length < CycloneMovement.followerStepsBehind - 1) {
+          return false;
+        }
       }
 
       if (this._positionHistory.length === 0) {
@@ -449,7 +430,7 @@ const addPixelMovementToClass = (classRef) => {
       return this._moveDiagonally(horz, vert);
     }
 
-    isTouchingTile(x, y) {
+    isTouchingPos(x, y) {
       if (!(x >= this.firstX && x <= this.lastX)) {
         return false;
       }
@@ -461,8 +442,56 @@ const addPixelMovementToClass = (classRef) => {
       return true;
     }
 
+    isTouchingRect(left, top, right, bottom) {
+      return this.wouldTouchRectAt(left, top, right, bottom, this._x, this._y);
+    }
+
+    isTouchingCharacter(character) {
+      return this.wouldTouchCharacterAt(character, this._x, this._y);
+    }
+
+    wouldTouchRectAt(left, top, right, bottom, x, y) {
+      const firstX = this.firstCollisionXAt(x);
+      const lastX = this.lastCollisionXAt(x);
+      const firstY = this.firstCollisionYAt(y);
+      const lastY = this.lastCollisionYAt(y);
+
+      if (right < firstX) {
+        return false;
+      }
+
+      if (left >= lastX) {
+        return false;
+      }
+
+      if (bottom < firstY) {
+        return false;
+      }
+
+      if (top >= lastY) {
+        return false;
+      }
+
+      return true;
+    }
+
+    wouldTouchCharacterAt(character, x, y) {
+      const {
+        left = character.x,
+        right = character.x + 1,
+        top = character.y,
+        bottom = character.y + 1,
+      } = character;
+
+      return this.wouldTouchRectAt(left, top, right, bottom, x, y);
+    }
+
     pos(x, y) {
-      return this.isTouchingTile(x, y);
+      if (this._x === x && this._y === y) {
+        return true;
+      }
+
+      return this.isTouchingPos(x, y);
     }
 
     iterateTiles(callback) {
@@ -513,7 +542,7 @@ const addPixelMovementToClass = (classRef) => {
         //because if it did, the player would be locked on it
         //this shouldn't be possible on normal conditions.
 
-        if (this.isTouchingTile(blockX, blockY)) {
+        if (this.isTouchingPos(blockX, blockY)) {
           return false;
         }
 
@@ -550,9 +579,32 @@ const addPixelMovementToClass = (classRef) => {
 
       return ladderCount > nonLadderCount;
     }
+
+    isCollidedWithVehicles() {
+      return false;
+    }
+
+    chasePosition(x, y) {
+      const sx = this.deltaXFrom(x);
+      const sy = this.deltaYFrom(y);
+
+      const sxAbs = Math.abs(sx);
+      const syAbs = Math.abs(sy);
+      const { stepSize } = CycloneMovement;
+
+      if (sxAbs >= stepSize && syAbs >= stepSize) {
+        this.moveDiagonally(sx > 0 ? 4 : 6, sy > 0 ? 8 : 2);
+      } else if (sxAbs >= stepSize) {
+        this.moveStraight(sx > 0 ? 4 : 6);
+      } else if (syAbs >= stepSize) {
+        this.moveStraight(sy > 0 ? 8 : 2);
+      }
+
+      this.setMoveSpeed($gamePlayer.realMoveSpeed());
+    }
   });
 };
 
 addPixelMovementToClass(Game_Player);
 addPixelMovementToClass(Game_Follower);
-addPixelMovementToClass(Game_Vehicle);
+// addPixelMovementToClass(Game_Vehicle);
