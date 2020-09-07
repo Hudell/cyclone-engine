@@ -6,4 +6,5 @@ import './Game_Follower';
 import './Game_Vehicle';
 import './Game_Event';
 import './Game_Interpreter';
+import './Game_Temp';
 import './DataManager';

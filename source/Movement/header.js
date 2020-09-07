@@ -4,7 +4,7 @@
 
 /*:
  * @target MZ
- * @plugindesc Adds new features to game map
+ * @plugindesc Adds new movement features to the game
  *
  * <pluginName:CycloneMovement>
  * @author Hudell
@@ -64,8 +64,7 @@
  * @text Steps per Tile
  * @desc How many steps the player will need to take to move an entire tile?
  * @type select
- * @default 8
- * @option 8
+ * @default 4
  * @option 4
  * @option 2
  * @option 1
@@ -101,6 +100,16 @@
  * @param autoLeaveVehicles
  * @text Leave Vehicles Automatically
  * @desc If true, the player will leave boats and ships automatically when they reach land
+ * @default false
+ *
+ * @param diagonalPathfinding
+ * @text Diagonal Pathfinding
+ * @desc
+ * @default false
+ *
+ * @param disableMouseMovement
+ * @text Disable Mouse Movement
+ * @desc
  * @default false
  *
  **/

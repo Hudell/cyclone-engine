@@ -51,6 +51,7 @@ globals:
   Game_Party: false
   Game_Follower: false
   Game_Vehicle: false
+  Game_Temp: false
 
   Window_Base: false
   Window_Selectable: false
@@ -67,6 +68,7 @@ globals:
   $gameSwitches: false
   $gameScreen: false
   $gameParty: false
+  $gameSystem: false
 
   $dataCommonEvents: false
   $dataMap: false
@@ -113,7 +115,7 @@ rules:
     - warn
   complexity:
     - error
-    - 10
+    - 15
   no-return-assign:
     - warn
   no-return-await:

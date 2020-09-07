@@ -16,14 +16,14 @@ CycloneMovement.patchClass(Game_Player, $super => class {
     return 0.5;
   }
 
-  get width() {
+  getWidth() {
     if (this.isInVehicle()) {
       return 1;
     }
 
     return this.defaultWidth;
   }
-  get height() {
+  getHeight() {
     if (this.isInVehicle()) {
       return 1;
     }
@@ -31,7 +31,7 @@ CycloneMovement.patchClass(Game_Player, $super => class {
     return this.defaultHeight;
   }
 
-  get hitboxX() {
+  getHitboxX() {
     if (this.isInVehicle()) {
       return 0;
     }
@@ -39,7 +39,7 @@ CycloneMovement.patchClass(Game_Player, $super => class {
     return this.defaultHitboxX;
   }
 
-  get hitboxY() {
+  getHitboxY() {
     if (this.isInVehicle()) {
       return 0;
     }
@@ -47,7 +47,6 @@ CycloneMovement.patchClass(Game_Player, $super => class {
     return this.defaultHitboxY;
   }
 
-  // eslint-disable-next-line complexity
   moveByInput() {
     if (this.isMoving() || !this.canMove()) {
       return;
@@ -59,19 +58,33 @@ CycloneMovement.patchClass(Game_Player, $super => class {
 
     if (direction > 0) {
       $gameTemp.clearDestination();
-    // } else if ($gameTemp.isDestinationValid()) {
-      // direction = this.determineDirectionToDestination();
-      // diagonalDirection = direction;
+    } else if ($gameTemp.isDestinationValid()) {
+      diagonalDirection = this.determineDirectionToDestination();
+      direction = CycloneMovement.getFirstDirection(diagonalDirection);
     }
 
-    alternativeD = this.getAlternativeDirection(direction, diagonalDirection);
-
-    // this.clearCheckedTiles();
+    alternativeD = CycloneMovement.getAlternativeDirection(direction, diagonalDirection);
+    CycloneMovement.clearCheckedTiles();
 
     if (direction === 0) {
       return;
     }
 
+    this.tryMoving(direction, alternativeD, diagonalDirection);
+
+    if (!this.isMoving()) {
+      if (this.tryOtherMovementOptions(direction)) {
+        return;
+      }
+
+      if (this._direction !== direction) {
+        this.setDirection(direction);
+        this.checkEventTriggerTouchFront();
+      }
+    }
+  }
+
+  tryMoving(direction, alternativeD, diagonalDirection) {
     if (this.canPass(this._x, this._y, direction) || (direction !== alternativeD && this.canPass(this._x, this._y, alternativeD))) {
       this.onBeforeMove();
 
@@ -85,24 +98,13 @@ CycloneMovement.patchClass(Game_Player, $super => class {
       if (!this.isMovementSucceeded()) {
         this.executeMove(alternativeD);
 
-        // If none of the directions was clear and we were already facing one of them before, then revert back to it
+        // If none of the directions were clear and we were already facing one of them before, then revert back to it
         if (!this.isMovementSucceeded()) {
           if (oldDirection === direction || oldDirection === alternativeD) {
             this._direction = oldDirection;
           }
         }
       }
-
-      return;
-    }
-
-    if (this.tryOtherMovementOptions(direction)) {
-      return;
-    }
-
-    if (this._direction !== direction) {
-      this.setDirection(direction);
-      this.checkEventTriggerTouchFront();
     }
   }
 
@@ -113,6 +115,10 @@ CycloneMovement.patchClass(Game_Player, $super => class {
   tryOtherMovementOptions(direction) {
     if (this.tryToLeaveVehicle(direction)) {
       return true;
+    }
+
+    if (this.isInVehicle()) {
+      return false;
     }
 
     if (this.tryToAvoidDiagonally(direction)) {
@@ -294,27 +300,6 @@ CycloneMovement.patchClass(Game_Player, $super => class {
       default:
         break;
     }
-  }
-
-  getAlternativeDirection(direction, diagonalDirection) {
-    if (direction === diagonalDirection) {
-      return direction;
-    }
-
-    switch (diagonalDirection) {
-      case 7:
-        return direction == 8 ? 4 : 8;
-      case 9:
-        return direction == 8 ? 6 : 8;
-      case 1:
-        return direction == 2 ? 4 : 2;
-      case 3:
-        return direction == 2 ? 6 : 2;
-      default:
-        break;
-    }
-
-    return direction;
   }
 
   moveStraight(d) {
@@ -576,30 +561,8 @@ CycloneMovement.patchClass(Game_Player, $super => class {
     return true;
   }
 
-  getBestLandingPosition(vehicle, direction) {
-    let x;
-    let y;
-
-    switch(direction) {
-      case 2:
-        x = this.x;
-        y = this.y + this.defaultHitboxY + this.defaultHeight;
-        break;
-      case 4:
-        x = this.x - this.defaultHitboxX - this.defaultWidth;
-        y = this.y;
-        break;
-      case 6:
-        x = this.x + this.defaultHitboxX + this.defaultWidth;
-        y = this.y;
-        break;
-      case 8:
-        x = this.x;
-        y = this.y - this.defaultHitboxY - this.defaultHeight;
-        break;
-    }
-
-    if (!this.canLandOn(x, y)) {
+  isValidLandingPosition(vehicle, x, y, d) {
+    if (!this.canLandOn(x, y, d)) {
       return false;
     }
 
@@ -607,14 +570,103 @@ CycloneMovement.patchClass(Game_Player, $super => class {
       return false;
     }
 
-    if (!vehicle.isLandOk(x, y, direction)) {
+    if (!vehicle.isLandOk(x, y, d)) {
       return false;
     }
 
-    return {
-      x,
-      y,
-    };
+    return true;
+  }
+
+  getLandingXOffset(vehicle, x, y, direction) {
+    for (let i = 1; i < CycloneMovement.stepCount; i++) {
+      const offset = CycloneMovement.stepSize * i;
+      if (this.isValidLandingPosition(vehicle, x - offset, y, direction)) {
+        return -offset;
+      }
+
+      if (this.isValidLandingPosition(vehicle, x + offset, y, direction)) {
+        return offset;
+      }
+    }
+
+    return 0;
+  }
+
+  getLandingYOffset(vehicle, x, y, direction) {
+    for (let i = 1; i < CycloneMovement.stepCount; i++) {
+      const offset = CycloneMovement.stepSize * i;
+      if (this.isValidLandingPosition(vehicle, x, y - offset, direction)) {
+        return -offset;
+      }
+
+      if (this.isValidLandingPosition(vehicle, x, y + offset, direction)) {
+        return offset;
+      }
+    }
+
+    return 0;
+  }
+
+  getBestLandingPosition(vehicle, direction) {
+    let x;
+    let y;
+    let vehicleX = this.x;
+    let vehicleY = this.y;
+    const { stepCount } = CycloneMovement;
+
+    switch(direction) {
+      case 2:
+        x = Math.round(this.x * stepCount) / stepCount;
+        y = Math.ceil((this.y + this.hitboxY + this.height) * stepCount) / stepCount;
+        break;
+      case 4:
+        x = Math.floor((this.x - this.defaultHitboxX - this.defaultWidth) * stepCount) / stepCount;
+        y = Math.round(this.y * stepCount) / stepCount;
+        break;
+      case 6:
+        x = Math.ceil((this.x + this.hitboxX + this.width) * stepCount) / stepCount;
+        y = Math.round(this.y * stepCount) / stepCount;
+        break;
+      case 8:
+        x = Math.round(this.x * stepCount) / stepCount;
+        y = Math.floor((this.y - this.defaultHitboxY - this.defaultHeight) * stepCount) / stepCount;
+        break;
+    }
+
+    if (this.isValidLandingPosition(vehicle, x, y, direction)) {
+      return {
+        x,
+        y,
+        vehicleX,
+        vehicleY,
+      };
+    }
+
+    if (CycloneMovement.isVertical(direction)) {
+      const xOffset = this.getLandingXOffset(vehicle, x, y, direction);
+      if (xOffset !== 0) {
+        return {
+          x: x + xOffset,
+          y,
+          vehicleX: vehicleX + xOffset,
+          vehicleY,
+        };
+      }
+
+      return false;
+    }
+
+    const yOffset = this.getLandingYOffset(vehicle, x, y, direction);
+    if (yOffset !== 0) {
+      return {
+        x,
+        y: y + yOffset,
+        vehicleX,
+        vehicleY: vehicleY + yOffset
+      };
+    }
+
+    return false;
   }
 
   getOffVehicle(direction = undefined) {
@@ -634,9 +686,21 @@ CycloneMovement.patchClass(Game_Player, $super => class {
     }
 
     this._followers.synchronize(this.x, this.y, direction);
-    this.vehicle().getOff();
+    vehicle.getOff();
 
     if (!this.isInAirship()) {
+      if (vehicle._x < target.vehicleX) {
+        vehicle.setDirection(6);
+      } else if (vehicle._x > target.vehicleX) {
+        vehicle.setDirection(4);
+      } else if (vehicle._y < target.vehicleY) {
+        vehicle.setDirection(2);
+      } else if (vehicle._y > target.vehicleY) {
+        vehicle.setDirection(8);
+      }
+
+      vehicle._x = target.vehicleX;
+      vehicle._y = target.vehicleY;
       this._x = target.x;
       this._y = target.y;
 
@@ -655,7 +719,7 @@ CycloneMovement.patchClass(Game_Player, $super => class {
 
   isPositionPassable(x, y, d) {
     const vehicle = this.vehicle();
-    if (vehicle) {
+    if (vehicle && !this._ignoreVehicle) {
       return vehicle.checkPassage(Math.floor(x), Math.floor(y));
     }
 
@@ -665,46 +729,58 @@ CycloneMovement.patchClass(Game_Player, $super => class {
   shouldSkipExtraPassabilityTests() {
     const vehicle = this.vehicle();
 
-    if (vehicle) {
+    if (vehicle && !this._ignoreVehicle) {
       return true;
     }
 
     return false;
   }
 
-  // Check if there's enough room for the player on that position
-  canLandOn(x, y) {
-    const x1 = Math.floor(x + this.defaultHitboxX);
-    const y1 = Math.floor(y + this.defaultHitboxY);
-
-    if (!$gameMap.isTileClear(x1, y1)) {
+  isInVehicle() {
+    if (this._ignoreVehicle) {
       return false;
     }
 
-    const x2 = x + this.defaultHitboxX + this.defaultWidth;
-    const x2f = CycloneMovement.isRoundNumber(x2) ? x2 -1 : Math.floor(x2);
+    return $super.isInVehicle.call(this);
+  }
 
-    if (x1 !== x2f) {
-      if (!$gameMap.isTileClear(x2f, y1)) {
-        return false;
+  // Check if there's enough room for the player on that position
+  canLandOn(x, y, direction) {
+    this._ignoreVehicle = true;
+    try {
+      if (this.canPass(x, y, 2)) {
+        return true;
       }
+      if (this.canPass(x, y, 4)) {
+        return true;
+      }
+      if (this.canPass(x, y, 6)) {
+        return true;
+      }
+      if (this.canPass(x, y, 8)) {
+        return true;
+      }
+
+      return false;
+    } finally {
+      this._ignoreVehicle = false;
+    }
+  }
+
+  determineDirectionToDestination() {
+    const x = $gameTemp.destinationX();
+    const y = $gameTemp.destinationY();
+
+    return this.findDirectionTo(x, y);
+  }
+
+  searchLimit() {
+    const limit = $super.searchLimit.call(this);
+
+    if (TouchInput.isLongPressed()) {
+      return Math.floor(limit / CycloneMovement.stepCount);
     }
 
-    const y2 = y + this.defaultHitboxY + this.defaultHeight;
-    const y2f = CycloneMovement.isRoundNumber(y2) ? y2 - 1 : Math.floor(y2);
-
-    if (y1 !== y2f) {
-      if (!$gameMap.isTileClear(x1, y2f)) {
-        return false;
-      }
-
-      if (x1 !== x2f) {
-        if (!$gameMap.isTileClear(x2f, y2f)) {
-          return false;
-        }
-      }
-    }
-
-    return true;
+    return limit;
   }
 });

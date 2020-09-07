@@ -1,21 +1,6 @@
 import './CharacterOverride';
 
 CycloneMovement.patchClass(Game_Vehicle, $super => class {
-  get width() {
-    return 1;
-  }
-  get height() {
-    return 1;
-  }
-
-  get hitboxX() {
-    return 0;
-  }
-
-  get hitboxY() {
-    return 0;
-  }
-
   checkPassage(x, y) {
     if (this.isBoat()) {
       return $gameMap.isBoatPassable(x, y);
@@ -60,25 +45,13 @@ CycloneMovement.patchClass(Game_Vehicle, $super => class {
       return this.isAirshipLandOk(x, y);
     }
 
-    // // const x2 = CycloneMovement.roundXWithDirection(x, d, CycloneMovement.collisionSize);
-    // // const y2 = CycloneMovement.roundYWithDirection(y, d, CycloneMovement.collisionSize);
-
-    // if (!$gameMap.isValid(x, y)) {
-    //   return false;
-    // }
-
-    // if (!$gamePlayer.canLandOn(x, y)) {
-    //   return false;
-    // }
-
-    // // if (!$gameMap.isPassable(x, y, this.reverseDir(d))) {
-    // //   return false;
-    // // }
-
-    // if (this.isCollidedWithCharacters(x, y)) {
-    //   return false;
-    // }
-
     return true;
+  }
+
+  getOff() {
+    this._driving = false;
+    this.setWalkAnime(false);
+    this.setStepAnime(false);
+    $gameSystem.replayWalkingBgm();
   }
 });

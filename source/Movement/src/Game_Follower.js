@@ -1,7 +1,19 @@
 import './CharacterOverride';
 
 CycloneMovement.patchClass(Game_Follower, $super => class {
-  // eslint-disable-next-line complexity
+  getWidth() {
+    return 0.75;
+  }
+  getHeight() {
+    return 0.375;
+  }
+  getHitboxX() {
+    return 0.125;
+  }
+  getHibtoxY() {
+    return 0.5;
+  }
+
   chaseCharacter(character) {
     if (this.isMoving()) {
       return;

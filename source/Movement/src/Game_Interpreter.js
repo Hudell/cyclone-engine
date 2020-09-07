@@ -1,9 +1,9 @@
 CycloneMovement.patchClass(Game_Interpreter, $super => class {
-  command201() {
-    $super.command201.call(this);
+  command201(...args) {
+    const result = $super.command201.call(this, ...args);
 
     if ($gameParty.inBattle()) {
-      return;
+      return result;
     }
 
     CycloneMovement.clearCheckedTiles();
@@ -12,5 +12,7 @@ CycloneMovement.patchClass(Game_Interpreter, $super => class {
         CycloneMovement.markTileAsChecked(x, y);
       });
     }
+
+    return result;
   }
 });

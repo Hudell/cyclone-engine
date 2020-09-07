@@ -28,4 +28,16 @@ CycloneMovement.patchClass(Game_Map, $super => class {
 
     return true;
   }
+
+  distance(x1, y1, x2, y2) {
+    if (!CycloneMovement.diagonalPathfinding) {
+      return $super.distance.call(this, x1, y1, x2, y2);
+    }
+
+    const d1 = Math.abs(this.deltaX(x1, x2));
+    const d2 = Math.abs(this.deltaY(y1, y2));
+
+    const total = d1 * d1 + d2 * d2;
+    return Math.sqrt(total);
+  }
 });

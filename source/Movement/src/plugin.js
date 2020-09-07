@@ -11,7 +11,7 @@ class CycloneMovement extends CyclonePlugin {
     super.register({
       stepCount: {
         type: 'int',
-        defaultValue: 8,
+        defaultValue: 4,
       },
       followerStepsBehind: {
         type: 'int',
@@ -30,7 +30,7 @@ class CycloneMovement extends CyclonePlugin {
       autoLeaveVehicles: 'boolean',
     });
 
-    this.stepCount = [1, 2, 4, 8].includes(this.params.stepCount) ? this.params.stepCount : 8;
+    this.stepCount = [1, 2, 4].includes(this.params.stepCount) ? this.params.stepCount : 4;
     this.collisionStepCount = Math.min(4, this.stepCount);
     this.stepSize = 1 / this.stepCount;
     this.collisionSize = 1 / this.collisionStepCount;
@@ -40,6 +40,7 @@ class CycloneMovement extends CyclonePlugin {
     this.triggerTouchEventAfterTeleport = this.params.triggerTouchEventAfterTeleport === true;
     this.blockRepeatedTouchEvents = this.params.blockRepeatedTouchEvents !== false;
     this.ignoreEmptyEvents = this.params.ignoreEmptyEvents !== false;
+    this.diagonalPathfinding = true;
   }
 
   static get currentMapCollisionTable() {
@@ -64,6 +65,53 @@ class CycloneMovement extends CyclonePlugin {
 
   static goesDown(d) {
     return d >= 1 && d <= 3;
+  }
+
+  static isDiagonal(d) {
+    return this.isVertical(d) && this.isHorizontal(d);
+  }
+
+  static isVertical(d) {
+    return this.goesDown(d) || this.goesUp(d);
+  }
+
+  static isHorizontal(d) {
+    return this.goesLeft(d) || this.goesRight(d);
+  }
+
+  static getFirstDirection(diagonalDirection) {
+    if (!diagonalDirection) {
+      return diagonalDirection;
+    }
+
+    if (diagonalDirection > 6) {
+      return 8;
+    }
+    if (diagonalDirection < 4) {
+      return 2;
+    }
+    return diagonalDirection;
+  }
+
+  static getAlternativeDirection(direction, diagonalDirection) {
+    if (direction === diagonalDirection) {
+      return direction;
+    }
+
+    switch (diagonalDirection) {
+      case 7:
+        return direction == 8 ? 4 : 8;
+      case 9:
+        return direction == 8 ? 6 : 8;
+      case 1:
+        return direction == 2 ? 4 : 2;
+      case 3:
+        return direction == 2 ? 6 : 2;
+      default:
+        break;
+    }
+
+    return direction;
   }
 
   static xWithDirection(x, d, stepSize = undefined) {
@@ -132,7 +180,7 @@ class CycloneMovement extends CyclonePlugin {
       return;
     }
 
-    const stepCount = Math.min(this.stepCount, 4);
+    const stepCount = this.collisionStepCount;
     currentMapCollisionTable = new Array($dataMap.width * $dataMap.height * stepCount * stepCount);
     this.loadDefaultCollisionTable();
     this.loadCustomCollision();
@@ -152,35 +200,39 @@ class CycloneMovement extends CyclonePlugin {
     }
   }
 
+  static setBlockCollision(x, y, collision) {
+    const index = this.collisionIndex(x, y);
+    currentMapCollisionTable[index] = collision;
+  }
 
   static applyFullTileCollision(x, y, collision) {
-    for (let subX = x; subX < x + 1; subX += 0.25) {
-      for (let subY = y; subY < y + 1; subY += 0.25) {
-        const index = this.collisionIndex(subX, subY);
-        currentMapCollisionTable[index] = collision;
+    const size = this.collisionSize;
+    for (let subX = x; subX < x + 1; subX += size) {
+      for (let subY = y; subY < y + 1; subY += size) {
+        this.setBlockCollision(subX, subY, collision);
       }
     }
   }
 
   static applyTileDirectionCollision(x, y, direction, collision) {
+    const size = this.collisionSize;
+
     if (direction === 2 || direction === 8) {
-      const subY = y + (direction === 2 ? 0.75 : 0);
-      for (let subX = x; subX < x + 1; subX += 0.25) {
-        const index = this.collisionIndex(subX, subY);
-        currentMapCollisionTable[index] = collision;
+      const subY = y + (direction === 2 ? 1 - size : 0);
+      for (let subX = x; subX < x + 1; subX += size) {
+        this.setBlockCollision(subX, subY, collision);
       }
       return;
     }
 
-    const subX = x + (direction === 6 ? 0.75 : 0);
-    for (let subY = y; subY < y + 1; subY += 0.25) {
-      const index = this.collisionIndex(subX, subY);
-      currentMapCollisionTable[index] = collision;
+    const subX = x + (direction === 6 ? 1 - size : 0);
+    for (let subY = y; subY < y + 1; subY += size) {
+      this.setBlockCollision(subX, subY, collision);
     }
   }
 
   static collisionIndex(x, y, useEditorStepCount = false) {
-    const stepCount = useEditorStepCount ? 4 : Math.min(CycloneMovement.stepCount, 4);
+    const stepCount = useEditorStepCount ? 4 : this.collisionStepCount;
 
     const intX = Math.floor(x * stepCount);
     const intY = Math.floor(y * stepCount);
@@ -195,17 +247,15 @@ class CycloneMovement extends CyclonePlugin {
       return;
     }
 
-    const stepCount = Math.min(CycloneMovement.stepCount, 4);
-    const increment = 1 / stepCount;
+    const increment = this.collisionSize;
 
     for (let x = 0; x < $dataMap.width; x += increment) {
       for (let y = 0; y < $dataMap.height; y += increment) {
-        const index = this.collisionIndex(x, y);
-        const editorIndex = this.collisionIndex(x, y, true);
-
+        const editorIndex = this.collisionIndex(x, y);
         const customCollision = Number(data.collision[editorIndex] || 0);
+
         if (customCollision > 0) {
-          currentMapCollisionTable[index] = customCollision;
+          this.setBlockCollision(x, y, customCollision);
         }
       }
     }
@@ -236,7 +286,6 @@ class CycloneMovement extends CyclonePlugin {
 
     return false;
   }
-
 
   static applyTileCollision(x, y, down, left, right, up) {
     if (down === left && down === right && down === up) {

@@ -97,6 +97,12 @@
  * @text Ignore Empty Events
  * @desc if true, the game won't try to trigger events that have no commands
  * @default true
+ *
+ * @param autoLeaveVehicles
+ * @text Leave Vehicles Automatically
+ * @desc If true, the player will leave boats and ships automatically when they reach land
+ * @default false
+ *
  **/
 (function () {
 'use strict';
@@ -686,6 +692,37 @@ class CyclonePlugin {
     };
   }
 
+  static throttle(fn, delay) {
+    let timeout;
+    let latestArgs;
+    let needsCalling = false;
+
+    const call = () => {
+      timeout = setTimeout(() => {
+        if (needsCalling) {
+          call();
+        } else {
+          timeout = false;
+        }
+        needsCalling = false;
+      }, delay);
+
+      fn.call(this, ...latestArgs);
+    };
+
+    const debounced = function(...args) {
+      latestArgs = args;
+      if (timeout) {
+        needsCalling = true;
+        return;
+      }
+
+      call();
+    };
+
+    return debounced;
+  }
+
   static _addProperty(classObj, propName, { getter: getterFn, setter: setterFn, lazy = false })  {
     if (lazy) {
       // Creates a property that replaces itself with the value the first time it's called.
@@ -741,7 +778,7 @@ class CycloneMovement$1 extends CyclonePlugin {
     super.register({
       stepCount: {
         type: 'int',
-        defaultValue: 8,
+        defaultValue: 4,
       },
       followerStepsBehind: {
         type: 'int',
@@ -760,7 +797,7 @@ class CycloneMovement$1 extends CyclonePlugin {
       autoLeaveVehicles: 'boolean',
     });
 
-    this.stepCount = [1, 2, 4, 8].includes(this.params.stepCount) ? this.params.stepCount : 8;
+    this.stepCount = [1, 2, 4].includes(this.params.stepCount) ? this.params.stepCount : 4;
     this.collisionStepCount = Math.min(4, this.stepCount);
     this.stepSize = 1 / this.stepCount;
     this.collisionSize = 1 / this.collisionStepCount;
@@ -770,6 +807,7 @@ class CycloneMovement$1 extends CyclonePlugin {
     this.triggerTouchEventAfterTeleport = this.params.triggerTouchEventAfterTeleport === true;
     this.blockRepeatedTouchEvents = this.params.blockRepeatedTouchEvents !== false;
     this.ignoreEmptyEvents = this.params.ignoreEmptyEvents !== false;
+    this.diagonalPathfinding = true;
   }
 
   static get currentMapCollisionTable() {
@@ -794,6 +832,51 @@ class CycloneMovement$1 extends CyclonePlugin {
 
   static goesDown(d) {
     return d >= 1 && d <= 3;
+  }
+
+  static isDiagonal(d) {
+    return this.isVertical(d) && this.isHorizontal(d);
+  }
+
+  static isVertical(d) {
+    return this.goesDown(d) || this.goesUp(d);
+  }
+
+  static isHorizontal(d) {
+    return this.goesLeft(d) || this.goesRight(d);
+  }
+
+  static getFirstDirection(diagonalDirection) {
+    if (!diagonalDirection) {
+      return diagonalDirection;
+    }
+
+    if (diagonalDirection > 6) {
+      return 8;
+    }
+    if (diagonalDirection < 4) {
+      return 2;
+    }
+    return diagonalDirection;
+  }
+
+  static getAlternativeDirection(direction, diagonalDirection) {
+    if (direction === diagonalDirection) {
+      return direction;
+    }
+
+    switch (diagonalDirection) {
+      case 7:
+        return direction == 8 ? 4 : 8;
+      case 9:
+        return direction == 8 ? 6 : 8;
+      case 1:
+        return direction == 2 ? 4 : 2;
+      case 3:
+        return direction == 2 ? 6 : 2;
+    }
+
+    return direction;
   }
 
   static xWithDirection(x, d, stepSize = undefined) {
@@ -862,7 +945,7 @@ class CycloneMovement$1 extends CyclonePlugin {
       return;
     }
 
-    const stepCount = Math.min(this.stepCount, 4);
+    const stepCount = this.collisionStepCount;
     currentMapCollisionTable = new Array($dataMap.width * $dataMap.height * stepCount * stepCount);
     this.loadDefaultCollisionTable();
     this.loadCustomCollision();
@@ -882,35 +965,39 @@ class CycloneMovement$1 extends CyclonePlugin {
     }
   }
 
+  static setBlockCollision(x, y, collision) {
+    const index = this.collisionIndex(x, y);
+    currentMapCollisionTable[index] = collision;
+  }
 
   static applyFullTileCollision(x, y, collision) {
-    for (let subX = x; subX < x + 1; subX += 0.25) {
-      for (let subY = y; subY < y + 1; subY += 0.25) {
-        const index = this.collisionIndex(subX, subY);
-        currentMapCollisionTable[index] = collision;
+    const size = this.collisionSize;
+    for (let subX = x; subX < x + 1; subX += size) {
+      for (let subY = y; subY < y + 1; subY += size) {
+        this.setBlockCollision(subX, subY, collision);
       }
     }
   }
 
   static applyTileDirectionCollision(x, y, direction, collision) {
+    const size = this.collisionSize;
+
     if (direction === 2 || direction === 8) {
-      const subY = y + (direction === 2 ? 0.75 : 0);
-      for (let subX = x; subX < x + 1; subX += 0.25) {
-        const index = this.collisionIndex(subX, subY);
-        currentMapCollisionTable[index] = collision;
+      const subY = y + (direction === 2 ? 1 - size : 0);
+      for (let subX = x; subX < x + 1; subX += size) {
+        this.setBlockCollision(subX, subY, collision);
       }
       return;
     }
 
-    const subX = x + (direction === 6 ? 0.75 : 0);
-    for (let subY = y; subY < y + 1; subY += 0.25) {
-      const index = this.collisionIndex(subX, subY);
-      currentMapCollisionTable[index] = collision;
+    const subX = x + (direction === 6 ? 1 - size : 0);
+    for (let subY = y; subY < y + 1; subY += size) {
+      this.setBlockCollision(subX, subY, collision);
     }
   }
 
   static collisionIndex(x, y, useEditorStepCount = false) {
-    const stepCount = useEditorStepCount ? 4 : Math.min(CycloneMovement$1.stepCount, 4);
+    const stepCount = useEditorStepCount ? 4 : this.collisionStepCount;
 
     const intX = Math.floor(x * stepCount);
     const intY = Math.floor(y * stepCount);
@@ -925,17 +1012,15 @@ class CycloneMovement$1 extends CyclonePlugin {
       return;
     }
 
-    const stepCount = Math.min(CycloneMovement$1.stepCount, 4);
-    const increment = 1 / stepCount;
+    const increment = this.collisionSize;
 
     for (let x = 0; x < $dataMap.width; x += increment) {
       for (let y = 0; y < $dataMap.height; y += increment) {
-        const index = this.collisionIndex(x, y);
-        const editorIndex = this.collisionIndex(x, y, true);
-
+        const editorIndex = this.collisionIndex(x, y);
         const customCollision = Number(data.collision[editorIndex] || 0);
+
         if (customCollision > 0) {
-          currentMapCollisionTable[index] = customCollision;
+          this.setBlockCollision(x, y, customCollision);
         }
       }
     }
@@ -966,7 +1051,6 @@ class CycloneMovement$1 extends CyclonePlugin {
 
     return false;
   }
-
 
   static applyTileCollision(x, y, down, left, right, up) {
     if (down === left && down === right && down === up) {
@@ -1052,23 +1136,51 @@ CycloneMovement.patchClass(Game_Map, $super => class {
 
     return true;
   }
+
+  distance(x1, y1, x2, y2) {
+    if (!CycloneMovement.diagonalPathfinding) {
+      return $super.distance.call(this, x1, y1, x2, y2);
+    }
+
+    const d1 = Math.abs(this.deltaX(x1, x2));
+    const d2 = Math.abs(this.deltaY(y1, y2));
+
+    const total = d1 * d1 + d2 * d2;
+    return Math.sqrt(total);
+  }
 });
 
 const addPixelMovementToClass = (classRef) => {
   CycloneMovement.patchClass(classRef, $super => class {
     get width() {
-      return 0.75;
+      if (this._tempWidth !== undefined) {
+        return this._tempWidth;
+      }
+
+      return this.getWidth();
     }
     get height() {
-      return 0.375;
+      if (this._tempHeight !== undefined) {
+        return this._tempHeight;
+      }
+
+      return this.getHeight();
     }
 
     get hitboxX() {
-      return 0.125;
+      if (this._tempHitboxX !== undefined) {
+        return this._tempHitboxX;
+      }
+
+      return this.getHitboxX();
     }
 
     get hitboxY() {
-      return 0.5;
+      if (this._tempHitboxY !== undefined) {
+        return this._tempHitboxY;
+      }
+
+      return this.getHitboxY();
     }
 
     get left() {
@@ -1098,6 +1210,20 @@ const addPixelMovementToClass = (classRef) => {
       return this.lastXAt(this._x);
     }
 
+    getWidth() {
+      return 1;
+    }
+    getHeight() {
+      return 1;
+    }
+
+    getHitboxX() {
+      return 0;
+    }
+
+    getHitboxY() {
+      return 0;
+    }
     firstXAt(x) {
       return Math.floor(x + this.hitboxX);
     }
@@ -1155,6 +1281,15 @@ const addPixelMovementToClass = (classRef) => {
       return false;
     }
 
+    update(...args) {
+      try {
+        this._canPassCache = {};
+        $super.update.call(this, ...args);
+      } finally {
+        delete this._canPassCache;
+      }
+    }
+
     shouldPassThrough() {
       if (this.isThrough() || this.isDebugThrough()) {
         return true;
@@ -1164,6 +1299,33 @@ const addPixelMovementToClass = (classRef) => {
     }
 
     canPass(x, y, d) {
+      if (!this._canPassCache) {
+        return this._canPass(x, y, d);
+      }
+
+      const index = CycloneMovement.collisionIndex(x, y);
+      let result = this._canPassCache?.[index]?.[d];
+
+      if (result !== undefined) {
+        return result;
+      }
+
+      result = this._canPass(x, y, d);
+      if (!this._canPassCache[index]) {
+        this._canPassCache[index] = new Array(10);
+      }
+
+      this._canPassCache[index][d] = result;
+      return result;
+    }
+
+    _canPass(x, y, d) {
+      if (CycloneMovement.isDiagonal(d)) {
+        const d1 = CycloneMovement.getFirstDirection(d);
+        const d2 = CycloneMovement.getAlternativeDirection(d1, d);
+        return this.canPassDiagonally(x, y, d2, d1);
+      }
+
       const x2 = CycloneMovement.roundXWithDirection(x, d);
       const y2 = CycloneMovement.roundYWithDirection(y, d);
 
@@ -1654,16 +1816,298 @@ const addPixelMovementToClass = (classRef) => {
         this.moveStraight(sx > 0 ? 4 : 6);
       } else if (syAbs >= stepSize) {
         this.moveStraight(sy > 0 ? 8 : 2);
+      } else if (sxAbs > 0 || syAbs > 0) {
+        this._x = x;
+        this._y = y;
       }
 
       this.setMoveSpeed($gamePlayer.realMoveSpeed());
+    }
+
+    setDirection(d) {
+      if (CycloneMovement.goesUp(d)) {
+        $super.setDirection.call(this, 8);
+      } else if (CycloneMovement.goesDown(d)) {
+        $super.setDirection.call(this, 2);
+      } else if (CycloneMovement.goesLeft(d)) {
+        $super.setDirection.call(this, 4);
+      } else if (CycloneMovement.goesRight(d)) {
+        $super.setDirection.call(this, 6);
+      }
+    }
+
+    _findNextBestNode(best, x1, y1, direction, closedList, goalX, goalY, current, openList, nodeList) {
+      const x2 = CycloneMovement.roundXWithDirection(x1, direction);
+      const y2 = CycloneMovement.roundYWithDirection(y1, direction);
+
+      const pos2 = y2 * $gameMap.width() + x2;
+
+      if (closedList.contains(pos2)) {
+        return best;
+      }
+
+      if (Math.floor(x1) === goalX && Math.floor(y1) === goalY) {
+        return false;
+      }
+
+      if (!this.canPass(x1, y1, direction)) {
+        return best;
+      }
+
+      let g2 = current.g + CycloneMovement.stepSize;
+      if (CycloneMovement.isDiagonal(direction)) {
+        g2 += CycloneMovement.stepSize;
+      }
+
+      const index2 = openList.indexOf(pos2);
+      if (index2 < 0 || g2 < nodeList[index2].g) {
+        let neighbor;
+        if (index2 >= 0) {
+          neighbor = nodeList[index2];
+        } else {
+          neighbor = {};
+          nodeList.push(neighbor);
+          openList.push(pos2);
+        }
+
+        neighbor.parent = current;
+        neighbor.x = x2;
+        neighbor.y = y2;
+        neighbor.g = g2;
+        neighbor.f = g2 + $gameMap.distance(x2, y2, goalX, goalY);
+
+        if (!best || neighbor.f - neighbor.g < best.f - best.g) {
+          return neighbor;
+        }
+      }
+
+      return best;
+    }
+
+    getDirectionNode(start, goalX, goalY) {
+      const searchLimit = this.searchLimit();
+      const mapWidth = $gameMap.width();
+      const nodeList = [];
+      const openList = [];
+      const closedList = [];
+      let best = start;
+
+      if (this.x === goalX && this.y === goalY) {
+        return undefined;
+      }
+
+      nodeList.push(start);
+      openList.push(start.y * mapWidth + start.x);
+
+      while (nodeList.length) {
+        let bestIndex = 0;
+        for (let i = 0; i < nodeList.length; i++) {
+          if (nodeList[i].f < nodeList[bestIndex].f) {
+            bestIndex = i;
+          }
+        }
+
+        const current = nodeList[bestIndex];
+        const x1 = current.x;
+        const y1 = current.y;
+        const pos1 = y1 * mapWidth + x1;
+        const g1 = current.g;
+
+        nodeList.splice(bestIndex, 1);
+        openList.splice(openList.indexOf(pos1), 1);
+        closedList.push(pos1);
+
+        if (this._positionMatch(current.x, current.y, goalX, goalY)) {
+          best = current;
+          break;
+        }
+
+        if (g1 >= searchLimit) {
+          continue;
+        }
+
+        for (let d = 1; d <= 9; d++) {
+          if (d === 5) {
+            continue;
+          }
+
+          if (!CycloneMovement.diagonalPathfinding && CycloneMovement.isDiagonal(d)) {
+            continue;
+          }
+
+          const nextBest = this._findNextBestNode(best, x1, y1, d, closedList, goalX, goalY, current, openList, nodeList);
+          if (nextBest === false) {
+            break;
+          }
+
+          best = nextBest;
+        }
+      }
+
+      return best;
+    }
+
+    clearCachedNode() {
+      this.setCachedNode();
+    }
+
+    setCachedNode(node, goalX, goalY) {
+      this._cachedNode = node;
+      this._cachedGoalX = goalX;
+      this._cachedGoalY = goalY;
+
+      this._cacheTTL = 20;
+    }
+
+    _getDirectionFromDeltas(deltaX, deltaY) {
+      if (CycloneMovement.diagonalPathfinding) {
+        if (deltaY > 0) {
+          if (deltaX > 0) {
+            return 3;
+          }
+          if (deltaX < 0) {
+            return 1;
+          }
+        } else if (deltaY < 0) {
+          if (deltaX < 0) {
+            return 7;
+          }
+          if (deltaX > 0) {
+            return 9;
+          }
+        }
+      }
+
+      if (deltaY > 0) {
+        return 2;
+      }
+
+      if (deltaX < 0) {
+        return 4;
+      }
+
+      if (deltaX > 0) {
+        return 6;
+      }
+
+      if (deltaY < 0) {
+        return 8;
+      }
+
+      return 0;
+    }
+
+    _returnDirection(direction, goalX, goalY, canRetry) {
+      if (direction) {
+        if (!this.canPass(this._x, this._y, direction)) {
+          this.clearCachedNode();
+          if (canRetry) {
+            return this.findDirectionTo(goalX, goalY);
+          }
+          return 0;
+        }
+      }
+
+      return direction;
+    }
+
+    _positionMatch(x1, y1, x2, y2) {
+      return x1 === x2 && y1 === y2;
+    }
+
+    _nodeIsNotNextStep(node, x, y) {
+      if (!node.parent) {
+        return false;
+      }
+
+      return !this._positionMatch(node.parent.x, node.parent.y, x, y);
+    }
+
+    _findDirectionTo(goalX, goalY) {
+      let node = this._cachedNode;
+      const start = {};
+      start.parent = null;
+      start.x = this.x;
+      start.y = this.y;
+      start.g = 0;
+      start.f = $gameMap.distance(start.x, start.y, goalX, goalY);
+
+      let canRetry = true;
+      if (node === undefined) {
+        node = this.getDirectionNode(start, goalX, goalY);
+        this.setCachedNode(node, goalX, goalY);
+        if (node === undefined) {
+          return 0;
+        }
+        canRetry = false;
+      }
+
+      if (node.x !== start.x || node.y !== start.y) {
+        while (this._nodeIsNotNextStep(node, start.x, start.y)) {
+          node = node.parent;
+        }
+
+        if (!node.parent) {
+          this.clearCachedNode();
+          if (canRetry) {
+            node = this.getDirectionNode(start, goalX, goalY);
+            this.setCachedNode(node, goalX, goalY);
+
+            if (node === undefined) {
+              return 0;
+            }
+          }
+        }
+      }
+
+      const deltaX1 = $gameMap.deltaX(node.x, start.x);
+      const deltaY1 = $gameMap.deltaY(node.y, start.y);
+      const deltaD = this._getDirectionFromDeltas(deltaX1, deltaY1);
+
+      if (deltaD) {
+        return deltaD;
+      }
+
+      const deltaX2 = this.deltaXFrom(goalX);
+      const deltaY2 = this.deltaYFrom(goalY);
+      let direction = 0;
+
+      if (Math.abs(deltaX2) > Math.abs(deltaY2)) {
+        direction = deltaX2 > 0 ? 4 : 6;
+      } else if (deltaY2 !== 0) {
+        direction = deltaY2 > 0 ? 8 : 2;
+      }
+
+      return this._returnDirection(direction, goalX, goalY, canRetry);
+    }
+
+    findDirectionTo(goalX, goalY) {
+      if (this.x === goalX && this.y === goalY) {
+        return 0;
+      }
+
+      if (this._cachedNode) {
+        if (this._cachedGoalX !== goalX || this._cachedGoalY !== goalY) {
+          this.clearCachedNode();
+        } else if (this._cacheTTL > 0) {
+          this._cacheTTL--;
+        } else {
+          this.clearCachedNode();
+        }
+      }
+
+
+      try {
+        return this._findDirectionTo(goalX, goalY);
+      } finally {
+        delete this._pfGrid;
+      }
     }
   });
 };
 
 addPixelMovementToClass(Game_Player);
 addPixelMovementToClass(Game_Follower);
-// addPixelMovementToClass(Game_Vehicle);
 
 let tryToLeaveVehicleDelay = 0;
 
@@ -1681,14 +2125,14 @@ CycloneMovement.patchClass(Game_Player, $super => class {
     return 0.5;
   }
 
-  get width() {
+  getWidth() {
     if (this.isInVehicle()) {
       return 1;
     }
 
     return this.defaultWidth;
   }
-  get height() {
+  getHeight() {
     if (this.isInVehicle()) {
       return 1;
     }
@@ -1696,7 +2140,7 @@ CycloneMovement.patchClass(Game_Player, $super => class {
     return this.defaultHeight;
   }
 
-  get hitboxX() {
+  getHitboxX() {
     if (this.isInVehicle()) {
       return 0;
     }
@@ -1704,7 +2148,7 @@ CycloneMovement.patchClass(Game_Player, $super => class {
     return this.defaultHitboxX;
   }
 
-  get hitboxY() {
+  getHitboxY() {
     if (this.isInVehicle()) {
       return 0;
     }
@@ -1712,7 +2156,6 @@ CycloneMovement.patchClass(Game_Player, $super => class {
     return this.defaultHitboxY;
   }
 
-  // eslint-disable-next-line complexity
   moveByInput() {
     if (this.isMoving() || !this.canMove()) {
       return;
@@ -1724,19 +2167,33 @@ CycloneMovement.patchClass(Game_Player, $super => class {
 
     if (direction > 0) {
       $gameTemp.clearDestination();
-    // } else if ($gameTemp.isDestinationValid()) {
-      // direction = this.determineDirectionToDestination();
-      // diagonalDirection = direction;
+    } else if ($gameTemp.isDestinationValid()) {
+      diagonalDirection = this.determineDirectionToDestination();
+      direction = CycloneMovement.getFirstDirection(diagonalDirection);
     }
 
-    alternativeD = this.getAlternativeDirection(direction, diagonalDirection);
-
-    // this.clearCheckedTiles();
+    alternativeD = CycloneMovement.getAlternativeDirection(direction, diagonalDirection);
+    CycloneMovement.clearCheckedTiles();
 
     if (direction === 0) {
       return;
     }
 
+    this.tryMoving(direction, alternativeD, diagonalDirection);
+
+    if (!this.isMoving()) {
+      if (this.tryOtherMovementOptions(direction)) {
+        return;
+      }
+
+      if (this._direction !== direction) {
+        this.setDirection(direction);
+        this.checkEventTriggerTouchFront();
+      }
+    }
+  }
+
+  tryMoving(direction, alternativeD, diagonalDirection) {
     if (this.canPass(this._x, this._y, direction) || (direction !== alternativeD && this.canPass(this._x, this._y, alternativeD))) {
       this.onBeforeMove();
 
@@ -1750,24 +2207,13 @@ CycloneMovement.patchClass(Game_Player, $super => class {
       if (!this.isMovementSucceeded()) {
         this.executeMove(alternativeD);
 
-        // If none of the directions was clear and we were already facing one of them before, then revert back to it
+        // If none of the directions were clear and we were already facing one of them before, then revert back to it
         if (!this.isMovementSucceeded()) {
           if (oldDirection === direction || oldDirection === alternativeD) {
             this._direction = oldDirection;
           }
         }
       }
-
-      return;
-    }
-
-    if (this.tryOtherMovementOptions(direction)) {
-      return;
-    }
-
-    if (this._direction !== direction) {
-      this.setDirection(direction);
-      this.checkEventTriggerTouchFront();
     }
   }
 
@@ -1778,6 +2224,10 @@ CycloneMovement.patchClass(Game_Player, $super => class {
   tryOtherMovementOptions(direction) {
     if (this.tryToLeaveVehicle(direction)) {
       return true;
+    }
+
+    if (this.isInVehicle()) {
+      return false;
     }
 
     if (this.tryToAvoidDiagonally(direction)) {
@@ -1956,25 +2406,6 @@ CycloneMovement.patchClass(Game_Player, $super => class {
         this.moveDiagonally(6, 2);
         break;
     }
-  }
-
-  getAlternativeDirection(direction, diagonalDirection) {
-    if (direction === diagonalDirection) {
-      return direction;
-    }
-
-    switch (diagonalDirection) {
-      case 7:
-        return direction == 8 ? 4 : 8;
-      case 9:
-        return direction == 8 ? 6 : 8;
-      case 1:
-        return direction == 2 ? 4 : 2;
-      case 3:
-        return direction == 2 ? 6 : 2;
-    }
-
-    return direction;
   }
 
   moveStraight(d) {
@@ -2236,30 +2667,8 @@ CycloneMovement.patchClass(Game_Player, $super => class {
     return true;
   }
 
-  getBestLandingPosition(vehicle, direction) {
-    let x;
-    let y;
-
-    switch(direction) {
-      case 2:
-        x = this.x;
-        y = this.y + this.defaultHitboxY + this.defaultHeight;
-        break;
-      case 4:
-        x = this.x - this.defaultHitboxX - this.defaultWidth;
-        y = this.y;
-        break;
-      case 6:
-        x = this.x + this.defaultHitboxX + this.defaultWidth;
-        y = this.y;
-        break;
-      case 8:
-        x = this.x;
-        y = this.y - this.defaultHitboxY - this.defaultHeight;
-        break;
-    }
-
-    if (!this.canLandOn(x, y)) {
+  isValidLandingPosition(vehicle, x, y, d) {
+    if (!this.canLandOn(x, y, d)) {
       return false;
     }
 
@@ -2267,14 +2676,103 @@ CycloneMovement.patchClass(Game_Player, $super => class {
       return false;
     }
 
-    if (!vehicle.isLandOk(x, y, direction)) {
+    if (!vehicle.isLandOk(x, y, d)) {
       return false;
     }
 
-    return {
-      x,
-      y,
-    };
+    return true;
+  }
+
+  getLandingXOffset(vehicle, x, y, direction) {
+    for (let i = 1; i < CycloneMovement.stepCount; i++) {
+      const offset = CycloneMovement.stepSize * i;
+      if (this.isValidLandingPosition(vehicle, x - offset, y, direction)) {
+        return -offset;
+      }
+
+      if (this.isValidLandingPosition(vehicle, x + offset, y, direction)) {
+        return offset;
+      }
+    }
+
+    return 0;
+  }
+
+  getLandingYOffset(vehicle, x, y, direction) {
+    for (let i = 1; i < CycloneMovement.stepCount; i++) {
+      const offset = CycloneMovement.stepSize * i;
+      if (this.isValidLandingPosition(vehicle, x, y - offset, direction)) {
+        return -offset;
+      }
+
+      if (this.isValidLandingPosition(vehicle, x, y + offset, direction)) {
+        return offset;
+      }
+    }
+
+    return 0;
+  }
+
+  getBestLandingPosition(vehicle, direction) {
+    let x;
+    let y;
+    let vehicleX = this.x;
+    let vehicleY = this.y;
+    const { stepCount } = CycloneMovement;
+
+    switch(direction) {
+      case 2:
+        x = Math.round(this.x * stepCount) / stepCount;
+        y = Math.ceil((this.y + this.hitboxY + this.height) * stepCount) / stepCount;
+        break;
+      case 4:
+        x = Math.floor((this.x - this.defaultHitboxX - this.defaultWidth) * stepCount) / stepCount;
+        y = Math.round(this.y * stepCount) / stepCount;
+        break;
+      case 6:
+        x = Math.ceil((this.x + this.hitboxX + this.width) * stepCount) / stepCount;
+        y = Math.round(this.y * stepCount) / stepCount;
+        break;
+      case 8:
+        x = Math.round(this.x * stepCount) / stepCount;
+        y = Math.floor((this.y - this.defaultHitboxY - this.defaultHeight) * stepCount) / stepCount;
+        break;
+    }
+
+    if (this.isValidLandingPosition(vehicle, x, y, direction)) {
+      return {
+        x,
+        y,
+        vehicleX,
+        vehicleY,
+      };
+    }
+
+    if (CycloneMovement.isVertical(direction)) {
+      const xOffset = this.getLandingXOffset(vehicle, x, y, direction);
+      if (xOffset !== 0) {
+        return {
+          x: x + xOffset,
+          y,
+          vehicleX: vehicleX + xOffset,
+          vehicleY,
+        };
+      }
+
+      return false;
+    }
+
+    const yOffset = this.getLandingYOffset(vehicle, x, y, direction);
+    if (yOffset !== 0) {
+      return {
+        x,
+        y: y + yOffset,
+        vehicleX,
+        vehicleY: vehicleY + yOffset
+      };
+    }
+
+    return false;
   }
 
   getOffVehicle(direction = undefined) {
@@ -2294,9 +2792,21 @@ CycloneMovement.patchClass(Game_Player, $super => class {
     }
 
     this._followers.synchronize(this.x, this.y, direction);
-    this.vehicle().getOff();
+    vehicle.getOff();
 
     if (!this.isInAirship()) {
+      if (vehicle._x < target.vehicleX) {
+        vehicle.setDirection(6);
+      } else if (vehicle._x > target.vehicleX) {
+        vehicle.setDirection(4);
+      } else if (vehicle._y < target.vehicleY) {
+        vehicle.setDirection(2);
+      } else if (vehicle._y > target.vehicleY) {
+        vehicle.setDirection(8);
+      }
+
+      vehicle._x = target.vehicleX;
+      vehicle._y = target.vehicleY;
       this._x = target.x;
       this._y = target.y;
 
@@ -2315,7 +2825,7 @@ CycloneMovement.patchClass(Game_Player, $super => class {
 
   isPositionPassable(x, y, d) {
     const vehicle = this.vehicle();
-    if (vehicle) {
+    if (vehicle && !this._ignoreVehicle) {
       return vehicle.checkPassage(Math.floor(x), Math.floor(y));
     }
 
@@ -2325,52 +2835,76 @@ CycloneMovement.patchClass(Game_Player, $super => class {
   shouldSkipExtraPassabilityTests() {
     const vehicle = this.vehicle();
 
-    if (vehicle) {
+    if (vehicle && !this._ignoreVehicle) {
       return true;
     }
 
     return false;
   }
 
-  // Check if there's enough room for the player on that position
-  canLandOn(x, y) {
-    const x1 = Math.floor(x + this.defaultHitboxX);
-    const y1 = Math.floor(y + this.defaultHitboxY);
-
-    if (!$gameMap.isTileClear(x1, y1)) {
+  isInVehicle() {
+    if (this._ignoreVehicle) {
       return false;
     }
 
-    const x2 = x + this.defaultHitboxX + this.defaultWidth;
-    const x2f = CycloneMovement.isRoundNumber(x2) ? x2 -1 : Math.floor(x2);
+    return $super.isInVehicle.call(this);
+  }
 
-    if (x1 !== x2f) {
-      if (!$gameMap.isTileClear(x2f, y1)) {
-        return false;
+  // Check if there's enough room for the player on that position
+  canLandOn(x, y, direction) {
+    this._ignoreVehicle = true;
+    try {
+      if (this.canPass(x, y, 2)) {
+        return true;
       }
+      if (this.canPass(x, y, 4)) {
+        return true;
+      }
+      if (this.canPass(x, y, 6)) {
+        return true;
+      }
+      if (this.canPass(x, y, 8)) {
+        return true;
+      }
+
+      return false;
+    } finally {
+      this._ignoreVehicle = false;
+    }
+  }
+
+  determineDirectionToDestination() {
+    const x = $gameTemp.destinationX();
+    const y = $gameTemp.destinationY();
+
+    return this.findDirectionTo(x, y);
+  }
+
+  searchLimit() {
+    const limit = $super.searchLimit.call(this);
+
+    if (TouchInput.isLongPressed()) {
+      return Math.floor(limit / CycloneMovement.stepCount);
     }
 
-    const y2 = y + this.defaultHitboxY + this.defaultHeight;
-    const y2f = CycloneMovement.isRoundNumber(y2) ? y2 - 1 : Math.floor(y2);
-
-    if (y1 !== y2f) {
-      if (!$gameMap.isTileClear(x1, y2f)) {
-        return false;
-      }
-
-      if (x1 !== x2f) {
-        if (!$gameMap.isTileClear(x2f, y2f)) {
-          return false;
-        }
-      }
-    }
-
-    return true;
+    return limit;
   }
 });
 
 CycloneMovement.patchClass(Game_Follower, $super => class {
-  // eslint-disable-next-line complexity
+  getWidth() {
+    return 0.75;
+  }
+  getHeight() {
+    return 0.375;
+  }
+  getHitboxX() {
+    return 0.125;
+  }
+  getHibtoxY() {
+    return 0.5;
+  }
+
   chaseCharacter(character) {
     if (this.isMoving()) {
       return;
@@ -2388,21 +2922,6 @@ CycloneMovement.patchClass(Game_Follower, $super => class {
 });
 
 CycloneMovement.patchClass(Game_Vehicle, $super => class {
-  get width() {
-    return 1;
-  }
-  get height() {
-    return 1;
-  }
-
-  get hitboxX() {
-    return 0;
-  }
-
-  get hitboxY() {
-    return 0;
-  }
-
   checkPassage(x, y) {
     if (this.isBoat()) {
       return $gameMap.isBoatPassable(x, y);
@@ -2447,26 +2966,14 @@ CycloneMovement.patchClass(Game_Vehicle, $super => class {
       return this.isAirshipLandOk(x, y);
     }
 
-    // // const x2 = CycloneMovement.roundXWithDirection(x, d, CycloneMovement.collisionSize);
-    // // const y2 = CycloneMovement.roundYWithDirection(y, d, CycloneMovement.collisionSize);
-
-    // if (!$gameMap.isValid(x, y)) {
-    //   return false;
-    // }
-
-    // if (!$gamePlayer.canLandOn(x, y)) {
-    //   return false;
-    // }
-
-    // // if (!$gameMap.isPassable(x, y, this.reverseDir(d))) {
-    // //   return false;
-    // // }
-
-    // if (this.isCollidedWithCharacters(x, y)) {
-    //   return false;
-    // }
-
     return true;
+  }
+
+  getOff() {
+    this._driving = false;
+    this.setWalkAnime(false);
+    this.setStepAnime(false);
+    $gameSystem.replayWalkingBgm();
   }
 });
 
@@ -2542,11 +3049,11 @@ CycloneMovement.patchClass(Game_Event, $super => class {
 });
 
 CycloneMovement.patchClass(Game_Interpreter, $super => class {
-  command201() {
-    $super.command201.call(this);
+  command201(...args) {
+    const result = $super.command201.call(this, ...args);
 
     if ($gameParty.inBattle()) {
-      return;
+      return result;
     }
 
     CycloneMovement.clearCheckedTiles();
@@ -2554,6 +3061,65 @@ CycloneMovement.patchClass(Game_Interpreter, $super => class {
       $gamePlayer.runForAllTiles((x, y) => {
         CycloneMovement.markTileAsChecked(x, y);
       });
+    }
+
+    return result;
+  }
+});
+
+let timeout;
+let latestX;
+let latestY;
+let needsCalling = false;
+
+CycloneMovement.patchClass(Game_Temp, $super => class {
+  _setDestination(x, y) {
+    if (timeout) {
+      clearTimeout(timeout);
+    }
+    timeout = setTimeout(() => {
+      timeout = false;
+      if (needsCalling) {
+        this._setDestination(latestX, latestY);
+      }
+    }, 50 * CycloneMovement.stepCount);
+
+    $super.setDestination.call(this, x, y);
+    needsCalling = false;
+    latestX = x;
+    latestY = y;
+  }
+
+  setDestination(x, y) {
+    if (!TouchInput.isLongPressed()) {
+      return this._setDestination(x, y);
+    }
+
+    if (!timeout) {
+      return this._setDestination(x, y);
+    }
+
+    const delta = $gameMap.distance(x, y, latestX, latestY);
+    if (delta > 3) {
+      return this._setDestination(x, y);
+    }
+
+    latestX = x;
+    latestY = y;
+
+    needsCalling = true;
+  }
+
+  clearDestination(...args) {
+    $super.clearDestination.call(this, ...args);
+
+    needsCalling = false;
+    latestX = undefined;
+    latestY = undefined;
+
+    if (timeout) {
+      clearTimeout(timeout);
+      timeout = false;
     }
   }
 });
