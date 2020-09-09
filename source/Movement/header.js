@@ -4,7 +4,7 @@
 
 /*:
  * @target MZ
- * @plugindesc Adds new movement features to the game
+ * @plugindesc  ALPHA/Incomplete Version - Adds new movement features to the game
  *
  * <pluginName:CycloneMovement>
  * @author Hudell

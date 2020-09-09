@@ -8,3 +8,4 @@ import './SceneManager';
 import './Spriteset_Map';
 import './Tilemap';
 import './TouchInput';
+import './Sprite_Character';

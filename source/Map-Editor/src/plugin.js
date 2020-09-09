@@ -3,7 +3,7 @@ import { Layers } from './constants';
 import { MapshotTileMap } from './mapshot/MapshotTileMap';
 import { LZString } from '../../Libs/lz-string.min';
 
-const layerVisibility = [true, true, true, true, true, false, false, false, false, false];
+const layerVisibility = [true, true, true, true, true, false, true, false, false, false];
 let editorActive = true;
 let windowWidth = 408;
 const mapCaches = {};
@@ -629,6 +629,16 @@ class CycloneMapEditor extends CyclonePlugin {
       })
     });
     layerMenu.append(this.regionsButton);
+    this.eventsButton = new nw.MenuItem( {
+      label: 'Events',
+      type: 'checkbox',
+      checked: currentLayer === 6,
+      key: '7',
+      click: this.makeMenuEvent(() => {
+        CycloneMapEditor.changeCurrentLayer(6);
+      })
+    });
+    layerMenu.append(this.eventsButton);
     layerMenu.append(new nw.MenuItem( {type: 'separator'}));
     this.collisionsButton = new nw.MenuItem( {
       label: 'Collisions',
@@ -731,25 +741,6 @@ class CycloneMapEditor extends CyclonePlugin {
       label: 'Export',
       submenu: exportMenu,
     }));
-
-    // const pluginsMenu = new nw.Menu();
-    // let anyPlugin = false;
-    // if (globalThis.CycloneMovement) {
-    //   pluginsMenu.append(new nw.MenuItem({
-    //     label: 'Custom Collision',
-    //     click: this.makeMenuEvent(() => {
-
-    //     }),
-    //   }));
-    //   anyPlugin = true;
-    // }
-
-    // if (anyPlugin) {
-    //   menu.append(new nw.MenuItem({
-    //     label: 'Plugins',
-    //     submenu: pluginsMenu,
-    //   }));
-    // }
 
     const helpMenu = new nw.Menu();
     helpMenu.append(new nw.MenuItem( {
@@ -1056,6 +1047,9 @@ class CycloneMapEditor extends CyclonePlugin {
         break;
       case 'Numpad6':
         this.changeCurrentLayer(5);
+        break;
+      case 'Numpad7':
+        this.changeCurrentLayer(6);
         break;
       case 'Numpad8':
         this.changeCurrentLayer(8);
@@ -1656,6 +1650,7 @@ class CycloneMapEditor extends CyclonePlugin {
       this.layer4Button.checked = newIndex === 3;
       this.shadowsButton.checked = newIndex === 4;
       this.regionsButton.checked = newIndex === 5;
+      this.eventsButton.checked = newIndex === 6;
       this.autoLayerButton.checked = newIndex === 7;
       this.collisionsButton.checked = newIndex === 8;
       this.tagsButton.checked = newIndex === 9;

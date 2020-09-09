@@ -38,7 +38,7 @@ class WindowCycloneMapEditorLayerList extends Window_Base {
       'Layer 4',
       'Shadows',
       'Regions',
-      false,
+      'Events',
       'Auto Layer'
     ];
 

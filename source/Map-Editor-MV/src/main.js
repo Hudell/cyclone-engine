@@ -13,6 +13,7 @@ import '../../Map-Editor/src/SceneManager';
 import '../../Map-Editor/src/Spriteset_Map';
 import '../../Map-Editor/src/Tilemap';
 import '../../Map-Editor/src/TouchInput';
+import '../../Map-Editor/src/Sprite_Character';
 
 
 import './WindowCycloneGrid';
