@@ -170,6 +170,14 @@
  * @default true
  * @desc Should the status bar indicate if the current position is a damage floor tile?
  *
+ * @param collisionStepCount
+ * @text Default Collision Blocks
+ * @type select
+ * @default 1
+ * @desc How many collision blocks per tile should the editor show?
+ * @option 4
+ * @option 2
+ * @option 1
  *
  **/
 
@@ -1348,6 +1356,10 @@ class CycloneMapEditor$1 extends CyclonePlugin {
         type: 'boolean',
         defaultValue: true,
       },
+      collisionStepCount: {
+        type: 'int',
+        defaultValue: 1,
+      }
     });
 
     document.addEventListener('keydown', (...args) => {
@@ -3998,6 +4010,11 @@ class CycloneMapEditor$1 extends CyclonePlugin {
         return window.CycloneMovement.collisionStepCount;
       }
 
+      const count = this.params.collisionStepCount;
+      if ([1, 2, 4].includes(count)) {
+        return count;
+      }
+
       return 1;
     }
 
@@ -4458,7 +4475,6 @@ class WindowCycloneGrid extends Window_Base {
     const drawHeight = Math.floor(CycloneMapEditor.tileHeight * CycloneMapEditor.currentZoom) / gridRatio;
 
     const context = this.contents.context;
-    context.save();
     context.strokeStyle = '#000000';
 
     for (let cellX = 0; cellX < gridRatio; cellX++) {
@@ -4467,11 +4483,10 @@ class WindowCycloneGrid extends Window_Base {
         const drawX = x + cellX * drawWidth;
         const drawY = y + cellY * drawHeight;
 
-        this.contents.strokeRect(drawX, drawY, drawWidth, drawHeight);
+        context.strokeRect(drawX, drawY, drawWidth, drawHeight);
       }
     }
     context.stroke();
-
   }
 
   maybeDrawRegions(x, y) {

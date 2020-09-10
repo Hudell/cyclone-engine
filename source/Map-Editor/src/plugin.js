@@ -389,6 +389,10 @@ class CycloneMapEditor extends CyclonePlugin {
         type: 'boolean',
         defaultValue: true,
       },
+      collisionStepCount: {
+        type: 'int',
+        defaultValue: 1,
+      }
     });
 
     document.addEventListener('keydown', (...args) => {
@@ -3037,6 +3041,11 @@ class CycloneMapEditor extends CyclonePlugin {
     if (currentLayer === Layers.collisions) {
       if (window.CycloneMovement) {
         return window.CycloneMovement.collisionStepCount;
+      }
+
+      const count = this.params.collisionStepCount;
+      if ([1, 2, 4].includes(count)) {
+        return count;
       }
 
       return 1;

@@ -3,6 +3,7 @@ import '../../MV/ColorManager';
 import '../../MV/Window_Selectable';
 import '../../MV/Scene_Map';
 import '../../MV/TouchInput';
+import '../../MV/Bitmap';
 import '../../Map-Editor/src/plugin';
 import '../../Map-Editor/src/Bitmap';
 import '../../Map-Editor/src/DataManager';

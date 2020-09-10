@@ -151,6 +151,16 @@
  * @type boolean
  * @default true
  * @desc Should the status bar indicate if the current position is a damage floor tile?
+ *
+ * @param collisionStepCount
+ * @text Default Collision Blocks
+ * @type select
+ * @default 1
+ * @desc How many collision blocks per tile should the editor show?
+ * @option 4
+ * @option 2
+ * @option 1
+ *
  **/
 
 /*~struct~RegionIcon:

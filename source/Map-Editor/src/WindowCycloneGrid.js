@@ -33,7 +33,6 @@ class WindowCycloneGrid extends Window_Base {
     const drawHeight = Math.floor(CycloneMapEditor.tileHeight * CycloneMapEditor.currentZoom) / gridRatio;
 
     const context = this.contents.context;
-    context.save();
     context.strokeStyle = '#000000';
 
     for (let cellX = 0; cellX < gridRatio; cellX++) {
@@ -42,11 +41,10 @@ class WindowCycloneGrid extends Window_Base {
         const drawX = x + cellX * drawWidth;
         const drawY = y + cellY * drawHeight;
 
-        this.contents.strokeRect(drawX, drawY, drawWidth, drawHeight);
+        context.strokeRect(drawX, drawY, drawWidth, drawHeight);
       }
     }
     context.stroke();
-
   }
 
   maybeDrawRegions(x, y) {
