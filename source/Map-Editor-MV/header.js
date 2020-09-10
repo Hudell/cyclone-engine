@@ -151,8 +151,6 @@
  * @type boolean
  * @default true
  * @desc Should the status bar indicate if the current position is a damage floor tile?
- *
- *
  **/
 
 /*~struct~RegionIcon:

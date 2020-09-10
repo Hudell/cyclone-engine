@@ -31,7 +31,7 @@ class WindowCycloneMapEditorCommands extends Window_Command {
     const x = Graphics.width - CycloneMapEditor.windowWidth;
     const y = 0;
     const w = CycloneMapEditor.windowWidth;
-    const h = 74;
+    const h = Graphics.width < 1280 ? 50 : 74;
     super.initialize(new Rectangle(x, y, w, h));
     this.showBackgroundDimmer();
     this.configureHandlers();
@@ -70,6 +70,14 @@ class WindowCycloneMapEditorCommands extends Window_Command {
       CycloneMapEditor.reloadButton();
       this.activate();
     });
+  }
+
+  maxScrollY() {
+    return 0;
+  }
+
+  maxScrollX() {
+    return 0;
   }
 
   processCursorMove() {
@@ -135,10 +143,27 @@ class WindowCycloneMapEditorCommands extends Window_Command {
     }
   }
 
+  itemRect(index) {
+    const rect = super.itemRect(index);
+
+    if (Graphics.width < 1280) {
+      rect.width += 3;
+    }
+
+    return rect;
+  }
+
+  lineHeight() {
+    if (Graphics.width >= 1280) {
+      return super.lineHeight();
+    }
+
+    return 14;
+  }
+
   drawItem(index) {
     const symbol = this.commandSymbol(index);
     const rect = this.itemRect(index);
-
 
     if (symbol === CycloneMapEditor.currentTool) {
       this.contents.fillRect(rect.x, rect.y + 2, rect.width, rect.height, '#00FF0066');
@@ -171,7 +196,7 @@ class WindowCycloneMapEditorCommands extends Window_Command {
 
     const ctx = this.contents._canvas.getContext('2d');
     ctx.imageSmoothingEnabled = false;
-    ctx.drawImage(icon, rect.x + 1, rect.y, 48, 48);
+    ctx.drawImage(icon, rect.x + 1, rect.y, CycloneMapEditor.tileDrawWidth, CycloneMapEditor.tileDrawWidth);
   }
 
   drawAllItems() {

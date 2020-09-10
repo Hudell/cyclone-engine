@@ -43,8 +43,8 @@ CycloneMapEditor.patchClass(Bitmap, $super => class {
 
       const sourceX = (tileX * CycloneMapEditor.tileWidth) + (tableX * halfWidth);
       const sourceY = (tileY * CycloneMapEditor.tileHeight) + (tableY * halfHeight);
-      const targetX = x + (i % 2) * halfWidth;
-      const targetY = y + Math.floor(i / 2) * halfHeight;
+      const targetX = x + (i % 2) * drawHalfWidth;
+      const targetY = y + Math.floor(i / 2) * drawHalfHeight;
 
       this.blt(bitmap, sourceX, sourceY, halfWidth, halfHeight, targetX, targetY, drawHalfWidth, drawHalfHeight);
     }
@@ -157,16 +157,20 @@ CycloneMapEditor.patchClass(Bitmap, $super => class {
     return this.drawNormalTile(tileId, x, y, drawWidth, drawHeight);
   }
 
-  drawIcon(iconIndex, x, y) {
+  drawIcon(iconIndex, x, y, drawWidth, drawHeight) {
     const bitmap = ImageManager.loadSystem('IconSet');
     const pw = ImageManager.iconWidth;
     const ph = ImageManager.iconHeight;
     const sx = (iconIndex % 16) * pw;
     const sy = Math.floor(iconIndex / 16) * ph;
-    this.blt(bitmap, sx, sy, pw, ph, x, y);
+
+    const realDrawWidth = drawWidth ?? pw;
+    const realDrawHeight = drawHeight ?? ph;
+
+    this.blt(bitmap, sx, sy, pw, ph, x, y, realDrawWidth, realDrawHeight);
   }
 
-  drawRegion(regionId, x, y, drawWidth, drawHeight) {
+  drawRegion(regionId, x, y, drawWidth, drawHeight, stretchIcon = false) {
     const realDrawWidth = drawWidth ?? CycloneMapEditor.tileWidth;
     const realDrawHeight = drawHeight ?? CycloneMapEditor.tileHeight;
 
@@ -181,7 +185,12 @@ CycloneMapEditor.patchClass(Bitmap, $super => class {
       const diffX = (realDrawWidth - iconWidth) / 2;
       const diffY = (realDrawHeight - iconHeight) / 2;
 
-      this.drawIcon(iconIndex, x + diffX, y + diffY);
+      const iconDrawWidth = stretchIcon ? realDrawWidth : iconWidth;
+      const iconDrawHeight = stretchIcon ? realDrawHeight : iconHeight;
+      const iconX = stretchIcon ? x : x + diffX;
+      const iconY = stretchIcon ? y : y + diffY;
+
+      this.drawIcon(iconIndex, iconX, iconY, iconDrawWidth, iconDrawHeight);
     } else {
       this.drawText(regionId, x, y, realDrawWidth, realDrawHeight, 'center');
     }

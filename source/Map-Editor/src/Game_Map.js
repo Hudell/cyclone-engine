@@ -39,25 +39,25 @@ CycloneMapEditor.patchClass(Game_Map, $super => class {
     return $super.isLoopVertical.call(this);
   }
 
-  // canvasToMapX(x) {
-  //   if (!CycloneMapEditor.active || CycloneMapEditor.currentZoom === 1) {
-  //     return $super.canvasToMapX.call(this, x);
-  //   }
+  canvasToMapX(x) {
+    if (!CycloneMapEditor.active || CycloneMapEditor.currentZoom === 1) {
+      return $super.canvasToMapX.call(this, x);
+    }
 
-  //   const tileWidth = this.tileWidth() * CycloneMapEditor.currentZoom;
-  //   const originX = this._displayX * tileWidth;
-  //   const mapX = Math.floor((originX + x) / tileWidth);
-  //   return this.roundX(mapX);
-  // }
+    const tileWidth = this.tileWidth() * CycloneMapEditor.currentZoom;
+    const originX = this._displayX * tileWidth;
+    const mapX = Math.floor((originX + x) / tileWidth);
+    return this.roundX(mapX);
+  }
 
-  // canvasToMapY(y) {
-  //   if (!CycloneMapEditor.active || CycloneMapEditor.currentZoom === 1) {
-  //     return $super.canvasToMapY.call(this, y);
-  //   }
+  canvasToMapY(y) {
+    if (!CycloneMapEditor.active || CycloneMapEditor.currentZoom === 1) {
+      return $super.canvasToMapY.call(this, y);
+    }
 
-  //   const tileHeight = this.tileHeight() * CycloneMapEditor.currentZoom;
-  //   const originY = this._displayY * tileHeight;
-  //   const mapY = Math.floor((originY + y) / tileHeight);
-  //   return this.roundY(mapY);
-  // }
+    const tileHeight = this.tileHeight() * CycloneMapEditor.currentZoom;
+    const originY = this._displayY * tileHeight;
+    const mapY = Math.floor((originY + y) / tileHeight);
+    return this.roundY(mapY);
+  }
 });

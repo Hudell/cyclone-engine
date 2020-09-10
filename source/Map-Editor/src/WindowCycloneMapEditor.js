@@ -152,18 +152,17 @@ class WindowCycloneMapEditor extends Window_Command {
   }
 
   itemWidth() {
-    return 48;
-    // return tileWidth;
+    return CycloneMapEditor.tileDrawWidth;
   }
 
   itemHeight() {
-    return 48;
-    // return tileHeight;
+    return CycloneMapEditor.tileDrawHeight;
   }
 
   drawRegion(index) {
     const rect = this.itemRect(index);
-    this.contents.drawRegion(index, rect.x, rect.y, rect.width, rect.height);
+    this.contents.fontSize = Graphics.width < 1280 ? 14 : 18;
+    this.contents.drawRegion(index, rect.x, rect.y, rect.width, rect.height, true);
   }
 
   drawCollision(index) {
@@ -306,8 +305,8 @@ class WindowCycloneMapEditor extends Window_Command {
       colDrawCount = 1;
     }
 
-    const selectionWidth = 48 * colDrawCount;
-    const selectionHeight = 48 * rowDrawCount;
+    const selectionWidth = CycloneMapEditor.tileDrawWidth * colDrawCount;
+    const selectionHeight = CycloneMapEditor.tileDrawHeight * rowDrawCount;
 
     this.contents.fillRect(x, y, selectionWidth, 4, '#000000');
     this.contents.fillRect(x, y + selectionHeight - 4, selectionWidth, 4, '#000000');

@@ -932,7 +932,7 @@ var LZString=function(){function o(o,r){if(!t[o]){t[o]={};for(var n=0;n<o.length
 
 const layerVisibility = [true, true, true, true, true, false, true, false, false, false];
 let editorActive = true;
-let windowWidth = 408;
+let windowWidth = 216;
 const mapCaches = {};
 let customCollisionTable = {};
 
@@ -1077,11 +1077,45 @@ class CycloneMapEditor$1 extends CyclonePlugin {
   static set tileWidth(value) {
     tileWidth = value;
   }
+  static get tileDrawWidth() {
+    if (Graphics.width < 1280) {
+      if (tileWidth > 32) {
+        return Math.floor(tileWidth / 2);
+      }
+
+      if (tileWidth <= 16) {
+        return tileWidth * 2;
+      }
+    } else {
+      if (tileWidth < 32) {
+        return tileWidth * 2;
+      }
+    }
+
+    return tileWidth;
+  }
   static get tileHeight() {
     return tileHeight;
   }
   static set tileHeight(value) {
     tileHeight = value;
+  }
+  static get tileDrawHeight() {
+    if (Graphics.width < 1280) {
+      if (tileHeight > 32) {
+        return Math.floor(tileHeight / 2);
+      }
+
+      if (tileHeight <= 16) {
+        return tileHeight * 2;
+      }
+    } else {
+      if (tileHeight < 32) {
+        return tileHeight * 2;
+      }
+    }
+
+    return tileHeight;
   }
   static get windowWidth() {
     return windowWidth;
@@ -1193,6 +1227,13 @@ class CycloneMapEditor$1 extends CyclonePlugin {
       SceneManager._scene._mapEditorGrid.refresh();
       SceneManager._scene._spriteset.updatePosition();
     }
+
+    // if (Utils.isNwjs()) {
+    //   this.zoom100Menu.checked = value === 1;
+    //   this.zoom150Menu.checked = value === 1.5;
+    //   this.zoom200Menu.checked = value === 2;
+    //   this.zoom400Menu.checked = value === 4;
+    // }
   }
 
   static register() {
@@ -1354,56 +1395,6 @@ class CycloneMapEditor$1 extends CyclonePlugin {
     editMenu.append(this.showGridMenu);
 
     // const zoomMenu = new nw.Menu();
-    // this.zoom30Menu = new nw.MenuItem({
-    //   label: '30%',
-    //   type: 'checkbox',
-    //   checked: currentZoom === 0.3,
-    //   click: this.makeMenuEvent(() => {
-    //     this.currentZoom = 0.3;
-
-    //   }),
-    // });
-    // zoomMenu.append(this.zoom30Menu);
-    // this.zoom50Menu = new nw.MenuItem({
-    //   label: '50%',
-    //   type: 'checkbox',
-    //   checked: currentZoom === 0.5,
-    //   click: this.makeMenuEvent(() => {
-    //     this.currentZoom = 0.5;
-
-    //   }),
-    // });
-    // zoomMenu.append(this.zoom50Menu);
-    // this.zoom67Menu = new nw.MenuItem({
-    //   label: '67%',
-    //   type: 'checkbox',
-    //   checked: currentZoom === 0.67,
-    //   click: this.makeMenuEvent(() => {
-    //     this.currentZoom = 0.67;
-
-    //   }),
-    // });
-    // zoomMenu.append(this.zoom67Menu);
-    // this.zoom75Menu = new nw.MenuItem({
-    //   label: '75%',
-    //   type: 'checkbox',
-    //   checked: currentZoom === 0.75,
-    //   click: this.makeMenuEvent(() => {
-    //     this.currentZoom = 0.75;
-
-    //   }),
-    // });
-    // zoomMenu.append(this.zoom75Menu);
-    // this.zoom90Menu = new nw.MenuItem({
-    //   label: '90%',
-    //   type: 'checkbox',
-    //   checked: currentZoom === 0.9,
-    //   click: this.makeMenuEvent(() => {
-    //     this.currentZoom = 0.9;
-
-    //   }),
-    // });
-    // zoomMenu.append(this.zoom90Menu);
     // this.zoom100Menu = new nw.MenuItem({
     //   label: '100%',
     //   type: 'checkbox',
@@ -1424,6 +1415,26 @@ class CycloneMapEditor$1 extends CyclonePlugin {
     //   }),
     // });
     // zoomMenu.append(this.zoom150Menu);
+    // this.zoom200Menu = new nw.MenuItem({
+    //   label: '200%',
+    //   type: 'checkbox',
+    //   checked: currentZoom === 2,
+    //   click: this.makeMenuEvent(() => {
+    //     this.currentZoom = 2;
+
+    //   }),
+    // });
+    // zoomMenu.append(this.zoom200Menu);
+
+    // this.zoom400Menu = new nw.MenuItem({
+    //   label: '400%',
+    //   type: 'checkbox',
+    //   checked: currentZoom === 4,
+    //   click: this.makeMenuEvent(() => {
+    //     this.currentZoom = 4;
+    //   }),
+    // });
+    // zoomMenu.append(this.zoom400Menu);
 
     // editMenu.append(new nw.MenuItem({
     //   label: 'Zoom',
@@ -1846,8 +1857,10 @@ class CycloneMapEditor$1 extends CyclonePlugin {
 
       const xDelta = Graphics.width - window.innerWidth;
       const yDelta = Graphics.height - window.innerHeight;
-      window.moveBy(-xDelta / 2, -yDelta / 2);
-      window.resizeBy(xDelta, yDelta);
+      if (xDelta !== 0 || yDelta !== 0) {
+        window.moveBy(-xDelta / 2, -yDelta / 2);
+        window.resizeBy(xDelta, yDelta);
+      }
     }, 20);
   }
 
@@ -2020,7 +2033,7 @@ class CycloneMapEditor$1 extends CyclonePlugin {
   }
 
   static checkScrollKeys(key) {
-    switch(key) {
+    switch(key.toLowerCase()) {
       case 'w':
         $gameMap.scrollUp(3);
         break;
@@ -3943,8 +3956,8 @@ CycloneMapEditor.patchClass(Bitmap, $super => class {
 
       const sourceX = (tileX * CycloneMapEditor.tileWidth) + (tableX * halfWidth);
       const sourceY = (tileY * CycloneMapEditor.tileHeight) + (tableY * halfHeight);
-      const targetX = x + (i % 2) * halfWidth;
-      const targetY = y + Math.floor(i / 2) * halfHeight;
+      const targetX = x + (i % 2) * drawHalfWidth;
+      const targetY = y + Math.floor(i / 2) * drawHalfHeight;
 
       this.blt(bitmap, sourceX, sourceY, halfWidth, halfHeight, targetX, targetY, drawHalfWidth, drawHalfHeight);
     }
@@ -4057,16 +4070,20 @@ CycloneMapEditor.patchClass(Bitmap, $super => class {
     return this.drawNormalTile(tileId, x, y, drawWidth, drawHeight);
   }
 
-  drawIcon(iconIndex, x, y) {
+  drawIcon(iconIndex, x, y, drawWidth, drawHeight) {
     const bitmap = ImageManager.loadSystem('IconSet');
     const pw = ImageManager.iconWidth;
     const ph = ImageManager.iconHeight;
     const sx = (iconIndex % 16) * pw;
     const sy = Math.floor(iconIndex / 16) * ph;
-    this.blt(bitmap, sx, sy, pw, ph, x, y);
+
+    const realDrawWidth = drawWidth ?? pw;
+    const realDrawHeight = drawHeight ?? ph;
+
+    this.blt(bitmap, sx, sy, pw, ph, x, y, realDrawWidth, realDrawHeight);
   }
 
-  drawRegion(regionId, x, y, drawWidth, drawHeight) {
+  drawRegion(regionId, x, y, drawWidth, drawHeight, stretchIcon = false) {
     const realDrawWidth = drawWidth ?? CycloneMapEditor.tileWidth;
     const realDrawHeight = drawHeight ?? CycloneMapEditor.tileHeight;
 
@@ -4081,7 +4098,12 @@ CycloneMapEditor.patchClass(Bitmap, $super => class {
       const diffX = (realDrawWidth - iconWidth) / 2;
       const diffY = (realDrawHeight - iconHeight) / 2;
 
-      this.drawIcon(iconIndex, x + diffX, y + diffY);
+      const iconDrawWidth = stretchIcon ? realDrawWidth : iconWidth;
+      const iconDrawHeight = stretchIcon ? realDrawHeight : iconHeight;
+      const iconX = stretchIcon ? x : x + diffX;
+      const iconY = stretchIcon ? y : y + diffY;
+
+      this.drawIcon(iconIndex, iconX, iconY, iconDrawWidth, iconDrawHeight);
     } else {
       this.drawText(regionId, x, y, realDrawWidth, realDrawHeight, 'center');
     }
@@ -4162,27 +4184,27 @@ CycloneMapEditor.patchClass(Game_Map, $super => class {
     return $super.isLoopVertical.call(this);
   }
 
-  // canvasToMapX(x) {
-  //   if (!CycloneMapEditor.active || CycloneMapEditor.currentZoom === 1) {
-  //     return $super.canvasToMapX.call(this, x);
-  //   }
+  canvasToMapX(x) {
+    if (!CycloneMapEditor.active || CycloneMapEditor.currentZoom === 1) {
+      return $super.canvasToMapX.call(this, x);
+    }
 
-  //   const tileWidth = this.tileWidth() * CycloneMapEditor.currentZoom;
-  //   const originX = this._displayX * tileWidth;
-  //   const mapX = Math.floor((originX + x) / tileWidth);
-  //   return this.roundX(mapX);
-  // }
+    const tileWidth = this.tileWidth() * CycloneMapEditor.currentZoom;
+    const originX = this._displayX * tileWidth;
+    const mapX = Math.floor((originX + x) / tileWidth);
+    return this.roundX(mapX);
+  }
 
-  // canvasToMapY(y) {
-  //   if (!CycloneMapEditor.active || CycloneMapEditor.currentZoom === 1) {
-  //     return $super.canvasToMapY.call(this, y);
-  //   }
+  canvasToMapY(y) {
+    if (!CycloneMapEditor.active || CycloneMapEditor.currentZoom === 1) {
+      return $super.canvasToMapY.call(this, y);
+    }
 
-  //   const tileHeight = this.tileHeight() * CycloneMapEditor.currentZoom;
-  //   const originY = this._displayY * tileHeight;
-  //   const mapY = Math.floor((originY + y) / tileHeight);
-  //   return this.roundY(mapY);
-  // }
+    const tileHeight = this.tileHeight() * CycloneMapEditor.currentZoom;
+    const originY = this._displayY * tileHeight;
+    const mapY = Math.floor((originY + y) / tileHeight);
+    return this.roundY(mapY);
+  }
 });
 
 CycloneMapEditor.patchClass(Game_Player, $super => class {
@@ -4572,7 +4594,7 @@ class WindowCycloneMapEditorCommands extends Window_Command {
     const x = Graphics.width - CycloneMapEditor.windowWidth;
     const y = 0;
     const w = CycloneMapEditor.windowWidth;
-    const h = 74;
+    const h = Graphics.width < 1280 ? 50 : 74;
     super.initialize(new Rectangle(x, y, w, h));
     this.showBackgroundDimmer();
     this.configureHandlers();
@@ -4611,6 +4633,14 @@ class WindowCycloneMapEditorCommands extends Window_Command {
       CycloneMapEditor.reloadButton();
       this.activate();
     });
+  }
+
+  maxScrollY() {
+    return 0;
+  }
+
+  maxScrollX() {
+    return 0;
   }
 
   processCursorMove() {
@@ -4676,10 +4706,27 @@ class WindowCycloneMapEditorCommands extends Window_Command {
     }
   }
 
+  itemRect(index) {
+    const rect = super.itemRect(index);
+
+    if (Graphics.width < 1280) {
+      rect.width += 3;
+    }
+
+    return rect;
+  }
+
+  lineHeight() {
+    if (Graphics.width >= 1280) {
+      return super.lineHeight();
+    }
+
+    return 14;
+  }
+
   drawItem(index) {
     const symbol = this.commandSymbol(index);
     const rect = this.itemRect(index);
-
 
     if (symbol === CycloneMapEditor.currentTool) {
       this.contents.fillRect(rect.x, rect.y + 2, rect.width, rect.height, '#00FF0066');
@@ -4712,7 +4759,7 @@ class WindowCycloneMapEditorCommands extends Window_Command {
 
     const ctx = this.contents._canvas.getContext('2d');
     ctx.imageSmoothingEnabled = false;
-    ctx.drawImage(icon, rect.x + 1, rect.y, 48, 48);
+    ctx.drawImage(icon, rect.x + 1, rect.y, CycloneMapEditor.tileDrawWidth, CycloneMapEditor.tileDrawWidth);
   }
 
   drawAllItems() {
@@ -4759,7 +4806,6 @@ class WindowCycloneMapEditorLayerList extends Window_Base {
 
   drawContents() {
     this.contents.clear();
-    this.contents.fontSize = 22;
     const ctx = this.contents._canvas.getContext('2d');
 
     const names = [
@@ -4770,8 +4816,9 @@ class WindowCycloneMapEditorLayerList extends Window_Base {
       'Shadows',
       'Regions',
       'Events',
-      'Auto Layer'
+      'Auto Layer',
     ];
+    this.contents.fontSize = Graphics.width < 1280 ? 13 : 22;
 
     ctx.imageSmoothingEnabled = false;
     for (let i = 0; i < 4; i++) {
@@ -5074,18 +5121,17 @@ class WindowCycloneMapEditor extends Window_Command {
   }
 
   itemWidth() {
-    return 48;
-    // return tileWidth;
+    return CycloneMapEditor.tileDrawWidth;
   }
 
   itemHeight() {
-    return 48;
-    // return tileHeight;
+    return CycloneMapEditor.tileDrawHeight;
   }
 
   drawRegion(index) {
     const rect = this.itemRect(index);
-    this.contents.drawRegion(index, rect.x, rect.y, rect.width, rect.height);
+    this.contents.fontSize = Graphics.width < 1280 ? 14 : 18;
+    this.contents.drawRegion(index, rect.x, rect.y, rect.width, rect.height, true);
   }
 
   drawCollision(index) {
@@ -5228,8 +5274,8 @@ class WindowCycloneMapEditor extends Window_Command {
       colDrawCount = 1;
     }
 
-    const selectionWidth = 48 * colDrawCount;
-    const selectionHeight = 48 * rowDrawCount;
+    const selectionWidth = CycloneMapEditor.tileDrawWidth * colDrawCount;
+    const selectionHeight = CycloneMapEditor.tileDrawHeight * rowDrawCount;
 
     this.contents.fillRect(x, y, selectionWidth, 4, '#000000');
     this.contents.fillRect(x, y + selectionHeight - 4, selectionWidth, 4, '#000000');
@@ -5519,7 +5565,8 @@ CycloneMapEditor.patchClass(Scene_Map, $super => class {
   createMapEditorWindows() {
     CycloneMapEditor.tileWidth = $gameMap.tileWidth();
     CycloneMapEditor.tileHeight = $gameMap.tileHeight();
-    const neededWidth = CycloneMapEditor.tileWidth * 8 + 24;
+
+    const neededWidth = CycloneMapEditor.tileDrawWidth * 8 + 24;
     if (neededWidth > CycloneMapEditor.windowWidth) {
       CycloneMapEditor.windowWidth = neededWidth;
     }
@@ -6129,5 +6176,33 @@ CycloneMapEditor.patchClass(Sprite_Character, $super => class {
     }
     $super.update.call(this, ...args);
   }
+});
+
+CycloneMapEditor.patchClass(Scene_Boot, $super => class {
+  resizeScreen() {
+    if (Utils.isNwjs() && $dataSystem.advanced.screenWidth < 1280) {
+      const minWidth = screen.availWidth - (window.outerWidth - window.innerWidth);
+      const minHeight = screen.availHeight - (window.outerHeight - window.innerHeight);
+
+      const { screenWidth, screenHeight, uiAreaWidth, uiAreaHeight } = $dataSystem.advanced;
+
+      if (screenWidth < minWidth) {
+        $dataSystem.advanced.screenWidth = minWidth;
+      }
+      if (uiAreaWidth < minWidth) {
+        $dataSystem.advanced.uiAreaWidth = minWidth;
+      }
+
+      if (screenHeight < minHeight) {
+        $dataSystem.advanced.screenHeight = minHeight;
+      }
+      if (uiAreaHeight < minHeight) {
+        $dataSystem.advanced.uiAreaHeight = minHeight;
+      }
+    }
+
+    $super.resizeScreen.call(this);
+  }
+
 });
 })();

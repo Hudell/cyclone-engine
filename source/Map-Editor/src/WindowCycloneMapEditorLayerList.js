@@ -28,7 +28,6 @@ class WindowCycloneMapEditorLayerList extends Window_Base {
 
   drawContents() {
     this.contents.clear();
-    this.contents.fontSize = 22;
     const ctx = this.contents._canvas.getContext('2d');
 
     const names = [
@@ -39,8 +38,9 @@ class WindowCycloneMapEditorLayerList extends Window_Base {
       'Shadows',
       'Regions',
       'Events',
-      'Auto Layer'
+      'Auto Layer',
     ];
+    this.contents.fontSize = Graphics.width < 1280 ? 13 : 22;
 
     ctx.imageSmoothingEnabled = false;
     for (let i = 0; i < 4; i++) {

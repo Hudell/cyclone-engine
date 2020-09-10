@@ -38,7 +38,8 @@ CycloneMapEditor.patchClass(Scene_Map, $super => class {
   createMapEditorWindows() {
     CycloneMapEditor.tileWidth = $gameMap.tileWidth();
     CycloneMapEditor.tileHeight = $gameMap.tileHeight();
-    const neededWidth = CycloneMapEditor.tileWidth * 8 + 24;
+
+    const neededWidth = CycloneMapEditor.tileDrawWidth * 8 + 24;
     if (neededWidth > CycloneMapEditor.windowWidth) {
       CycloneMapEditor.windowWidth = neededWidth;
     }

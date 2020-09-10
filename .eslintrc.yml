@@ -72,6 +72,7 @@ globals:
 
   $dataCommonEvents: false
   $dataMap: false
+  $dataSystem: false
 
   CyclonePlugin: true
   CycloneMapEditor: true

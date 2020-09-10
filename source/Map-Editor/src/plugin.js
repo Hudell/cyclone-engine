@@ -5,7 +5,7 @@ import { LZString } from '../../Libs/lz-string.min';
 
 const layerVisibility = [true, true, true, true, true, false, true, false, false, false];
 let editorActive = true;
-let windowWidth = 408;
+let windowWidth = 216;
 const mapCaches = {};
 let customCollisionTable = {};
 
@@ -150,11 +150,45 @@ class CycloneMapEditor extends CyclonePlugin {
   static set tileWidth(value) {
     tileWidth = value;
   }
+  static get tileDrawWidth() {
+    if (Graphics.width < 1280) {
+      if (tileWidth > 32) {
+        return Math.floor(tileWidth / 2);
+      }
+
+      if (tileWidth <= 16) {
+        return tileWidth * 2;
+      }
+    } else {
+      if (tileWidth < 32) {
+        return tileWidth * 2;
+      }
+    }
+
+    return tileWidth;
+  }
   static get tileHeight() {
     return tileHeight;
   }
   static set tileHeight(value) {
     tileHeight = value;
+  }
+  static get tileDrawHeight() {
+    if (Graphics.width < 1280) {
+      if (tileHeight > 32) {
+        return Math.floor(tileHeight / 2);
+      }
+
+      if (tileHeight <= 16) {
+        return tileHeight * 2;
+      }
+    } else {
+      if (tileHeight < 32) {
+        return tileHeight * 2;
+      }
+    }
+
+    return tileHeight;
   }
   static get windowWidth() {
     return windowWidth;
@@ -266,6 +300,13 @@ class CycloneMapEditor extends CyclonePlugin {
       SceneManager._scene._mapEditorGrid.refresh();
       SceneManager._scene._spriteset.updatePosition();
     }
+
+    // if (Utils.isNwjs()) {
+    //   this.zoom100Menu.checked = value === 1;
+    //   this.zoom150Menu.checked = value === 1.5;
+    //   this.zoom200Menu.checked = value === 2;
+    //   this.zoom400Menu.checked = value === 4;
+    // }
   }
 
   static register() {
@@ -427,56 +468,6 @@ class CycloneMapEditor extends CyclonePlugin {
     editMenu.append(this.showGridMenu);
 
     // const zoomMenu = new nw.Menu();
-    // this.zoom30Menu = new nw.MenuItem({
-    //   label: '30%',
-    //   type: 'checkbox',
-    //   checked: currentZoom === 0.3,
-    //   click: this.makeMenuEvent(() => {
-    //     this.currentZoom = 0.3;
-
-    //   }),
-    // });
-    // zoomMenu.append(this.zoom30Menu);
-    // this.zoom50Menu = new nw.MenuItem({
-    //   label: '50%',
-    //   type: 'checkbox',
-    //   checked: currentZoom === 0.5,
-    //   click: this.makeMenuEvent(() => {
-    //     this.currentZoom = 0.5;
-
-    //   }),
-    // });
-    // zoomMenu.append(this.zoom50Menu);
-    // this.zoom67Menu = new nw.MenuItem({
-    //   label: '67%',
-    //   type: 'checkbox',
-    //   checked: currentZoom === 0.67,
-    //   click: this.makeMenuEvent(() => {
-    //     this.currentZoom = 0.67;
-
-    //   }),
-    // });
-    // zoomMenu.append(this.zoom67Menu);
-    // this.zoom75Menu = new nw.MenuItem({
-    //   label: '75%',
-    //   type: 'checkbox',
-    //   checked: currentZoom === 0.75,
-    //   click: this.makeMenuEvent(() => {
-    //     this.currentZoom = 0.75;
-
-    //   }),
-    // });
-    // zoomMenu.append(this.zoom75Menu);
-    // this.zoom90Menu = new nw.MenuItem({
-    //   label: '90%',
-    //   type: 'checkbox',
-    //   checked: currentZoom === 0.9,
-    //   click: this.makeMenuEvent(() => {
-    //     this.currentZoom = 0.9;
-
-    //   }),
-    // });
-    // zoomMenu.append(this.zoom90Menu);
     // this.zoom100Menu = new nw.MenuItem({
     //   label: '100%',
     //   type: 'checkbox',
@@ -497,6 +488,26 @@ class CycloneMapEditor extends CyclonePlugin {
     //   }),
     // });
     // zoomMenu.append(this.zoom150Menu);
+    // this.zoom200Menu = new nw.MenuItem({
+    //   label: '200%',
+    //   type: 'checkbox',
+    //   checked: currentZoom === 2,
+    //   click: this.makeMenuEvent(() => {
+    //     this.currentZoom = 2;
+
+    //   }),
+    // });
+    // zoomMenu.append(this.zoom200Menu);
+
+    // this.zoom400Menu = new nw.MenuItem({
+    //   label: '400%',
+    //   type: 'checkbox',
+    //   checked: currentZoom === 4,
+    //   click: this.makeMenuEvent(() => {
+    //     this.currentZoom = 4;
+    //   }),
+    // });
+    // zoomMenu.append(this.zoom400Menu);
 
     // editMenu.append(new nw.MenuItem({
     //   label: 'Zoom',
@@ -919,8 +930,10 @@ class CycloneMapEditor extends CyclonePlugin {
 
       const xDelta = Graphics.width - window.innerWidth;
       const yDelta = Graphics.height - window.innerHeight;
-      window.moveBy(-xDelta / 2, -yDelta / 2);
-      window.resizeBy(xDelta, yDelta);
+      if (xDelta !== 0 || yDelta !== 0) {
+        window.moveBy(-xDelta / 2, -yDelta / 2);
+        window.resizeBy(xDelta, yDelta);
+      }
     }, 20);
   }
 
@@ -1093,7 +1106,7 @@ class CycloneMapEditor extends CyclonePlugin {
   }
 
   static checkScrollKeys(key) {
-    switch(key) {
+    switch(key.toLowerCase()) {
       case 'w':
         $gameMap.scrollUp(3);
         break;
