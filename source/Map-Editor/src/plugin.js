@@ -712,74 +712,109 @@ class CycloneMapEditor extends CyclonePlugin {
     }));
 
     const exportMenu = new nw.Menu();
-    exportMenu.append(new nw.MenuItem({
+    const exportLayersMenu = new nw.Menu();
+    exportLayersMenu.append(new nw.MenuItem({
       label: 'Layer 1',
       click: this.makeMenuEvent(() => {
         CycloneMapEditor.exportSingleLayer(0);
       }),
     }));
-    exportMenu.append(new nw.MenuItem({
+    exportLayersMenu.append(new nw.MenuItem({
       label: 'Layer 2',
       click: this.makeMenuEvent(() => {
         CycloneMapEditor.exportSingleLayer(1);
       }),
     }));
-    exportMenu.append(new nw.MenuItem({
+    exportLayersMenu.append(new nw.MenuItem({
       label: 'Layer 3',
       click: this.makeMenuEvent(() => {
         CycloneMapEditor.exportSingleLayer(2);
       }),
     }));
-    exportMenu.append(new nw.MenuItem({
+    exportLayersMenu.append(new nw.MenuItem({
       label: 'Layer 4',
       click: this.makeMenuEvent(() => {
         CycloneMapEditor.exportSingleLayer(3);
       }),
     }));
-    exportMenu.append(new nw.MenuItem( {type: 'separator'}));
+
     exportMenu.append(new nw.MenuItem({
+      label: 'Layers',
+      submenu: exportLayersMenu,
+    }));
+
+    const exportRenderedMapMenu = new nw.Menu();
+    exportRenderedMapMenu.append(new nw.MenuItem({
       label: 'Lower Tiles',
       click: this.makeMenuEvent(() => {
         CycloneMapEditor.exportLowerTiles();
       }),
     }));
-    exportMenu.append(new nw.MenuItem({
+    exportRenderedMapMenu.append(new nw.MenuItem({
       label: 'Upper Tiles',
       click: this.makeMenuEvent(() => {
         CycloneMapEditor.exportUpperTiles();
       }),
     }));
-    exportMenu.append(new nw.MenuItem( {type: 'separator'}));
-    exportMenu.append(new nw.MenuItem({
+    exportRenderedMapMenu.append(new nw.MenuItem( {type: 'separator'}));
+    exportRenderedMapMenu.append(new nw.MenuItem({
       label: 'Whole Map',
       click: this.makeMenuEvent(() => {
         CycloneMapEditor.exportWholeMap();
       }),
     }));
-    exportMenu.append(new nw.MenuItem( {type: 'separator'}));
     exportMenu.append(new nw.MenuItem({
+      label: 'Rendered Map',
+      submenu: exportRenderedMapMenu,
+    }));
+
+    const exportEventsMenu = new nw.Menu();
+    exportEventsMenu.append(new nw.MenuItem({
       label: 'Low Events',
       click: this.makeMenuEvent(() => {
         CycloneMapEditor.exportLowEvents();
       }),
     }));
-    exportMenu.append(new nw.MenuItem({
+    exportEventsMenu.append(new nw.MenuItem({
       label: 'Normal Events',
       click: this.makeMenuEvent(() => {
         CycloneMapEditor.exportNormalEvents();
       }),
     }));
-    exportMenu.append(new nw.MenuItem({
+    exportEventsMenu.append(new nw.MenuItem({
       label: 'High Events',
       click: this.makeMenuEvent(() => {
         CycloneMapEditor.exportHighEvents();
       }),
     }));
-    exportMenu.append(new nw.MenuItem({
+    exportEventsMenu.append(new nw.MenuItem( {type: 'separator'}));
+    exportEventsMenu.append(new nw.MenuItem({
       label: 'All Events',
       click: this.makeMenuEvent(() => {
         CycloneMapEditor.exportAllEvents();
       }),
+    }));
+    exportMenu.append(new nw.MenuItem({
+      label: 'Events',
+      submenu: exportEventsMenu,
+    }));
+
+    const exportCollisionsMenu = new nw.Menu();
+    exportCollisionsMenu.append(new nw.MenuItem({
+      label: 'Custom Collision',
+      click: this.makeMenuEvent(() => {
+        CycloneMapEditor.exportCustomCollision();
+      }),
+    }));
+    exportCollisionsMenu.append(new nw.MenuItem({
+      label: 'Full Collision',
+      click: this.makeMenuEvent(() => {
+        CycloneMapEditor.exportFullCollision();
+      }),
+    }));
+    exportMenu.append(new nw.MenuItem({
+      label: 'Collision',
+      submenu: exportCollisionsMenu,
     }));
 
     menu.append(new nw.MenuItem({
@@ -1279,6 +1314,21 @@ class CycloneMapEditor extends CyclonePlugin {
     tilemap.drawEvents();
 
     this.downloadMapshot(tilemap, `Map${ $gameMap._mapId.padZero(3) }_Events`);
+  }
+
+  static exportCustomCollision() {
+    const tilemap = new MapshotTileMap();
+    tilemap.drawCustomCollision();
+
+    this.downloadMapshot(tilemap, `Map${ $gameMap._mapId.padZero(3) }_Collision`);
+  }
+
+  static exportFullCollision() {
+    const tilemap = new MapshotTileMap();
+    tilemap.drawDefaultCollision();
+    tilemap.drawCustomCollision();
+
+    this.downloadMapshot(tilemap, `Map${ $gameMap._mapId.padZero(3) }_FullCollision`);
   }
 
   static undoButton() {
