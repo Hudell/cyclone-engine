@@ -2,6 +2,7 @@ import { CyclonePlugin } from '../../Core/main';
 import { Layers } from './constants';
 import { MapshotTileMap } from './mapshot/MapshotTileMap';
 import { LZString } from '../../Libs/lz-string.min';
+import { throttle } from '../../Utils/throttle';
 
 const layerVisibility = [true, true, true, true, true, false, true, false, false, false];
 let editorActive = true;
@@ -52,8 +53,6 @@ let statusBush = false;
 let statusCounter = false;
 let statusDamage = false;
 let statusLadder = false;
-let gridPreviewBlockHandler = false;
-let gridNeedsRefresh = false;
 let currentZoom = 1;
 
 const _ = '';
@@ -133,6 +132,30 @@ const highLayerAutotiles = [
   46,
   47,
 ];
+
+const refreshGrid = throttle(() => {
+  SceneManager._scene._mapEditorGrid.refresh();
+}, 50);
+
+const refreshTilemap = throttle(() => {
+  SceneManager._scene._spriteset._tilemap.refresh();
+}, 200);
+
+const refreshCollision = throttle(() => {
+  if (TouchInput.isPressed()) {
+    return refreshCollision();
+  }
+  if (window.CycloneMovement) {
+    window.CycloneMovement.setupCollision();
+  }
+}, 200);
+
+const saveExtraData = throttle(() => {
+  if (TouchInput.isPressed()) {
+    return saveExtraData();
+  }
+  CycloneMapEditor.saveExtraData();
+}, 200);
 
 class CycloneMapEditor extends CyclonePlugin {
   static get currentTab() {
@@ -2482,37 +2505,23 @@ class CycloneMapEditor extends CyclonePlugin {
   }
 
   static maybeRefreshGrid() {
-    if (currentLayer !== 5) {
+    if (currentLayer !== Layers.regions) {
       return;
     }
 
-    // Grid refresh is a heavy operation, so let's limit how often we do it
-    if (!gridPreviewBlockHandler) {
-      gridPreviewBlockHandler = setTimeout(() => {
-        gridPreviewBlockHandler = false;
-        if (gridNeedsRefresh) {
-          setTimeout(() => {
-            this.maybeRefreshGrid();
-          }, 50);
-        }
-      }, 50);
-
-      SceneManager._scene._mapEditorGrid.refresh();
-      return;
-    }
-
-    gridNeedsRefresh = true;
+    refreshGrid();
   }
 
   static refreshTilemap() {
     previewChanges = {};
-    this.saveExtraData();
-    if (window.CycloneMovement) {
-      window.CycloneMovement.setupCollision();
+    saveExtraData();
+    refreshCollision();
+    if (TouchInput.isLongPressed()) {
+      refreshTilemap();
+    } else {
+      SceneManager._scene._spriteset._tilemap.refresh();
     }
-
-    SceneManager._scene._spriteset._tilemap.refresh();
-    SceneManager._scene._mapEditorGrid.refresh();
+    refreshGrid();
   }
 
   static copyAutoRectangle(startX, startY, width, height) {

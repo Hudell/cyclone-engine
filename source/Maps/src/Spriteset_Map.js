@@ -1,3 +1,6 @@
+import { defaultIfNaN } from '../../Utils/defaultIfNaN';
+import { getValueMaybeVariable } from '../../Utils/getValueMaybeVariable';
+
 CycloneMaps.patchClass(Spriteset_Map, $super => class {
   createLowerLayer() {
     CycloneMaps.clearSettings();
@@ -107,12 +110,12 @@ CycloneMaps.patchClass(Spriteset_Map, $super => class {
       return false;
     }
 
-    return CycloneMaps.getValueMaybeVariable($dataMap.meta[variableName]);
+    return getValueMaybeVariable($dataMap.meta[variableName]);
   }
 
   getOverlayIntVariable(variableName, defaultValue) {
     const value = parseInt(this.getOverlayVariable(variableName)) ?? defaultValue;
-    return CycloneMaps.defaultIfNaN(value, defaultValue);
+    return defaultIfNaN(value, defaultValue);
   }
 
   updateLayerOpacity(layer, maxOpacity, opacityChange) {
