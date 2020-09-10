@@ -62,7 +62,7 @@
  * ===========================================================================
  * Change Log
  * ===========================================================================
- * 2020-09-09 - Version 1.04.00
+ * 2020-09-10 - Version 1.04.00
  *   * Added option to customize the collision in blocks of 1/4 of a tile.
  *   * Added options to export the collision map to an image
  *   * Changed the editor to force a larger screen when the game uses a small
