@@ -1393,7 +1393,6 @@ class CycloneMapEditor$1 extends CyclonePlugin {
       })
     });
     editMenu.append(this.showGridMenu);
-
     // const zoomMenu = new nw.Menu();
     // this.zoom100Menu = new nw.MenuItem({
     //   label: '100%',
@@ -1444,6 +1443,41 @@ class CycloneMapEditor$1 extends CyclonePlugin {
     menu.append(new nw.MenuItem({
       label: 'Edit',
       submenu: editMenu,
+    }));
+
+    const mapMenu = new nw.Menu();
+    mapMenu.append(new nw.MenuItem({
+      label: 'Scroll Up',
+      key: 'w',
+      click: () => {
+        $gameMap.scrollUp(3);
+      },
+    }));
+    mapMenu.append(new nw.MenuItem({
+      label: 'Scroll Left',
+      key: 'a',
+      click: () => {
+        $gameMap.scrollLeft(3);
+      },
+    }));
+    mapMenu.append(new nw.MenuItem({
+      label: 'Scroll Down',
+      key: 's',
+      click: () => {
+        $gameMap.scrollDown(3);
+      },
+    }));
+    mapMenu.append(new nw.MenuItem({
+      label: 'Scroll Right',
+      key: 'd',
+      click: () => {
+        $gameMap.scrollRight(3);
+      },
+    }));
+
+    menu.append(new nw.MenuItem({
+      label: 'Map',
+      submenu: mapMenu,
     }));
 
     const drawMenu = new nw.Menu();
@@ -2433,7 +2467,9 @@ class CycloneMapEditor$1 extends CyclonePlugin {
 
   static onKeyPress(event) {
     if (editorActive) {
-      this.checkScrollKeys(event.key);
+      if (!Utils.isNwjs()) {
+        this.checkScrollKeys(event.key);
+      }
     }
   }
 
@@ -4204,6 +4240,50 @@ CycloneMapEditor.patchClass(Game_Map, $super => class {
     const originY = this._displayY * tileHeight;
     const mapY = Math.floor((originY + y) / tileHeight);
     return this.roundY(mapY);
+  }
+
+  scrollDown(distance) {
+    if (!CycloneMapEditor.active) {
+      return $super.scrollDown.call(this, distance);
+    }
+
+    const extraTiles = Math.ceil(Graphics.height / this.tileHeight()) - 3;
+    const lastY = this._displayY;
+    this._displayY = Math.min(this._displayY + distance, this.height() - this.screenTileY() + extraTiles);
+    this._parallaxY += this._displayY - lastY;
+  }
+
+  scrollLeft(distance) {
+    if (!CycloneMapEditor.active) {
+      return $super.scrollLeft.call(this, distance);
+    }
+
+    const extraTiles = Math.ceil(Graphics.width / this.tileWidth()) - 3;
+    const lastX = this._displayX;
+    this._displayX = Math.max(this._displayX - distance, -extraTiles);
+    this._parallaxX += this._displayX - lastX;
+  }
+
+  scrollRight(distance) {
+    if (!CycloneMapEditor.active) {
+      return $super.scrollRight.call(this, distance);
+    }
+
+    const extraTiles = Math.ceil(Graphics.width / this.tileWidth()) - 5;
+    const lastX = this._displayX;
+    this._displayX = Math.min(this._displayX + distance, this.width() - this.screenTileX() + extraTiles);
+    this._parallaxX += this._displayX - lastX;
+  }
+
+  scrollUp(distance) {
+    if (!CycloneMapEditor.active) {
+      return $super.scrollUp.call(this, distance);
+    }
+
+    const extraTiles = Math.ceil(Graphics.height / this.tileHeight()) - 3;
+    const lastY = this._displayY;
+    this._displayY = Math.max(this._displayY - distance, -extraTiles);
+    this._parallaxY += this._displayY - lastY;
   }
 });
 
@@ -6181,8 +6261,8 @@ CycloneMapEditor.patchClass(Sprite_Character, $super => class {
 CycloneMapEditor.patchClass(Scene_Boot, $super => class {
   resizeScreen() {
     if (Utils.isNwjs() && $dataSystem.advanced.screenWidth < 1280) {
-      const minWidth = screen.availWidth - (window.outerWidth - window.innerWidth);
-      const minHeight = screen.availHeight - (window.outerHeight - window.innerHeight);
+      const minWidth = Math.min(1920, screen.availWidth - (window.outerWidth - window.innerWidth));
+      const minHeight = Math.min(1080, screen.availHeight - (window.outerHeight - window.innerHeight));
 
       const { screenWidth, screenHeight, uiAreaWidth, uiAreaHeight } = $dataSystem.advanced;
 

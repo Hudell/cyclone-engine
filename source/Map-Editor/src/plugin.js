@@ -466,7 +466,6 @@ class CycloneMapEditor extends CyclonePlugin {
       })
     });
     editMenu.append(this.showGridMenu);
-
     // const zoomMenu = new nw.Menu();
     // this.zoom100Menu = new nw.MenuItem({
     //   label: '100%',
@@ -517,6 +516,41 @@ class CycloneMapEditor extends CyclonePlugin {
     menu.append(new nw.MenuItem({
       label: 'Edit',
       submenu: editMenu,
+    }));
+
+    const mapMenu = new nw.Menu();
+    mapMenu.append(new nw.MenuItem({
+      label: 'Scroll Up',
+      key: 'w',
+      click: () => {
+        $gameMap.scrollUp(3);
+      },
+    }));
+    mapMenu.append(new nw.MenuItem({
+      label: 'Scroll Left',
+      key: 'a',
+      click: () => {
+        $gameMap.scrollLeft(3);
+      },
+    }));
+    mapMenu.append(new nw.MenuItem({
+      label: 'Scroll Down',
+      key: 's',
+      click: () => {
+        $gameMap.scrollDown(3);
+      },
+    }));
+    mapMenu.append(new nw.MenuItem({
+      label: 'Scroll Right',
+      key: 'd',
+      click: () => {
+        $gameMap.scrollRight(3);
+      },
+    }));
+
+    menu.append(new nw.MenuItem({
+      label: 'Map',
+      submenu: mapMenu,
     }));
 
     const drawMenu = new nw.Menu();
@@ -1506,7 +1540,9 @@ class CycloneMapEditor extends CyclonePlugin {
 
   static onKeyPress(event) {
     if (editorActive) {
-      this.checkScrollKeys(event.key);
+      if (!Utils.isNwjs()) {
+        this.checkScrollKeys(event.key);
+      }
     }
   }
 

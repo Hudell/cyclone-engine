@@ -60,4 +60,48 @@ CycloneMapEditor.patchClass(Game_Map, $super => class {
     const mapY = Math.floor((originY + y) / tileHeight);
     return this.roundY(mapY);
   }
+
+  scrollDown(distance) {
+    if (!CycloneMapEditor.active) {
+      return $super.scrollDown.call(this, distance);
+    }
+
+    const extraTiles = Math.ceil(Graphics.height / this.tileHeight()) - 3;
+    const lastY = this._displayY;
+    this._displayY = Math.min(this._displayY + distance, this.height() - this.screenTileY() + extraTiles);
+    this._parallaxY += this._displayY - lastY;
+  }
+
+  scrollLeft(distance) {
+    if (!CycloneMapEditor.active) {
+      return $super.scrollLeft.call(this, distance);
+    }
+
+    const extraTiles = Math.ceil(Graphics.width / this.tileWidth()) - 3;
+    const lastX = this._displayX;
+    this._displayX = Math.max(this._displayX - distance, -extraTiles);
+    this._parallaxX += this._displayX - lastX;
+  }
+
+  scrollRight(distance) {
+    if (!CycloneMapEditor.active) {
+      return $super.scrollRight.call(this, distance);
+    }
+
+    const extraTiles = Math.ceil(Graphics.width / this.tileWidth()) - 5;
+    const lastX = this._displayX;
+    this._displayX = Math.min(this._displayX + distance, this.width() - this.screenTileX() + extraTiles);
+    this._parallaxX += this._displayX - lastX;
+  }
+
+  scrollUp(distance) {
+    if (!CycloneMapEditor.active) {
+      return $super.scrollUp.call(this, distance);
+    }
+
+    const extraTiles = Math.ceil(Graphics.height / this.tileHeight()) - 3;
+    const lastY = this._displayY;
+    this._displayY = Math.max(this._displayY - distance, -extraTiles);
+    this._parallaxY += this._displayY - lastY;
+  }
 });
