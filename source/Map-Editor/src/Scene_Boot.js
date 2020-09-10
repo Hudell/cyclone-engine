@@ -1,8 +1,8 @@
 CycloneMapEditor.patchClass(Scene_Boot, $super => class {
   resizeScreen() {
     if (Utils.isNwjs() && $dataSystem.advanced.screenWidth < 1280) {
-      const minWidth = screen.availWidth - (window.outerWidth - window.innerWidth);
-      const minHeight = screen.availHeight - (window.outerHeight - window.innerHeight);
+      const minWidth = Math.min(1920, screen.availWidth - (window.outerWidth - window.innerWidth));
+      const minHeight = Math.min(1080, screen.availHeight - (window.outerHeight - window.innerHeight));
 
       const { screenWidth, screenHeight, uiAreaWidth, uiAreaHeight } = $dataSystem.advanced;
 
