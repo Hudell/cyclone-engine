@@ -18,7 +18,7 @@
  *   `"Ybbd8"'     Y88'     `"Ybbd8"' 88  `"YbbdP"'  88       88  `"Ybbd8"'
  *                 d8'
  *                d8'
- * Live  Map Editor                                                  by Hudell
+ * Live Map Editor                                                   by Hudell
  * ===========================================================================
  * Terms of Use
  * ===========================================================================
@@ -62,6 +62,13 @@
  * ===========================================================================
  * Change Log
  * ===========================================================================
+ * 2020-09-09 - Version 1.04.00
+ *   * Added option to customize the collision in blocks of 1/4 of a tile.
+ *   * Added options to export the collision map to an image
+ *   * Changed the editor to force a larger screen when the game uses a small
+ *   resolution.
+ *   * Added option to toggle event visibility.
+ *
  * 2020-08-30 - Version 1.03.00
  *   * Added options to export the map as images
  *
