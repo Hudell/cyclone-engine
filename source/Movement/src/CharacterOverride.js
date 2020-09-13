@@ -908,6 +908,8 @@ const addPixelMovementToClass = (classRef) => {
           if (canRetry) {
             return this.findDirectionTo(goalX, goalY);
           }
+
+          this._direction = direction;
           return 0;
         }
       }
@@ -1000,12 +1002,7 @@ const addPixelMovementToClass = (classRef) => {
         }
       }
 
-
-      try {
-        return this._findDirectionTo(goalX, goalY);
-      } finally {
-        delete this._pfGrid;
-      }
+      return this._findDirectionTo(goalX, goalY);
     }
   });
 };

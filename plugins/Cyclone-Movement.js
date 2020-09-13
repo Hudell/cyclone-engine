@@ -2098,6 +2098,8 @@ const addPixelMovementToClass = (classRef) => {
           if (canRetry) {
             return this.findDirectionTo(goalX, goalY);
           }
+
+          this._direction = direction;
           return 0;
         }
       }
@@ -2190,12 +2192,7 @@ const addPixelMovementToClass = (classRef) => {
         }
       }
 
-
-      try {
-        return this._findDirectionTo(goalX, goalY);
-      } finally {
-        delete this._pfGrid;
-      }
+      return this._findDirectionTo(goalX, goalY);
     }
   });
 };
@@ -2575,7 +2572,8 @@ CycloneMovement.patchClass(Game_Player, $super => class {
 
     let anyStarted = false;
 
-    for (const event of $gameMap.eventsXy(tileX, tileY)) {
+    const events = $gameMap.eventsXy(tileX, tileY);
+    for (const event of events) {
       if (!this.shouldTriggerEvent(event, triggers, normal)) {
         continue;
       }
@@ -2654,14 +2652,20 @@ CycloneMovement.patchClass(Game_Player, $super => class {
     const destY = $gameTemp.destinationY();
 
     if (this._isSamePos(x1, y1, destX, destY)) {
-      return this.triggerTouchActionD1(x1, y1);
+      const result = this.triggerTouchActionD1(x1, y1);
+      if (result) {
+        return result;
+      }
     }
 
     const x2 = CycloneMovement.roundXWithDirection(x1, direction);
     const y2 = CycloneMovement.roundYWithDirection(y1, direction);
 
     if (this._isSamePos(x2, y2, destX, destY)) {
-      return this.triggerTouchActionD2(x2, y2);
+      const result = this.triggerTouchActionD2(x2, y2);
+      if (result) {
+        return result;
+      }
     }
 
     const x3 = CycloneMovement.roundXWithDirection(x2, direction);
