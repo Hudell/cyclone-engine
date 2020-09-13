@@ -257,7 +257,10 @@ const addPixelMovementToClass = (classRef) => {
 
       // Run the collision check for every Y tile the character is touching
       for (let newY = firstY; newY <= lastY; newY += CycloneMovement.collisionSize) {
-        if (this.checkLeftPassage(left, newY, destinationLeft) === false) {
+        const checkUp = newY > firstY;
+        const checkDown = newY < lastY;
+
+        if (this.checkLeftPassage(left, newY, destinationLeft, checkUp, checkDown) === false) {
           return false;
         }
       }
@@ -269,7 +272,7 @@ const addPixelMovementToClass = (classRef) => {
       return CycloneMovement.isPositionPassable(x, y, d);
     }
 
-    checkLeftPassage(left, y, destinationLeft) {
+    checkLeftPassage(left, y, destinationLeft, checkUp = false, checkDown = false) {
       const count = CycloneMovement.collisionStepCount;
       const leftFloor = Math.floor(left * count) / count;
       const destinationLeftFloor = Math.floor(destinationLeft * count) / count;
@@ -285,6 +288,10 @@ const addPixelMovementToClass = (classRef) => {
         if (!this.isPositionPassable(destinationLeftFloor, y, 6)) {
           return false;
         }
+
+        if (this.checkVerticalPassage(destinationLeftFloor, y, checkUp, checkDown) === false) {
+          return false;
+        }
       }
 
       return null;
@@ -297,7 +304,10 @@ const addPixelMovementToClass = (classRef) => {
       const destinationRight = right + CycloneMovement.stepSize;
 
       for (let newY = firstY; newY <= lastY; newY += CycloneMovement.collisionSize) {
-        if (this.checkRightPassage(right, newY, destinationRight) === false) {
+        const checkUp = newY > firstY;
+        const checkDown = newY < lastY;
+
+        if (this.checkRightPassage(right, newY, destinationRight, checkUp, checkDown) === false) {
           return false;
         }
       }
@@ -305,7 +315,7 @@ const addPixelMovementToClass = (classRef) => {
       return true;
     }
 
-    checkRightPassage(right, y, destinationRight) {
+    checkRightPassage(right, y, destinationRight, checkUp = false, checkDown = false) {
       const lastXDestination = this.lastCollisionXAt((destinationRight - this.width - this.hitboxX));
       const lastX = this.lastCollisionXAt((right - this.width - this.hitboxX));
 
@@ -320,6 +330,10 @@ const addPixelMovementToClass = (classRef) => {
         if (!this.isPositionPassable(lastXDestination, y, 4)) {
           return false;
         }
+
+        if (this.checkVerticalPassage(lastXDestination, y, checkUp, checkDown) === false) {
+          return false;
+        }
       }
 
       return null;
@@ -332,7 +346,10 @@ const addPixelMovementToClass = (classRef) => {
       const destinationTop = (top - CycloneMovement.stepSize);
 
       for (let newX = firstX; newX <= lastX; newX += CycloneMovement.collisionSize) {
-        if (this.checkUpPassage(newX, top, destinationTop) === false) {
+        const checkLeft = newX > firstX;
+        const checkRight = newX < lastX;
+
+        if (this.checkUpPassage(newX, top, destinationTop, checkLeft, checkRight) === false) {
           return false;
         }
       }
@@ -340,7 +357,35 @@ const addPixelMovementToClass = (classRef) => {
       return true;
     }
 
-    checkUpPassage(x, top, destinationTop) {
+    checkVerticalPassage(x, y, checkUp, checkDown) {
+      // If the collision block height is smaller than our hitbox height, then we need to check if horizontal movement is free among all new blocks we'll be touching
+      if (this.height <= CycloneMovement.collisionSize) {
+        return;
+      }
+
+      if (checkUp && !this.isPositionPassable(x, y, 8)) {
+        return false;
+      }
+      if (checkDown && !this.isPositionPassable(x, y, 2)) {
+        return false;
+      }
+    }
+
+    checkHorizontalPassage(x, y, checkLeft, checkRight) {
+      // If the collision block width is smaller than our hitbox width, then we need to check if horizontal movement is free among all new blocks we'll be touching
+      if (this.width <= CycloneMovement.collisionSize) {
+        return;
+      }
+
+      if (checkLeft && !this.isPositionPassable(x, y, 4)) {
+        return false;
+      }
+      if (checkRight && !this.isPositionPassable(x, y, 6)) {
+        return false;
+      }
+    }
+
+    checkUpPassage(x, top, destinationTop, checkLeft = false, checkRight = false) {
       const count = CycloneMovement.collisionStepCount;
       const topFloor = Math.floor(top * count) / count;
       const destinationTopFloor = Math.floor(destinationTop * count) / count;
@@ -356,6 +401,10 @@ const addPixelMovementToClass = (classRef) => {
         if (!this.isPositionPassable(x, destinationTopFloor, 2)) {
           return false;
         }
+
+        if (this.checkHorizontalPassage(x, destinationTopFloor, checkLeft, checkRight) === false) {
+          return false;
+        }
       }
 
       return null;
@@ -368,7 +417,10 @@ const addPixelMovementToClass = (classRef) => {
       const destinationBottom = (bottom + CycloneMovement.stepSize);
 
       for (let newX = firstX; newX <= lastX; newX += CycloneMovement.collisionSize) {
-        if (this.checkDownPassage(newX, bottom, destinationBottom) === false) {
+        const checkLeft = newX > firstX;
+        const checkRight = newX < lastX;
+
+        if (this.checkDownPassage(newX, bottom, destinationBottom, checkLeft, checkRight) === false) {
           return false;
         }
       }
@@ -376,7 +428,7 @@ const addPixelMovementToClass = (classRef) => {
       return true;
     }
 
-    checkDownPassage(x, bottom, destinationBottom) {
+    checkDownPassage(x, bottom, destinationBottom, checkLeft = false, checkRight = false) {
       const lastYDestination = this.lastCollisionYAt((destinationBottom - this.height - this.hitboxY));
       const lastY = this.lastCollisionYAt((bottom - this.height - this.hitboxY));
 
@@ -389,6 +441,10 @@ const addPixelMovementToClass = (classRef) => {
 
         // and check if the new bottom tile allows moving up
         if (!this.isPositionPassable(x, lastYDestination, 8)) {
+          return false;
+        }
+
+        if (this.checkHorizontalPassage(x, lastYDestination, checkLeft, checkRight) === false) {
           return false;
         }
       }
@@ -804,7 +860,7 @@ const addPixelMovementToClass = (classRef) => {
       this._cachedGoalX = goalX;
       this._cachedGoalY = goalY;
 
-      this._cacheTTL = 20;
+      this._cacheTTL = 2 * CycloneMovement.collisionSize * CycloneMovement.collisionSize - 1;
     }
 
     _getDirectionFromDeltas(deltaX, deltaY) {

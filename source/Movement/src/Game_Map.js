@@ -34,10 +34,12 @@ CycloneMovement.patchClass(Game_Map, $super => class {
       return $super.distance.call(this, x1, y1, x2, y2);
     }
 
-    const d1 = Math.abs(this.deltaX(x1, x2));
-    const d2 = Math.abs(this.deltaY(y1, y2));
+    // good old Pythagoras
+    const b = Math.abs(this.deltaY(y1, y2));
+    const c = Math.abs(this.deltaX(x1, x2));
+    const a2 = Math.pow(b, 2) + Math.pow(c, 2);
+    const a = Math.sqrt(a2);
 
-    const total = d1 * d1 + d2 * d2;
-    return Math.sqrt(total);
+    return Math.floor(a * CycloneMovement.collisionSize) / CycloneMovement.collisionSize;
   }
 });

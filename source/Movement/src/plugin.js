@@ -1,5 +1,6 @@
 import { CyclonePlugin } from '../../Core/main';
 import { LZString } from '../../Libs/lz-string.min';
+import { DirectionHelper } from '../../Utils/DirectionHelper';
 
 let currentMapCollisionTable = false;
 const checkedTiles = new Set();
@@ -15,7 +16,7 @@ class CycloneMovement extends CyclonePlugin {
       },
       followerStepsBehind: {
         type: 'int',
-        defaultValue: 6,
+        defaultValue: 3,
       },
       triggerAllEvents: 'boolean',
       triggerTouchEventAfterTeleport: 'boolean',
@@ -28,9 +29,14 @@ class CycloneMovement extends CyclonePlugin {
         defaultValue: true,
       },
       autoLeaveVehicles: 'boolean',
+      diagonalPathfinding: {
+        type: 'boolean',
+        defaultValue: true,
+      },
+      disableMouseMovement: 'boolean',
     });
 
-    this.stepCount = [1, 2, 4].includes(this.params.stepCount) ? this.params.stepCount : 4;
+    this.stepCount = [1, 2, 4].includes(this.params.stepCount) ? this.params.stepCount : 1;
     this.collisionStepCount = Math.min(4, this.stepCount);
     this.stepSize = 1 / this.stepCount;
     this.collisionSize = 1 / this.collisionStepCount;
@@ -40,7 +46,8 @@ class CycloneMovement extends CyclonePlugin {
     this.triggerTouchEventAfterTeleport = this.params.triggerTouchEventAfterTeleport === true;
     this.blockRepeatedTouchEvents = this.params.blockRepeatedTouchEvents !== false;
     this.ignoreEmptyEvents = this.params.ignoreEmptyEvents !== false;
-    this.diagonalPathfinding = true;
+    this.diagonalPathfinding = this.params.diagonalPathfinding !== false;
+    this.disableMouseMovement = this.params.disableMouseMovement === true;
   }
 
   static get currentMapCollisionTable() {
@@ -52,66 +59,43 @@ class CycloneMovement extends CyclonePlugin {
   }
 
   static goesLeft(d) {
-    return d && d % 3 === 1;
+    return DirectionHelper.goesLeft(d);
   }
 
   static goesRight(d) {
-    return d && d % 3 === 0;
+    return DirectionHelper.goesRight(d);
   }
 
   static goesUp(d) {
-    return d >= 7 && d <= 9;
+    return DirectionHelper.goesUp(d);
   }
 
   static goesDown(d) {
-    return d >= 1 && d <= 3;
+    return DirectionHelper.goesDown(d);
   }
 
   static isDiagonal(d) {
-    return this.isVertical(d) && this.isHorizontal(d);
+    return DirectionHelper.isDiagonal(d);
   }
 
   static isVertical(d) {
-    return this.goesDown(d) || this.goesUp(d);
+    return DirectionHelper.isVertical(d);
   }
 
   static isHorizontal(d) {
-    return this.goesLeft(d) || this.goesRight(d);
+    return DirectionHelper.isHorizontal(d);
+  }
+
+  static shareADirection(dir1, dir2) {
+    return DirectionHelper.shareADirection(dir1, dir2);
   }
 
   static getFirstDirection(diagonalDirection) {
-    if (!diagonalDirection) {
-      return diagonalDirection;
-    }
-
-    if (diagonalDirection > 6) {
-      return 8;
-    }
-    if (diagonalDirection < 4) {
-      return 2;
-    }
-    return diagonalDirection;
+    return DirectionHelper.getFirstDirection(diagonalDirection);
   }
 
   static getAlternativeDirection(direction, diagonalDirection) {
-    if (direction === diagonalDirection) {
-      return direction;
-    }
-
-    switch (diagonalDirection) {
-      case 7:
-        return direction == 8 ? 4 : 8;
-      case 9:
-        return direction == 8 ? 6 : 8;
-      case 1:
-        return direction == 2 ? 4 : 2;
-      case 3:
-        return direction == 2 ? 6 : 2;
-      default:
-        break;
-    }
-
-    return direction;
+    return DirectionHelper.getAlternativeDirection(direction, diagonalDirection);
   }
 
   static xWithDirection(x, d, stepSize = undefined) {
@@ -231,6 +215,15 @@ class CycloneMovement extends CyclonePlugin {
     }
   }
 
+  static applyTileCornerCollision(x, y, horz, vert, collision) {
+    const size = this.collisionSize;
+
+    const blockY = vert === 2 ? y + 1 - size : y;
+    const blockX = horz === 6 ? x + 1 - size : x;
+
+    this.setBlockCollision(blockX, blockY, collision);
+  }
+
   static collisionIndex(x, y, useEditorStepCount = false) {
     const stepCount = useEditorStepCount ? 4 : this.collisionStepCount;
 
@@ -247,12 +240,13 @@ class CycloneMovement extends CyclonePlugin {
       return;
     }
 
+    const radix = data.radix ?? 10;
     const increment = this.collisionSize;
 
     for (let x = 0; x < $dataMap.width; x += increment) {
       for (let y = 0; y < $dataMap.height; y += increment) {
         const editorIndex = this.collisionIndex(x, y);
-        const customCollision = Number(data.collision[editorIndex] || 0);
+        const customCollision = parseInt(data.collision[editorIndex], radix) || 0;
 
         if (customCollision > 0) {
           this.setBlockCollision(x, y, customCollision);
@@ -284,7 +278,19 @@ class CycloneMovement extends CyclonePlugin {
       return true;
     }
 
-    return false;
+    if (collision === 2) {
+      return false;
+    }
+
+    if (collision > 10) {
+      const blockedDirection = collision - 10;
+
+      if (this.shareADirection(d, blockedDirection)) {
+        return false;
+      }
+    }
+
+    return true;
   }
 
   static applyTileCollision(x, y, down, left, right, up) {
@@ -295,20 +301,34 @@ class CycloneMovement extends CyclonePlugin {
 
     this.applyFullTileCollision(x, y, 1);
 
-    if (!down) {
-      this.applyTileDirectionCollision(x, y, 2, 2);
-    }
-
     if (!left) {
-      this.applyTileDirectionCollision(x, y, 4, 2);
+      this.applyTileDirectionCollision(x, y, 4, 14);
     }
 
     if (!right) {
-      this.applyTileDirectionCollision(x, y, 6, 2);
+      this.applyTileDirectionCollision(x, y, 6, 16);
+    }
+
+    if (!down) {
+      this.applyTileDirectionCollision(x, y, 2, 12);
+
+      if (!left) {
+        this.applyTileCornerCollision(x, y, 4, 2, 11);
+      }
+      if (!right) {
+        this.applyTileCornerCollision(x, y, 6, 2, 13);
+      }
     }
 
     if (!up) {
-      this.applyTileDirectionCollision(x, y, 8, 2);
+      this.applyTileDirectionCollision(x, y, 8, 18);
+
+      if (!left) {
+        this.applyTileCornerCollision(x, y, 4, 8, 17);
+      }
+      if (!right) {
+        this.applyTileCornerCollision(x, y, 6, 8, 19);
+      }
     }
   }
 

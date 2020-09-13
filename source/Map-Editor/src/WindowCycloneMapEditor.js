@@ -1,3 +1,5 @@
+import { DirectionHelper } from '../../Utils/DirectionHelper';
+
 class WindowCycloneMapEditor extends Window_Command {
   initialize() {
     const x = Graphics.width - CycloneMapEditor.windowWidth;
@@ -117,6 +119,14 @@ class WindowCycloneMapEditor extends Window_Command {
     this.addCommand(0, 'collision', true, 0);
     this.addCommand(1, 'collision', true, 1);
     this.addCommand(2, 'collision', true, 2);
+    this.addCommand(17, 'collision', true, 17);
+    this.addCommand(18, 'collision', true, 18);
+    this.addCommand(19, 'collision', true, 19);
+    this.addCommand(14, 'collision', true, 14);
+    this.addCommand(16, 'collision', true, 16);
+    this.addCommand(11, 'collision', true, 11);
+    this.addCommand(12, 'collision', true, 12);
+    this.addCommand(13, 'collision', true, 13);
   }
 
   ensureSelectionVisible() {
@@ -175,11 +185,38 @@ class WindowCycloneMapEditor extends Window_Command {
     const y = rect.y;
     const drawWidth = rect.width;
     const drawHeight = rect.height;
-    const color = ['#00FF00', '#FF0000', '#FF00FF'][(index - 1) % 3];
-    this.contents.fillRect(x, y, drawWidth, drawHeight, color);
+    const collision = this._list[index].ext ?? index;
+    const colorIndex = collision <= 3 ? collision - 1 : 0;
 
     const context = this.contents.context;
     context.save();
+
+    const color = ['#00FF00', '#FF0000', '#FF00FF'][colorIndex];
+    context.fillStyle = color;
+    context.fillRect(x, y, drawWidth, drawHeight);
+
+    if (collision > 10) {
+      const blockedDirection = collision - 10;
+      const pieceWidth = Math.floor(drawWidth / 4);
+      const pieceHeight = Math.floor(drawHeight / 4);
+      context.fillStyle = '#FF00FF';
+
+      if (DirectionHelper.goesUp(blockedDirection)) {
+        context.fillRect(x, y, drawWidth, pieceHeight);
+      }
+      if (DirectionHelper.goesDown(blockedDirection)) {
+        context.fillRect(x, y + drawHeight - pieceHeight, drawWidth, pieceHeight);
+      }
+
+      if (DirectionHelper.goesLeft(blockedDirection)) {
+        context.fillRect(x, y, pieceWidth, drawHeight);
+      }
+
+      if (DirectionHelper.goesRight(blockedDirection)) {
+        context.fillRect(x + drawWidth - pieceWidth, y, pieceWidth, drawHeight);
+      }
+    }
+
     context.strokeStyle = '#000000';
     context.beginPath();
     context.moveTo(x, y);

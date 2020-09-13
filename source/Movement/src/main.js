@@ -7,4 +7,5 @@ import './Game_Vehicle';
 import './Game_Event';
 import './Game_Interpreter';
 import './Game_Temp';
+import './Scene_Map';
 import './DataManager';

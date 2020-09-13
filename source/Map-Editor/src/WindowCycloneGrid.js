@@ -1,4 +1,5 @@
 import { Layers } from './constants';
+import { DirectionHelper } from '../../Utils/DirectionHelper';
 
 class WindowCycloneGrid extends Window_Base {
   initialize() {
@@ -79,26 +80,29 @@ class WindowCycloneGrid extends Window_Base {
     const upBlocked = !this.checkTilePassability(mapX, mapY, 8);
     const leftBlocked = !this.checkTilePassability(mapX, mapY, 4);
     const rightBlocked = !this.checkTilePassability(mapX, mapY, 6);
+    const same = downBlocked === upBlocked && downBlocked === leftBlocked && downBlocked === rightBlocked;
 
-    if (downBlocked && upBlocked && leftBlocked && rightBlocked) {
-      this.contents.fillRect(x, y, drawWidth, drawHeight, '#FF000066');
+    if (downBlocked && same) {
+      this.contents.fillRect(x, y, drawWidth, drawHeight, '#FF000033');
       return;
     }
 
-    const pieceHeight = Math.floor(drawHeight / 4);
-    const pieceWidth = Math.floor(drawWidth / 4);
+    const sideHeight = 2;
+    const sideWidth = 2;
+
+    this.contents.fillRect(x, y, drawWidth, drawHeight, '#00FF0033');
 
     if (downBlocked) {
-      this.contents.fillRect(x, y + drawHeight - pieceHeight, drawWidth, pieceHeight, '#FF00FFAA');
+      this.contents.fillRect(x, y + drawHeight - sideHeight, drawWidth, sideHeight, '#FF00FFAA');
     }
     if (upBlocked) {
-      this.contents.fillRect(x, y, drawWidth, pieceHeight, '#FF00FFAA');
+      this.contents.fillRect(x, y, drawWidth, sideHeight, '#FF00FFAA');
     }
     if (leftBlocked) {
-      this.contents.fillRect(x, y, pieceWidth, drawHeight, '#FF00FFAA');
+      this.contents.fillRect(x, y, sideWidth, drawHeight, '#FF00FFAA');
     }
     if (rightBlocked) {
-      this.contents.fillRect(x + drawWidth - pieceWidth, y, pieceWidth, drawHeight, '#FF00FFAA');
+      this.contents.fillRect(x + drawWidth - sideWidth, y, sideWidth, drawHeight, '#FF00FFAA');
     }
   }
 
@@ -112,7 +116,30 @@ class WindowCycloneGrid extends Window_Base {
     const tileHeight = CycloneMapEditor.tileHeight;
     const drawWidth = tileWidth / 4;
     const drawHeight = tileHeight / 4;
-    const colors = ['#00FF0066', '#FF0000AA', '#FF00FFFF'];
+    const colors = ['#00FF00AA', '#FF0000AA', '#FF00FFFF'];
+
+    const context = this.contents.context;
+    context.save();
+
+    const drawCustomSideCollisions = (blockedDirection, drawX, drawY) => {
+      context.fillStyle = colors[2];
+      const pieceWidth = Math.floor(drawWidth / 4);
+      const pieceHeight = Math.floor(drawHeight / 4);
+
+      if (DirectionHelper.goesUp(blockedDirection)) {
+        context.fillRect(drawX, drawY, drawWidth, pieceHeight);
+      }
+      if (DirectionHelper.goesDown(blockedDirection)) {
+        context.fillRect(drawX, drawY + drawHeight - pieceHeight, drawWidth, pieceHeight);
+      }
+
+      if (DirectionHelper.goesLeft(blockedDirection)) {
+        context.fillRect(drawX, drawY, pieceWidth, drawHeight);
+      }
+      if (DirectionHelper.goesRight(blockedDirection)) {
+        context.fillRect(drawX + drawWidth - pieceWidth, drawY, pieceWidth, drawHeight);
+      }
+    };
 
     for (let cellX = 0; cellX < 4; cellX++) {
       for (let cellY = 0; cellY < 4; cellY++) {
@@ -125,14 +152,23 @@ class WindowCycloneGrid extends Window_Base {
           const drawX = x + (cellX * drawWidth);
           const drawY = y + (cellY * drawHeight);
 
-          this.contents.clearRect(drawX, drawY, drawWidth, drawHeight);
+          context.clearRect(drawX, drawY, drawWidth, drawHeight);
 
-          const colorIndex = customCollisionTable[index] - 1;
-          const color = colors[colorIndex % colors.length];
-          this.contents.fillRect(drawX, drawY, drawWidth, drawHeight, color);
+          const collision = customCollisionTable[index];
+          const colorIndex = collision <= 3 ? collision - 1 : 0;
+          const color = colors[colorIndex];
+          context.fillStyle = color;
+          context.fillRect(drawX, drawY, drawWidth, drawHeight);
+
+          if (collision > 10) {
+            drawCustomSideCollisions(collision - 10, drawX, drawY);
+          }
         }
       }
     }
+
+    context.restore();
+    this.contents._baseTexture.update();
   }
 
   maybeDrawCollisions(x, y) {
@@ -170,11 +206,13 @@ class WindowCycloneGrid extends Window_Base {
     if (!$gameMap.isValid(mapX, mapY)) {
       return false;
     }
-    this.drawCellGrid(x, y);
 
-    this.maybeDrawRegions(x, y);
+
     this.maybeDrawCollisions(x, y);
+    this.maybeDrawRegions(x, y);
     this.maybeDrawTags(x, y);
+
+    this.drawCellGrid(x, y);
   }
 
   refresh() {

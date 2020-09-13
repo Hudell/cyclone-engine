@@ -4,7 +4,7 @@
 
 /*:
  * @target MZ
- * @plugindesc  ALPHA/Incomplete Version - Adds new movement features to the game
+ * @plugindesc Adds new movement features to the game
  *
  * <pluginName:CycloneMovement>
  * @author Hudell
@@ -64,52 +64,74 @@
  * @text Steps per Tile
  * @desc How many steps the player will need to take to move an entire tile?
  * @type select
- * @default 4
+ * @default 1
  * @option 4
  * @option 2
  * @option 1
  *
  * @param followerStepsBehind
  * @text Follower Distance
- * @desc How many steps behind should the followers be?
+ * @desc How many steps behind should the followers be? Min = 1 step, Max = 1 tile
  * @type number
  * @min 1
- * @max 8
- * @default 6
+ * @max 4
+ * @default 3
  *
  * @param triggerAllEvents
  * @text Trigger All Events
  * @desc If true, the player may trigger multiple events when you press a button if there are more than one event in front of you
+ * @type boolean
+ * @on Trigger
+ * @off Skip
  * @default false
  *
  * @param triggerTouchEventAfterTeleport
  * @text Trigger Touch Event After Teleport
  * @desc
+ * @type boolean
+ * @on Trigger
+ * @off Skip
  * @default false
  *
  * @param blockRepeatedTouchEvents
  * @text Block Repeated Touch Events
  * @desc if false, any touch triggered event will be executed after every step that the player takes inside that tile.
+ * @type boolean
+ * @on Block
+ * @off Repeat
  * @default true
  *
  * @param ignoreEmptyEvents
  * @text Ignore Empty Events
  * @desc if true, the game won't try to trigger events that have no commands
+ * @type boolean
+ * @on Ignore
+ * @off Don't Ignore
  * @default true
  *
  * @param autoLeaveVehicles
  * @text Leave Vehicles Automatically
  * @desc If true, the player will leave boats and ships automatically when they reach land
+ * @type boolean
+ * @on Leave
+ * @off Don't Leave
  * @default false
  *
  * @param diagonalPathfinding
  * @text Diagonal Pathfinding
+ * @type boolean
+ * @on Enable
+ * @off Disable
  * @desc
- * @default false
+ * @default true
  *
  * @param disableMouseMovement
  * @text Disable Mouse Movement
+ * @type boolean
+ * @on Disable
+ * @off Don't Disable
  * @desc
  * @default false
  *
+ * @orderAfter Yami_8DirEx
  **/

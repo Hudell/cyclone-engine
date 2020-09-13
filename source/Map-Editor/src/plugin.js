@@ -888,9 +888,11 @@ class CycloneMapEditor extends CyclonePlugin {
 
   static applyExtraData(data) {
     customCollisionTable = {};
+    const radix = data?.radix || 10;
+
     if (data?.collision) {
       for (let i = 0; i < data.collision.length; i++) {
-        const col = Number(data.collision[i] || 0);
+        const col = parseInt(data.collision[i], radix) || 0;
         if (col) {
           customCollisionTable[i] = col;
         }
@@ -940,16 +942,22 @@ class CycloneMapEditor extends CyclonePlugin {
   }
 
   static getExtraData() {
+    const radix = 36;
     const collision = new Array($dataMap.width * $dataMap.height * 16);
     for (let i = 0; i < collision.length; i++) {
       if (customCollisionTable[i]) {
-        collision[i] = customCollisionTable[i];
+        if (customCollisionTable[i] >= radix) {
+          throw new Error('Invalid collision value: ', customCollisionTable[i]);
+        }
+
+        collision[i] = Number(customCollisionTable[i]).toString(radix);
       } else {
-        collision[i] = 0;
+        collision[i] = '0';
       }
     }
 
     return {
+      radix,
       collision: collision.join(''),
     };
   }

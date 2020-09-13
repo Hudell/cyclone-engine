@@ -4,7 +4,7 @@
 
 /*:
  * @target MZ
- * @plugindesc  ALPHA/Incomplete Version - Adds new movement features to the game
+ * @plugindesc Adds new movement features to the game
  *
  * <pluginName:CycloneMovement>
  * @author Hudell
@@ -64,54 +64,76 @@
  * @text Steps per Tile
  * @desc How many steps the player will need to take to move an entire tile?
  * @type select
- * @default 4
+ * @default 1
  * @option 4
  * @option 2
  * @option 1
  *
  * @param followerStepsBehind
  * @text Follower Distance
- * @desc How many steps behind should the followers be?
+ * @desc How many steps behind should the followers be? Min = 1 step, Max = 1 tile
  * @type number
  * @min 1
- * @max 8
- * @default 6
+ * @max 4
+ * @default 3
  *
  * @param triggerAllEvents
  * @text Trigger All Events
  * @desc If true, the player may trigger multiple events when you press a button if there are more than one event in front of you
+ * @type boolean
+ * @on Trigger
+ * @off Skip
  * @default false
  *
  * @param triggerTouchEventAfterTeleport
  * @text Trigger Touch Event After Teleport
  * @desc
+ * @type boolean
+ * @on Trigger
+ * @off Skip
  * @default false
  *
  * @param blockRepeatedTouchEvents
  * @text Block Repeated Touch Events
  * @desc if false, any touch triggered event will be executed after every step that the player takes inside that tile.
+ * @type boolean
+ * @on Block
+ * @off Repeat
  * @default true
  *
  * @param ignoreEmptyEvents
  * @text Ignore Empty Events
  * @desc if true, the game won't try to trigger events that have no commands
+ * @type boolean
+ * @on Ignore
+ * @off Don't Ignore
  * @default true
  *
  * @param autoLeaveVehicles
  * @text Leave Vehicles Automatically
  * @desc If true, the player will leave boats and ships automatically when they reach land
+ * @type boolean
+ * @on Leave
+ * @off Don't Leave
  * @default false
  *
  * @param diagonalPathfinding
  * @text Diagonal Pathfinding
+ * @type boolean
+ * @on Enable
+ * @off Disable
  * @desc
- * @default false
+ * @default true
  *
  * @param disableMouseMovement
  * @text Disable Mouse Movement
+ * @type boolean
+ * @on Disable
+ * @off Don't Disable
  * @desc
  * @default false
  *
+ * @orderAfter Yami_8DirEx
  **/
 (function () {
 'use strict';
@@ -678,56 +700,7 @@ class CyclonePlugin extends CyclonePatcher {
 
 var LZString=function(){function o(o,r){if(!t[o]){t[o]={};for(var n=0;n<o.length;n++)t[o][o.charAt(n)]=n;}return t[o][r]}var r=String.fromCharCode,n="ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/=",e="ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+-$",t={},i={compressToBase64:function(o){if(null==o)return "";var r=i._compress(o,6,function(o){return n.charAt(o)});switch(r.length%4){default:case 0:return r;case 1:return r+"===";case 2:return r+"==";case 3:return r+"="}},decompressFromBase64:function(r){return null==r?"":""==r?null:i._decompress(r.length,32,function(e){return o(n,r.charAt(e))})},compressToUTF16:function(o){return null==o?"":i._compress(o,15,function(o){return r(o+32)})+" "},decompressFromUTF16:function(o){return null==o?"":""==o?null:i._decompress(o.length,16384,function(r){return o.charCodeAt(r)-32})},compressToUint8Array:function(o){for(var r=i.compress(o),n=new Uint8Array(2*r.length),e=0,t=r.length;t>e;e++){var s=r.charCodeAt(e);n[2*e]=s>>>8,n[2*e+1]=s%256;}return n},decompressFromUint8Array:function(o){if(null===o||void 0===o)return i.decompress(o);for(var n=new Array(o.length/2),e=0,t=n.length;t>e;e++)n[e]=256*o[2*e]+o[2*e+1];var s=[];return n.forEach(function(o){s.push(r(o));}),i.decompress(s.join(""))},compressToEncodedURIComponent:function(o){return null==o?"":i._compress(o,6,function(o){return e.charAt(o)})},decompressFromEncodedURIComponent:function(r){return null==r?"":""==r?null:(r=r.replace(/ /g,"+"),i._decompress(r.length,32,function(n){return o(e,r.charAt(n))}))},compress:function(o){return i._compress(o,16,function(o){return r(o)})},_compress:function(o,r,n){if(null==o)return "";var e,t,i,s={},p={},u="",c="",a="",l=2,f=3,h=2,d=[],m=0,v=0;for(i=0;i<o.length;i+=1)if(u=o.charAt(i),Object.prototype.hasOwnProperty.call(s,u)||(s[u]=f++,p[u]=!0),c=a+u,Object.prototype.hasOwnProperty.call(s,c))a=c;else {if(Object.prototype.hasOwnProperty.call(p,a)){if(a.charCodeAt(0)<256){for(e=0;h>e;e++)m<<=1,v==r-1?(v=0,d.push(n(m)),m=0):v++;for(t=a.charCodeAt(0),e=0;8>e;e++)m=m<<1|1&t,v==r-1?(v=0,d.push(n(m)),m=0):v++,t>>=1;}else {for(t=1,e=0;h>e;e++)m=m<<1|t,v==r-1?(v=0,d.push(n(m)),m=0):v++,t=0;for(t=a.charCodeAt(0),e=0;16>e;e++)m=m<<1|1&t,v==r-1?(v=0,d.push(n(m)),m=0):v++,t>>=1;}l--,0==l&&(l=Math.pow(2,h),h++),delete p[a];}else for(t=s[a],e=0;h>e;e++)m=m<<1|1&t,v==r-1?(v=0,d.push(n(m)),m=0):v++,t>>=1;l--,0==l&&(l=Math.pow(2,h),h++),s[c]=f++,a=String(u);}if(""!==a){if(Object.prototype.hasOwnProperty.call(p,a)){if(a.charCodeAt(0)<256){for(e=0;h>e;e++)m<<=1,v==r-1?(v=0,d.push(n(m)),m=0):v++;for(t=a.charCodeAt(0),e=0;8>e;e++)m=m<<1|1&t,v==r-1?(v=0,d.push(n(m)),m=0):v++,t>>=1;}else {for(t=1,e=0;h>e;e++)m=m<<1|t,v==r-1?(v=0,d.push(n(m)),m=0):v++,t=0;for(t=a.charCodeAt(0),e=0;16>e;e++)m=m<<1|1&t,v==r-1?(v=0,d.push(n(m)),m=0):v++,t>>=1;}l--,0==l&&(l=Math.pow(2,h),h++),delete p[a];}else for(t=s[a],e=0;h>e;e++)m=m<<1|1&t,v==r-1?(v=0,d.push(n(m)),m=0):v++,t>>=1;l--,0==l&&(l=Math.pow(2,h),h++);}for(t=2,e=0;h>e;e++)m=m<<1|1&t,v==r-1?(v=0,d.push(n(m)),m=0):v++,t>>=1;for(;;){if(m<<=1,v==r-1){d.push(n(m));break}v++;}return d.join("")},decompress:function(o){return null==o?"":""==o?null:i._decompress(o.length,32768,function(r){return o.charCodeAt(r)})},_decompress:function(o,n,e){var t,i,s,p,u,c,a,l,f=[],h=4,d=4,m=3,v="",w=[],A={val:e(0),position:n,index:1};for(i=0;3>i;i+=1)f[i]=i;for(p=0,c=Math.pow(2,2),a=1;a!=c;)u=A.val&A.position,A.position>>=1,0==A.position&&(A.position=n,A.val=e(A.index++)),p|=(u>0?1:0)*a,a<<=1;switch(t=p){case 0:for(p=0,c=Math.pow(2,8),a=1;a!=c;)u=A.val&A.position,A.position>>=1,0==A.position&&(A.position=n,A.val=e(A.index++)),p|=(u>0?1:0)*a,a<<=1;l=r(p);break;case 1:for(p=0,c=Math.pow(2,16),a=1;a!=c;)u=A.val&A.position,A.position>>=1,0==A.position&&(A.position=n,A.val=e(A.index++)),p|=(u>0?1:0)*a,a<<=1;l=r(p);break;case 2:return ""}for(f[3]=l,s=l,w.push(l);;){if(A.index>o)return "";for(p=0,c=Math.pow(2,m),a=1;a!=c;)u=A.val&A.position,A.position>>=1,0==A.position&&(A.position=n,A.val=e(A.index++)),p|=(u>0?1:0)*a,a<<=1;switch(l=p){case 0:for(p=0,c=Math.pow(2,8),a=1;a!=c;)u=A.val&A.position,A.position>>=1,0==A.position&&(A.position=n,A.val=e(A.index++)),p|=(u>0?1:0)*a,a<<=1;f[d++]=r(p),l=d-1,h--;break;case 1:for(p=0,c=Math.pow(2,16),a=1;a!=c;)u=A.val&A.position,A.position>>=1,0==A.position&&(A.position=n,A.val=e(A.index++)),p|=(u>0?1:0)*a,a<<=1;f[d++]=r(p),l=d-1,h--;break;case 2:return w.join("")}if(0==h&&(h=Math.pow(2,m),m++),f[l])v=f[l];else {if(l!==d)return null;v=s+s.charAt(0);}w.push(v),f[d++]=s+v.charAt(0),h--,s=v,0==h&&(h=Math.pow(2,m),m++);}}};return i}();"function"==typeof define&&define.amd?define(function(){return LZString}):"undefined"!=typeof module&&null!=module&&(module.exports=LZString);
 
-let currentMapCollisionTable = false;
-const checkedTiles = new Set();
-
-class CycloneMovement$1 extends CyclonePlugin {
-  static register() {
-    super.initialize('CycloneMovement');
-
-    super.register({
-      stepCount: {
-        type: 'int',
-        defaultValue: 4,
-      },
-      followerStepsBehind: {
-        type: 'int',
-        defaultValue: 6,
-      },
-      triggerAllEvents: 'boolean',
-      triggerTouchEventAfterTeleport: 'boolean',
-      blockRepeatedTouchEvents: {
-        type: 'booelan',
-        defaultValue: true,
-      },
-      ignoreEmptyEvents: {
-        type: 'boolean',
-        defaultValue: true,
-      },
-      autoLeaveVehicles: 'boolean',
-    });
-
-    this.stepCount = [1, 2, 4].includes(this.params.stepCount) ? this.params.stepCount : 4;
-    this.collisionStepCount = Math.min(4, this.stepCount);
-    this.stepSize = 1 / this.stepCount;
-    this.collisionSize = 1 / this.collisionStepCount;
-    this.followerStepsBehind = Number(this.params.followerStepsBehind || 1).clamp(1, this.stepCount);
-    this.triggerAllEvents = this.params.triggerAllEvents === true;
-    this.autoLeaveVehicles = this.params.autoLeaveVehicles === true;
-    this.triggerTouchEventAfterTeleport = this.params.triggerTouchEventAfterTeleport === true;
-    this.blockRepeatedTouchEvents = this.params.blockRepeatedTouchEvents !== false;
-    this.ignoreEmptyEvents = this.params.ignoreEmptyEvents !== false;
-    this.diagonalPathfinding = true;
-  }
-
-  static get currentMapCollisionTable() {
-    return currentMapCollisionTable;
-  }
-
-  static isRoundNumber(n) {
-    return Math.floor(n) === n;
-  }
-
+class DirectionHelper {
   static goesLeft(d) {
     return d && d % 3 === 1;
   }
@@ -754,6 +727,26 @@ class CycloneMovement$1 extends CyclonePlugin {
 
   static isHorizontal(d) {
     return this.goesLeft(d) || this.goesRight(d);
+  }
+
+  static shareADirection(dir1, dir2) {
+    if (this.goesDown(dir1) && this.goesDown(dir2)) {
+      return true;
+    }
+
+    if (this.goesLeft(dir1) && this.goesLeft(dir2)) {
+      return true;
+    }
+
+    if (this.goesRight(dir1) && this.goesRight(dir2)) {
+      return true;
+    }
+
+    if (this.goesUp(dir1) && this.goesUp(dir2)) {
+      return true;
+    }
+
+    return false;
   }
 
   static getFirstDirection(diagonalDirection) {
@@ -787,6 +780,103 @@ class CycloneMovement$1 extends CyclonePlugin {
     }
 
     return direction;
+  }
+}
+
+let currentMapCollisionTable = false;
+const checkedTiles = new Set();
+
+class CycloneMovement$1 extends CyclonePlugin {
+  static register() {
+    super.initialize('CycloneMovement');
+
+    super.register({
+      stepCount: {
+        type: 'int',
+        defaultValue: 4,
+      },
+      followerStepsBehind: {
+        type: 'int',
+        defaultValue: 3,
+      },
+      triggerAllEvents: 'boolean',
+      triggerTouchEventAfterTeleport: 'boolean',
+      blockRepeatedTouchEvents: {
+        type: 'booelan',
+        defaultValue: true,
+      },
+      ignoreEmptyEvents: {
+        type: 'boolean',
+        defaultValue: true,
+      },
+      autoLeaveVehicles: 'boolean',
+      diagonalPathfinding: {
+        type: 'boolean',
+        defaultValue: true,
+      },
+      disableMouseMovement: 'boolean',
+    });
+
+    this.stepCount = [1, 2, 4].includes(this.params.stepCount) ? this.params.stepCount : 1;
+    this.collisionStepCount = Math.min(4, this.stepCount);
+    this.stepSize = 1 / this.stepCount;
+    this.collisionSize = 1 / this.collisionStepCount;
+    this.followerStepsBehind = Number(this.params.followerStepsBehind || 1).clamp(1, this.stepCount);
+    this.triggerAllEvents = this.params.triggerAllEvents === true;
+    this.autoLeaveVehicles = this.params.autoLeaveVehicles === true;
+    this.triggerTouchEventAfterTeleport = this.params.triggerTouchEventAfterTeleport === true;
+    this.blockRepeatedTouchEvents = this.params.blockRepeatedTouchEvents !== false;
+    this.ignoreEmptyEvents = this.params.ignoreEmptyEvents !== false;
+    this.diagonalPathfinding = this.params.diagonalPathfinding !== false;
+    this.disableMouseMovement = this.params.disableMouseMovement === true;
+  }
+
+  static get currentMapCollisionTable() {
+    return currentMapCollisionTable;
+  }
+
+  static isRoundNumber(n) {
+    return Math.floor(n) === n;
+  }
+
+  static goesLeft(d) {
+    return DirectionHelper.goesLeft(d);
+  }
+
+  static goesRight(d) {
+    return DirectionHelper.goesRight(d);
+  }
+
+  static goesUp(d) {
+    return DirectionHelper.goesUp(d);
+  }
+
+  static goesDown(d) {
+    return DirectionHelper.goesDown(d);
+  }
+
+  static isDiagonal(d) {
+    return DirectionHelper.isDiagonal(d);
+  }
+
+  static isVertical(d) {
+    return DirectionHelper.isVertical(d);
+  }
+
+  static isHorizontal(d) {
+    return DirectionHelper.isHorizontal(d);
+  }
+
+  static shareADirection(dir1, dir2) {
+    return DirectionHelper.shareADirection(dir1, dir2);
+  }
+
+  static getFirstDirection(diagonalDirection) {
+    return DirectionHelper.getFirstDirection(diagonalDirection);
+  }
+
+  static getAlternativeDirection(direction, diagonalDirection) {
+    return DirectionHelper.getAlternativeDirection(direction, diagonalDirection);
   }
 
   static xWithDirection(x, d, stepSize = undefined) {
@@ -906,6 +996,15 @@ class CycloneMovement$1 extends CyclonePlugin {
     }
   }
 
+  static applyTileCornerCollision(x, y, horz, vert, collision) {
+    const size = this.collisionSize;
+
+    const blockY = vert === 2 ? y + 1 - size : y;
+    const blockX = horz === 6 ? x + 1 - size : x;
+
+    this.setBlockCollision(blockX, blockY, collision);
+  }
+
   static collisionIndex(x, y, useEditorStepCount = false) {
     const stepCount = useEditorStepCount ? 4 : this.collisionStepCount;
 
@@ -922,12 +1021,13 @@ class CycloneMovement$1 extends CyclonePlugin {
       return;
     }
 
+    const radix = data.radix ?? 10;
     const increment = this.collisionSize;
 
     for (let x = 0; x < $dataMap.width; x += increment) {
       for (let y = 0; y < $dataMap.height; y += increment) {
         const editorIndex = this.collisionIndex(x, y);
-        const customCollision = Number(data.collision[editorIndex] || 0);
+        const customCollision = parseInt(data.collision[editorIndex], radix) || 0;
 
         if (customCollision > 0) {
           this.setBlockCollision(x, y, customCollision);
@@ -959,7 +1059,19 @@ class CycloneMovement$1 extends CyclonePlugin {
       return true;
     }
 
-    return false;
+    if (collision === 2) {
+      return false;
+    }
+
+    if (collision > 10) {
+      const blockedDirection = collision - 10;
+
+      if (this.shareADirection(d, blockedDirection)) {
+        return false;
+      }
+    }
+
+    return true;
   }
 
   static applyTileCollision(x, y, down, left, right, up) {
@@ -970,20 +1082,34 @@ class CycloneMovement$1 extends CyclonePlugin {
 
     this.applyFullTileCollision(x, y, 1);
 
-    if (!down) {
-      this.applyTileDirectionCollision(x, y, 2, 2);
-    }
-
     if (!left) {
-      this.applyTileDirectionCollision(x, y, 4, 2);
+      this.applyTileDirectionCollision(x, y, 4, 14);
     }
 
     if (!right) {
-      this.applyTileDirectionCollision(x, y, 6, 2);
+      this.applyTileDirectionCollision(x, y, 6, 16);
+    }
+
+    if (!down) {
+      this.applyTileDirectionCollision(x, y, 2, 12);
+
+      if (!left) {
+        this.applyTileCornerCollision(x, y, 4, 2, 11);
+      }
+      if (!right) {
+        this.applyTileCornerCollision(x, y, 6, 2, 13);
+      }
     }
 
     if (!up) {
-      this.applyTileDirectionCollision(x, y, 8, 2);
+      this.applyTileDirectionCollision(x, y, 8, 18);
+
+      if (!left) {
+        this.applyTileCornerCollision(x, y, 4, 8, 17);
+      }
+      if (!right) {
+        this.applyTileCornerCollision(x, y, 6, 8, 19);
+      }
     }
   }
 
@@ -1052,11 +1178,13 @@ CycloneMovement.patchClass(Game_Map, $super => class {
       return $super.distance.call(this, x1, y1, x2, y2);
     }
 
-    const d1 = Math.abs(this.deltaX(x1, x2));
-    const d2 = Math.abs(this.deltaY(y1, y2));
+    // good old Pythagoras
+    const b = Math.abs(this.deltaY(y1, y2));
+    const c = Math.abs(this.deltaX(x1, x2));
+    const a2 = Math.pow(b, 2) + Math.pow(c, 2);
+    const a = Math.sqrt(a2);
 
-    const total = d1 * d1 + d2 * d2;
-    return Math.sqrt(total);
+    return Math.floor(a * CycloneMovement.collisionSize) / CycloneMovement.collisionSize;
   }
 });
 
@@ -1319,7 +1447,10 @@ const addPixelMovementToClass = (classRef) => {
 
       // Run the collision check for every Y tile the character is touching
       for (let newY = firstY; newY <= lastY; newY += CycloneMovement.collisionSize) {
-        if (this.checkLeftPassage(left, newY, destinationLeft) === false) {
+        const checkUp = newY > firstY;
+        const checkDown = newY < lastY;
+
+        if (this.checkLeftPassage(left, newY, destinationLeft, checkUp, checkDown) === false) {
           return false;
         }
       }
@@ -1331,7 +1462,7 @@ const addPixelMovementToClass = (classRef) => {
       return CycloneMovement.isPositionPassable(x, y, d);
     }
 
-    checkLeftPassage(left, y, destinationLeft) {
+    checkLeftPassage(left, y, destinationLeft, checkUp = false, checkDown = false) {
       const count = CycloneMovement.collisionStepCount;
       const leftFloor = Math.floor(left * count) / count;
       const destinationLeftFloor = Math.floor(destinationLeft * count) / count;
@@ -1347,6 +1478,10 @@ const addPixelMovementToClass = (classRef) => {
         if (!this.isPositionPassable(destinationLeftFloor, y, 6)) {
           return false;
         }
+
+        if (this.checkVerticalPassage(destinationLeftFloor, y, checkUp, checkDown) === false) {
+          return false;
+        }
       }
 
       return null;
@@ -1359,7 +1494,10 @@ const addPixelMovementToClass = (classRef) => {
       const destinationRight = right + CycloneMovement.stepSize;
 
       for (let newY = firstY; newY <= lastY; newY += CycloneMovement.collisionSize) {
-        if (this.checkRightPassage(right, newY, destinationRight) === false) {
+        const checkUp = newY > firstY;
+        const checkDown = newY < lastY;
+
+        if (this.checkRightPassage(right, newY, destinationRight, checkUp, checkDown) === false) {
           return false;
         }
       }
@@ -1367,7 +1505,7 @@ const addPixelMovementToClass = (classRef) => {
       return true;
     }
 
-    checkRightPassage(right, y, destinationRight) {
+    checkRightPassage(right, y, destinationRight, checkUp = false, checkDown = false) {
       const lastXDestination = this.lastCollisionXAt((destinationRight - this.width - this.hitboxX));
       const lastX = this.lastCollisionXAt((right - this.width - this.hitboxX));
 
@@ -1382,6 +1520,10 @@ const addPixelMovementToClass = (classRef) => {
         if (!this.isPositionPassable(lastXDestination, y, 4)) {
           return false;
         }
+
+        if (this.checkVerticalPassage(lastXDestination, y, checkUp, checkDown) === false) {
+          return false;
+        }
       }
 
       return null;
@@ -1394,7 +1536,10 @@ const addPixelMovementToClass = (classRef) => {
       const destinationTop = (top - CycloneMovement.stepSize);
 
       for (let newX = firstX; newX <= lastX; newX += CycloneMovement.collisionSize) {
-        if (this.checkUpPassage(newX, top, destinationTop) === false) {
+        const checkLeft = newX > firstX;
+        const checkRight = newX < lastX;
+
+        if (this.checkUpPassage(newX, top, destinationTop, checkLeft, checkRight) === false) {
           return false;
         }
       }
@@ -1402,7 +1547,35 @@ const addPixelMovementToClass = (classRef) => {
       return true;
     }
 
-    checkUpPassage(x, top, destinationTop) {
+    checkVerticalPassage(x, y, checkUp, checkDown) {
+      // If the collision block height is smaller than our hitbox height, then we need to check if horizontal movement is free among all new blocks we'll be touching
+      if (this.height <= CycloneMovement.collisionSize) {
+        return;
+      }
+
+      if (checkUp && !this.isPositionPassable(x, y, 8)) {
+        return false;
+      }
+      if (checkDown && !this.isPositionPassable(x, y, 2)) {
+        return false;
+      }
+    }
+
+    checkHorizontalPassage(x, y, checkLeft, checkRight) {
+      // If the collision block width is smaller than our hitbox width, then we need to check if horizontal movement is free among all new blocks we'll be touching
+      if (this.width <= CycloneMovement.collisionSize) {
+        return;
+      }
+
+      if (checkLeft && !this.isPositionPassable(x, y, 4)) {
+        return false;
+      }
+      if (checkRight && !this.isPositionPassable(x, y, 6)) {
+        return false;
+      }
+    }
+
+    checkUpPassage(x, top, destinationTop, checkLeft = false, checkRight = false) {
       const count = CycloneMovement.collisionStepCount;
       const topFloor = Math.floor(top * count) / count;
       const destinationTopFloor = Math.floor(destinationTop * count) / count;
@@ -1418,6 +1591,10 @@ const addPixelMovementToClass = (classRef) => {
         if (!this.isPositionPassable(x, destinationTopFloor, 2)) {
           return false;
         }
+
+        if (this.checkHorizontalPassage(x, destinationTopFloor, checkLeft, checkRight) === false) {
+          return false;
+        }
       }
 
       return null;
@@ -1430,7 +1607,10 @@ const addPixelMovementToClass = (classRef) => {
       const destinationBottom = (bottom + CycloneMovement.stepSize);
 
       for (let newX = firstX; newX <= lastX; newX += CycloneMovement.collisionSize) {
-        if (this.checkDownPassage(newX, bottom, destinationBottom) === false) {
+        const checkLeft = newX > firstX;
+        const checkRight = newX < lastX;
+
+        if (this.checkDownPassage(newX, bottom, destinationBottom, checkLeft, checkRight) === false) {
           return false;
         }
       }
@@ -1438,7 +1618,7 @@ const addPixelMovementToClass = (classRef) => {
       return true;
     }
 
-    checkDownPassage(x, bottom, destinationBottom) {
+    checkDownPassage(x, bottom, destinationBottom, checkLeft = false, checkRight = false) {
       const lastYDestination = this.lastCollisionYAt((destinationBottom - this.height - this.hitboxY));
       const lastY = this.lastCollisionYAt((bottom - this.height - this.hitboxY));
 
@@ -1451,6 +1631,10 @@ const addPixelMovementToClass = (classRef) => {
 
         // and check if the new bottom tile allows moving up
         if (!this.isPositionPassable(x, lastYDestination, 8)) {
+          return false;
+        }
+
+        if (this.checkHorizontalPassage(x, lastYDestination, checkLeft, checkRight) === false) {
           return false;
         }
       }
@@ -1866,7 +2050,7 @@ const addPixelMovementToClass = (classRef) => {
       this._cachedGoalX = goalX;
       this._cachedGoalY = goalY;
 
-      this._cacheTTL = 20;
+      this._cacheTTL = 2 * CycloneMovement.collisionSize * CycloneMovement.collisionSize - 1;
     }
 
     _getDirectionFromDeltas(deltaX, deltaY) {
@@ -3031,6 +3215,16 @@ CycloneMovement.patchClass(Game_Temp, $super => class {
       clearTimeout(timeout);
       timeout = false;
     }
+  }
+});
+
+CycloneMovement.patchClass(Scene_Map, $super => class {
+  onMapTouch(...args) {
+    if (CycloneMovement.disableMouseMovement) {
+      return;
+    }
+
+    $super.onMapTouch.call(this, ...args);
   }
 });
 

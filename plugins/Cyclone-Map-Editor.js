@@ -1855,9 +1855,11 @@ class CycloneMapEditor$1 extends CyclonePlugin {
 
   static applyExtraData(data) {
     customCollisionTable = {};
+    const radix = data?.radix || 10;
+
     if (data?.collision) {
       for (let i = 0; i < data.collision.length; i++) {
-        const col = Number(data.collision[i] || 0);
+        const col = parseInt(data.collision[i], radix) || 0;
         if (col) {
           customCollisionTable[i] = col;
         }
@@ -1907,16 +1909,22 @@ class CycloneMapEditor$1 extends CyclonePlugin {
   }
 
   static getExtraData() {
+    const radix = 36;
     const collision = new Array($dataMap.width * $dataMap.height * 16);
     for (let i = 0; i < collision.length; i++) {
       if (customCollisionTable[i]) {
-        collision[i] = customCollisionTable[i];
+        if (customCollisionTable[i] >= radix) {
+          throw new Error('Invalid collision value: ', customCollisionTable[i]);
+        }
+
+        collision[i] = Number(customCollisionTable[i]).toString(radix);
       } else {
-        collision[i] = 0;
+        collision[i] = '0';
       }
     }
 
     return {
+      radix,
       collision: collision.join(''),
     };
   }
@@ -4442,6 +4450,89 @@ CycloneMapEditor.patchClass(Game_Player, $super => class {
   }
 });
 
+class DirectionHelper {
+  static goesLeft(d) {
+    return d && d % 3 === 1;
+  }
+
+  static goesRight(d) {
+    return d && d % 3 === 0;
+  }
+
+  static goesUp(d) {
+    return d >= 7 && d <= 9;
+  }
+
+  static goesDown(d) {
+    return d >= 1 && d <= 3;
+  }
+
+  static isDiagonal(d) {
+    return this.isVertical(d) && this.isHorizontal(d);
+  }
+
+  static isVertical(d) {
+    return this.goesDown(d) || this.goesUp(d);
+  }
+
+  static isHorizontal(d) {
+    return this.goesLeft(d) || this.goesRight(d);
+  }
+
+  static shareADirection(dir1, dir2) {
+    if (this.goesDown(dir1) && this.goesDown(dir2)) {
+      return true;
+    }
+
+    if (this.goesLeft(dir1) && this.goesLeft(dir2)) {
+      return true;
+    }
+
+    if (this.goesRight(dir1) && this.goesRight(dir2)) {
+      return true;
+    }
+
+    if (this.goesUp(dir1) && this.goesUp(dir2)) {
+      return true;
+    }
+
+    return false;
+  }
+
+  static getFirstDirection(diagonalDirection) {
+    if (!diagonalDirection) {
+      return diagonalDirection;
+    }
+
+    if (diagonalDirection > 6) {
+      return 8;
+    }
+    if (diagonalDirection < 4) {
+      return 2;
+    }
+    return diagonalDirection;
+  }
+
+  static getAlternativeDirection(direction, diagonalDirection) {
+    if (direction === diagonalDirection) {
+      return direction;
+    }
+
+    switch (diagonalDirection) {
+      case 7:
+        return direction == 8 ? 4 : 8;
+      case 9:
+        return direction == 8 ? 6 : 8;
+      case 1:
+        return direction == 2 ? 4 : 2;
+      case 3:
+        return direction == 2 ? 6 : 2;
+    }
+
+    return direction;
+  }
+}
+
 class WindowCycloneGrid extends Window_Base {
   initialize() {
     const width = Graphics.width;
@@ -4521,26 +4612,29 @@ class WindowCycloneGrid extends Window_Base {
     const upBlocked = !this.checkTilePassability(mapX, mapY, 8);
     const leftBlocked = !this.checkTilePassability(mapX, mapY, 4);
     const rightBlocked = !this.checkTilePassability(mapX, mapY, 6);
+    const same = downBlocked === upBlocked && downBlocked === leftBlocked && downBlocked === rightBlocked;
 
-    if (downBlocked && upBlocked && leftBlocked && rightBlocked) {
-      this.contents.fillRect(x, y, drawWidth, drawHeight, '#FF000066');
+    if (downBlocked && same) {
+      this.contents.fillRect(x, y, drawWidth, drawHeight, '#FF000033');
       return;
     }
 
-    const pieceHeight = Math.floor(drawHeight / 4);
-    const pieceWidth = Math.floor(drawWidth / 4);
+    const sideHeight = 2;
+    const sideWidth = 2;
+
+    this.contents.fillRect(x, y, drawWidth, drawHeight, '#00FF0033');
 
     if (downBlocked) {
-      this.contents.fillRect(x, y + drawHeight - pieceHeight, drawWidth, pieceHeight, '#FF00FFAA');
+      this.contents.fillRect(x, y + drawHeight - sideHeight, drawWidth, sideHeight, '#FF00FFAA');
     }
     if (upBlocked) {
-      this.contents.fillRect(x, y, drawWidth, pieceHeight, '#FF00FFAA');
+      this.contents.fillRect(x, y, drawWidth, sideHeight, '#FF00FFAA');
     }
     if (leftBlocked) {
-      this.contents.fillRect(x, y, pieceWidth, drawHeight, '#FF00FFAA');
+      this.contents.fillRect(x, y, sideWidth, drawHeight, '#FF00FFAA');
     }
     if (rightBlocked) {
-      this.contents.fillRect(x + drawWidth - pieceWidth, y, pieceWidth, drawHeight, '#FF00FFAA');
+      this.contents.fillRect(x + drawWidth - sideWidth, y, sideWidth, drawHeight, '#FF00FFAA');
     }
   }
 
@@ -4554,7 +4648,30 @@ class WindowCycloneGrid extends Window_Base {
     const tileHeight = CycloneMapEditor.tileHeight;
     const drawWidth = tileWidth / 4;
     const drawHeight = tileHeight / 4;
-    const colors = ['#00FF0066', '#FF0000AA', '#FF00FFFF'];
+    const colors = ['#00FF00AA', '#FF0000AA', '#FF00FFFF'];
+
+    const context = this.contents.context;
+    context.save();
+
+    const drawCustomSideCollisions = (blockedDirection, drawX, drawY) => {
+      context.fillStyle = colors[2];
+      const pieceWidth = Math.floor(drawWidth / 4);
+      const pieceHeight = Math.floor(drawHeight / 4);
+
+      if (DirectionHelper.goesUp(blockedDirection)) {
+        context.fillRect(drawX, drawY, drawWidth, pieceHeight);
+      }
+      if (DirectionHelper.goesDown(blockedDirection)) {
+        context.fillRect(drawX, drawY + drawHeight - pieceHeight, drawWidth, pieceHeight);
+      }
+
+      if (DirectionHelper.goesLeft(blockedDirection)) {
+        context.fillRect(drawX, drawY, pieceWidth, drawHeight);
+      }
+      if (DirectionHelper.goesRight(blockedDirection)) {
+        context.fillRect(drawX + drawWidth - pieceWidth, drawY, pieceWidth, drawHeight);
+      }
+    };
 
     for (let cellX = 0; cellX < 4; cellX++) {
       for (let cellY = 0; cellY < 4; cellY++) {
@@ -4567,14 +4684,23 @@ class WindowCycloneGrid extends Window_Base {
           const drawX = x + (cellX * drawWidth);
           const drawY = y + (cellY * drawHeight);
 
-          this.contents.clearRect(drawX, drawY, drawWidth, drawHeight);
+          context.clearRect(drawX, drawY, drawWidth, drawHeight);
 
-          const colorIndex = customCollisionTable[index] - 1;
-          const color = colors[colorIndex % colors.length];
-          this.contents.fillRect(drawX, drawY, drawWidth, drawHeight, color);
+          const collision = customCollisionTable[index];
+          const colorIndex = collision <= 3 ? collision - 1 : 0;
+          const color = colors[colorIndex];
+          context.fillStyle = color;
+          context.fillRect(drawX, drawY, drawWidth, drawHeight);
+
+          if (collision > 10) {
+            drawCustomSideCollisions(collision - 10, drawX, drawY);
+          }
         }
       }
     }
+
+    context.restore();
+    this.contents._baseTexture.update();
   }
 
   maybeDrawCollisions(x, y) {
@@ -4612,11 +4738,13 @@ class WindowCycloneGrid extends Window_Base {
     if (!$gameMap.isValid(mapX, mapY)) {
       return false;
     }
-    this.drawCellGrid(x, y);
 
-    this.maybeDrawRegions(x, y);
+
     this.maybeDrawCollisions(x, y);
+    this.maybeDrawRegions(x, y);
     this.maybeDrawTags(x, y);
+
+    this.drawCellGrid(x, y);
   }
 
   refresh() {
@@ -5272,6 +5400,14 @@ class WindowCycloneMapEditor extends Window_Command {
     this.addCommand(0, 'collision', true, 0);
     this.addCommand(1, 'collision', true, 1);
     this.addCommand(2, 'collision', true, 2);
+    this.addCommand(17, 'collision', true, 17);
+    this.addCommand(18, 'collision', true, 18);
+    this.addCommand(19, 'collision', true, 19);
+    this.addCommand(14, 'collision', true, 14);
+    this.addCommand(16, 'collision', true, 16);
+    this.addCommand(11, 'collision', true, 11);
+    this.addCommand(12, 'collision', true, 12);
+    this.addCommand(13, 'collision', true, 13);
   }
 
   ensureSelectionVisible() {
@@ -5330,11 +5466,38 @@ class WindowCycloneMapEditor extends Window_Command {
     const y = rect.y;
     const drawWidth = rect.width;
     const drawHeight = rect.height;
-    const color = ['#00FF00', '#FF0000', '#FF00FF'][(index - 1) % 3];
-    this.contents.fillRect(x, y, drawWidth, drawHeight, color);
+    const collision = this._list[index].ext ?? index;
+    const colorIndex = collision <= 3 ? collision - 1 : 0;
 
     const context = this.contents.context;
     context.save();
+
+    const color = ['#00FF00', '#FF0000', '#FF00FF'][colorIndex];
+    context.fillStyle = color;
+    context.fillRect(x, y, drawWidth, drawHeight);
+
+    if (collision > 10) {
+      const blockedDirection = collision - 10;
+      const pieceWidth = Math.floor(drawWidth / 4);
+      const pieceHeight = Math.floor(drawHeight / 4);
+      context.fillStyle = '#FF00FF';
+
+      if (DirectionHelper.goesUp(blockedDirection)) {
+        context.fillRect(x, y, drawWidth, pieceHeight);
+      }
+      if (DirectionHelper.goesDown(blockedDirection)) {
+        context.fillRect(x, y + drawHeight - pieceHeight, drawWidth, pieceHeight);
+      }
+
+      if (DirectionHelper.goesLeft(blockedDirection)) {
+        context.fillRect(x, y, pieceWidth, drawHeight);
+      }
+
+      if (DirectionHelper.goesRight(blockedDirection)) {
+        context.fillRect(x + drawWidth - pieceWidth, y, pieceWidth, drawHeight);
+      }
+    }
+
     context.strokeStyle = '#000000';
     context.beginPath();
     context.moveTo(x, y);
