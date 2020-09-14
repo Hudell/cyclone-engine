@@ -1046,7 +1046,11 @@ const addPixelMovementToClass = (classRef) => {
     }
 
     isMoving() {
-      return this._isMoving;
+      if (this.distancePerFrame() >= CycloneMovement.stepSize) {
+        return this._isMoving;
+      }
+
+      return this.originalIsMoving();
     }
 
     updateIsMoving() {
