@@ -134,6 +134,7 @@ rules:
     - ignoreGlobals: true
   max-depth:
     - error
+    - 10
   multiline-ternary:
     - error
     - never

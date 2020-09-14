@@ -435,30 +435,84 @@ CycloneMovement.patchClass(Game_Player, $super => class {
     return false;
   }
 
-  updateNonmoving(wasMoving, sceneActive) {
-    $super.updateNonmoving.call(this, wasMoving, sceneActive);
+  isOnDamageFloor() {
+    if (this.isInAirship()) {
+      return false;
+    }
 
-    if (wasMoving || Input.dir4 !== 0) {
-      if (!$gameMap.isEventRunning()) {
+    if (this._newMaxX < 0 || this._newMaxY < 0) {
+      return false;
+    }
+
+    for (let x = this._newMinX; x <= this._newMaxX; x++) {
+      for (let y = this._newMinY; y <= this._newMaxY; y++) {
+        if ($gameMap.isDamageFloor(x, y)) {
+          return true;
+        }
+      }
+    }
+
+    return false;
+  }
+
+  encounterProgressValue() {
+    const old = $super.encounterProgressValue.call(this);
+
+    return old / CycloneMovement.stepCount;
+  }
+
+  updateNonmoving(wasMoving, sceneActive) {
+    try {
+      if ($gameMap.isEventRunning()) {
+        return;
+      }
+
+      const enteredNewTile = this._newMaxX >= 0 && this._newMaxY >= 0;
+      if (enteredNewTile) {
+        $gameParty.onPlayerWalk();
+      }
+
+      if (enteredNewTile) {
+        for (let x = this._newMinX; x <= this._newMaxX; x++) {
+          for (let y = this._newMinY; y <= this._newMaxY; y++) {
+            this.startMapEvent(x, y, [1, 2], false);
+
+            if ($gameMap.setupStartingEvent()) {
+              return;
+            }
+          }
+        }
+      }
+
+      if (sceneActive && this.triggerAction()) {
+        return;
+      }
+
+      if (wasMoving) {
+        this.updateEncounterCount();
+      }
+
+      if (wasMoving || Input.dir4 !== 0) {
         this.checkEventTriggerThere([1, 2]);
         $gameMap.setupStartingEvent();
       }
+    } finally {
+      this._newMinX = Infinity;
+      this._newMinY = Infinity;
+      this._newMaxX = -Infinity;
+      this._newMaxY = -Infinity;
     }
   }
 
   updateMove() {
-    const newPositions = [];
     this.iterateNewTiles((x, y) => {
-      newPositions.push({x, y});
+      this._newMinX = Math.min(x, this._newMinX ?? -Infinity);
+      this._newMinY = Math.min(y, this._newMinY ?? -Infinity);
+      this._newMaxX = Math.max(x, this._newMaxX ?? Infinity);
+      this._newMaxY = Math.max(y, this._newMaxY ?? Infinity);
     });
 
     $super.updateMove.call(this);
-
-    for (const {x, y} of newPositions) {
-      if (!$gameMap.isEventRunning()) {
-        this.startMapEvent(x, y, [1, 2], false);
-      }
-    }
   }
 
   _isSamePos(x1, y1, destX, destY) {
