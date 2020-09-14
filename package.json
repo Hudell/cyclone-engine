@@ -8,6 +8,7 @@
     "maps": "cd source/Maps & rollup -cw",
     "time": "cd source/Time & rollup -cw",
     "movement": "cd source/Movement & rollup -cw",
+    "movement-mv": "cd source/Movement-MV & rollup -cw",
     "window": "cd source/WindowResizer & rollup -cw"
   },
   "author": "Hudell",
