@@ -236,24 +236,48 @@ CycloneMapEditor.patchClass(Bitmap, $super => class {
     context.fillStyle = color;
     context.fillRect(x, y, realDrawWidth, realDrawHeight);
 
-    if (collision > 10) {
+    let goesUp = false;
+    let goesDown = false;
+    let goesLeft = false;
+    let goesRight = false;
+
+    if (collision >= 20) {
+      const unblockedDirection = collision - 20;
+      goesUp = !DirectionHelper.goesUp(unblockedDirection);
+      goesDown = !DirectionHelper.goesDown(unblockedDirection);
+      goesLeft = !DirectionHelper.goesLeft(unblockedDirection);
+      goesRight = !DirectionHelper.goesRight(unblockedDirection);
+    } else if (collision > 10) {
       const blockedDirection = collision - 10;
+      goesUp = DirectionHelper.goesUp(blockedDirection);
+      goesDown = DirectionHelper.goesDown(blockedDirection);
+      goesLeft = DirectionHelper.goesLeft(blockedDirection);
+      goesRight = DirectionHelper.goesRight(blockedDirection);
+    } else if (collision === 4) {
+      goesDown = true;
+      goesUp = true;
+    } else if (collision === 5) {
+      goesLeft = true;
+      goesRight = true;
+    }
+
+    if (collision > 3) {
       const pieceWidth = Math.floor(realDrawWidth / 4);
       const pieceHeight = Math.floor(realDrawHeight / 4);
       context.fillStyle = '#FF00FF';
 
-      if (DirectionHelper.goesUp(blockedDirection)) {
+      if (goesUp) {
         context.fillRect(x, y, realDrawWidth, pieceHeight);
       }
-      if (DirectionHelper.goesDown(blockedDirection)) {
+      if (goesDown) {
         context.fillRect(x, y + realDrawHeight - pieceHeight, realDrawWidth, pieceHeight);
       }
 
-      if (DirectionHelper.goesLeft(blockedDirection)) {
+      if (goesLeft) {
         context.fillRect(x, y, pieceWidth, realDrawHeight);
       }
 
-      if (DirectionHelper.goesRight(blockedDirection)) {
+      if (goesRight) {
         context.fillRect(x + realDrawWidth - pieceWidth, y, pieceWidth, realDrawHeight);
       }
     }

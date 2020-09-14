@@ -2300,31 +2300,82 @@ class CycloneMapEditor extends CyclonePlugin {
     }
   }
 
+  // eslint-disable-next-line complexity
   static _getBlockCollision(i, j, count, tileId) {
     if (tileId <= 3) {
       return tileId;
     }
 
-    const d = tileId - 10;
-    const up = DirectionHelper.goesUp(d) && j === 0;
-    const down = DirectionHelper.goesDown(d) && j === count -1;
-    const left = DirectionHelper.goesLeft(d) && i === 0;
-    const right = DirectionHelper.goesRight(d) && i === count - 1;
+    let goesUp = false;
+    let goesDown = false;
+    let goesRight = false;
+    let goesLeft = false;
+
+    if (tileId >= 20) {
+      const d = tileId - 20;
+      goesUp = !DirectionHelper.goesUp(d);
+      goesDown = !DirectionHelper.goesDown(d);
+      goesLeft = !DirectionHelper.goesLeft(d);
+      goesRight = !DirectionHelper.goesRight(d);
+    } else if (tileId > 10) {
+      const d = tileId - 10;
+      goesUp = DirectionHelper.goesUp(d);
+      goesDown = DirectionHelper.goesDown(d);
+      goesLeft = DirectionHelper.goesLeft(d);
+      goesRight = DirectionHelper.goesRight(d);
+    } else if (tileId === 4) {
+      goesUp = true;
+      goesDown = true;
+    } else if (tileId === 5) {
+      goesLeft = true;
+      goesRight = true;
+    }
+
+    const up = goesUp && j === 0;
+    const down = goesDown && j === count -1;
+    const left = goesLeft && i === 0;
+    const right = goesRight && i === count - 1;
 
     if (up) {
       if (left) {
+        if (right) {
+          if (down) {
+            return 20;
+          }
+
+          return 22;
+        }
+
+        if (down) {
+          return 26;
+        }
+
         return 17;
       }
+
       if (right) {
+        if (down) {
+          return 24;
+        }
+
         return 19;
+      }
+
+      if (down) {
+        return 4;
       }
       return 18;
     }
 
     if (down) {
       if (left) {
+        if (right) {
+          return 28;
+        }
+
         return 11;
       }
+
       if (right) {
         return 13;
       }
@@ -2332,6 +2383,10 @@ class CycloneMapEditor extends CyclonePlugin {
     }
 
     if (left) {
+      if (right) {
+        return 5;
+      }
+
       return 14;
     }
 

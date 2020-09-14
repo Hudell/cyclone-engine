@@ -258,39 +258,75 @@ class CycloneMovement extends CyclonePlugin {
           return 2;
         }
 
-        if (customCollision > 10) {
+        let goesUp = false;
+        let goesLeft = false;
+        let goesRight = false;
+        let goesDown = false;
+
+        if (customCollision >= 20) {
+          const d = customCollision - 20;
+          goesUp = !DirectionHelper.goesUp(d);
+          goesLeft = !DirectionHelper.goesLeft(d);
+          goesRight = !DirectionHelper.goesRight(d);
+          goesDown = !DirectionHelper.goesDown(d);
+        } else if (customCollision > 10) {
           const d = customCollision - 10;
-          if (DirectionHelper.goesUp(d) && blockY === 0) {
-            blockUp = true;
+          goesUp = DirectionHelper.goesUp(d);
+          goesLeft = DirectionHelper.goesLeft(d);
+          goesRight = DirectionHelper.goesRight(d);
+          goesDown = DirectionHelper.goesDown(d);
+        } else if (customCollision === 4) {
+          goesUp = true;
+          goesDown = true;
+        } else if (customCollision === 5) {
+          goesLeft = true;
+          goesRight = true;
+        } else {
+          if (result === false) {
+            result = customCollision;
           }
-
-          if (DirectionHelper.goesDown(d) && blockY === diffCount - 1) {
-            blockDown = true;
-          }
-
-          if (DirectionHelper.goesLeft(d) && blockX === 0) {
-            blockLeft = true;
-          }
-
-          if (DirectionHelper.goesRight(d) && blockX === diffCount - 1) {
-            blockRight = true;
-          }
-        } else if (result === false) {
-          result = customCollision;
+          continue;
         }
+
+        if (goesUp && blockY === 0) {
+          blockUp = true;
+        }
+
+        if (goesDown && blockY === diffCount - 1) {
+          blockDown = true;
+        }
+
+        if (goesLeft && blockX === 0) {
+          blockLeft = true;
+        }
+
+        if (goesRight && blockX === diffCount - 1) {
+          blockRight = true;
+        }
+
       }
     }
 
     if (blockLeft && blockRight && blockDown && blockUp) {
-      return 2;
+      return 20;
     }
 
     if (blockUp) {
       if (blockLeft) {
+        if (blockRight) {
+          return 22;
+        }
         return 17;
       }
       if (blockRight) {
+        if (blockDown) {
+          return 24;
+        }
         return 19;
+      }
+
+      if (blockDown) {
+        return 4;
       }
 
       return 18;
@@ -298,6 +334,10 @@ class CycloneMovement extends CyclonePlugin {
 
     if (blockDown) {
       if (blockLeft) {
+        if (blockRight) {
+          return 28;
+        }
+
         return 11;
       }
       if (blockRight) {
@@ -307,6 +347,9 @@ class CycloneMovement extends CyclonePlugin {
     }
 
     if (blockLeft) {
+      if (blockRight) {
+        return 5;
+      }
       return 14;
     }
 
@@ -362,10 +405,23 @@ class CycloneMovement extends CyclonePlugin {
       return false;
     }
 
-    if (collision > 10) {
+    if (collision >= 20) {
+      const unblockedDirection = collision - 20;
+      if (!this.shareADirection(d, unblockedDirection)) {
+        return false;
+      }
+    } else if (collision > 10) {
       const blockedDirection = collision - 10;
 
       if (this.shareADirection(d, blockedDirection)) {
+        return false;
+      }
+    } else if (collision === 4) {
+      if (DirectionHelper.goesUp(d) || DirectionHelper.goesDown(d)) {
+        return false;
+      }
+    } else if (collision === 5) {
+      if (DirectionHelper.goesLeft(d) || DirectionHelper.goesRight(d)) {
         return false;
       }
     }

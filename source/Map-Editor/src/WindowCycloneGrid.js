@@ -121,22 +121,22 @@ class WindowCycloneGrid extends Window_Base {
     const context = this.contents.context;
     context.save();
 
-    const drawCustomSideCollisions = (blockedDirection, drawX, drawY) => {
+    const drawCustomSideCollisions = (goesUp, goesDown, goesLeft, goesRight, drawX, drawY) => {
       context.fillStyle = colors[2];
       const pieceWidth = Math.floor(drawWidth / 4);
       const pieceHeight = Math.floor(drawHeight / 4);
 
-      if (DirectionHelper.goesUp(blockedDirection)) {
+      if (goesUp) {
         context.fillRect(drawX, drawY, drawWidth, pieceHeight);
       }
-      if (DirectionHelper.goesDown(blockedDirection)) {
+      if (goesDown) {
         context.fillRect(drawX, drawY + drawHeight - pieceHeight, drawWidth, pieceHeight);
       }
 
-      if (DirectionHelper.goesLeft(blockedDirection)) {
+      if (goesLeft) {
         context.fillRect(drawX, drawY, pieceWidth, drawHeight);
       }
-      if (DirectionHelper.goesRight(blockedDirection)) {
+      if (goesRight) {
         context.fillRect(drawX + drawWidth - pieceWidth, drawY, pieceWidth, drawHeight);
       }
     };
@@ -160,8 +160,33 @@ class WindowCycloneGrid extends Window_Base {
           context.fillStyle = color;
           context.fillRect(drawX, drawY, drawWidth, drawHeight);
 
-          if (collision > 10) {
-            drawCustomSideCollisions(collision - 10, drawX, drawY);
+          let goesUp = false;
+          let goesDown = false;
+          let goesLeft = false;
+          let goesRight = false;
+
+          if (collision >= 20) {
+            const d = collision - 20;
+            goesUp = !DirectionHelper.goesUp(d);
+            goesDown = !DirectionHelper.goesDown(d);
+            goesLeft = !DirectionHelper.goesLeft(d);
+            goesRight = !DirectionHelper.goesRight(d);
+          } else if (collision > 10) {
+            const d = collision - 10;
+            goesUp = DirectionHelper.goesUp(d);
+            goesDown = DirectionHelper.goesDown(d);
+            goesLeft = DirectionHelper.goesLeft(d);
+            goesRight = DirectionHelper.goesRight(d);
+          } else if (collision === 4) {
+            goesUp = true;
+            goesDown = true;
+          } else if (collision === 5) {
+            goesLeft = true;
+            goesRight = true;
+          }
+
+          if (collision > 3) {
+            drawCustomSideCollisions(goesUp, goesDown, goesLeft, goesRight, drawX, drawY);
           }
         }
       }

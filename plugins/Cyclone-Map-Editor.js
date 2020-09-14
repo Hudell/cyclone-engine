@@ -3349,31 +3349,82 @@ class CycloneMapEditor$1 extends CyclonePlugin {
     }
   }
 
+  // eslint-disable-next-line complexity
   static _getBlockCollision(i, j, count, tileId) {
     if (tileId <= 3) {
       return tileId;
     }
 
-    const d = tileId - 10;
-    const up = DirectionHelper.goesUp(d) && j === 0;
-    const down = DirectionHelper.goesDown(d) && j === count -1;
-    const left = DirectionHelper.goesLeft(d) && i === 0;
-    const right = DirectionHelper.goesRight(d) && i === count - 1;
+    let goesUp = false;
+    let goesDown = false;
+    let goesRight = false;
+    let goesLeft = false;
+
+    if (tileId >= 20) {
+      const d = tileId - 20;
+      goesUp = !DirectionHelper.goesUp(d);
+      goesDown = !DirectionHelper.goesDown(d);
+      goesLeft = !DirectionHelper.goesLeft(d);
+      goesRight = !DirectionHelper.goesRight(d);
+    } else if (tileId > 10) {
+      const d = tileId - 10;
+      goesUp = DirectionHelper.goesUp(d);
+      goesDown = DirectionHelper.goesDown(d);
+      goesLeft = DirectionHelper.goesLeft(d);
+      goesRight = DirectionHelper.goesRight(d);
+    } else if (tileId === 4) {
+      goesUp = true;
+      goesDown = true;
+    } else if (tileId === 5) {
+      goesLeft = true;
+      goesRight = true;
+    }
+
+    const up = goesUp && j === 0;
+    const down = goesDown && j === count -1;
+    const left = goesLeft && i === 0;
+    const right = goesRight && i === count - 1;
 
     if (up) {
       if (left) {
+        if (right) {
+          if (down) {
+            return 20;
+          }
+
+          return 22;
+        }
+
+        if (down) {
+          return 26;
+        }
+
         return 17;
       }
+
       if (right) {
+        if (down) {
+          return 24;
+        }
+
         return 19;
+      }
+
+      if (down) {
+        return 4;
       }
       return 18;
     }
 
     if (down) {
       if (left) {
+        if (right) {
+          return 28;
+        }
+
         return 11;
       }
+
       if (right) {
         return 13;
       }
@@ -3381,6 +3432,10 @@ class CycloneMapEditor$1 extends CyclonePlugin {
     }
 
     if (left) {
+      if (right) {
+        return 5;
+      }
+
       return 14;
     }
 
@@ -4425,24 +4480,48 @@ CycloneMapEditor.patchClass(Bitmap, $super => class {
     context.fillStyle = color;
     context.fillRect(x, y, realDrawWidth, realDrawHeight);
 
-    if (collision > 10) {
+    let goesUp = false;
+    let goesDown = false;
+    let goesLeft = false;
+    let goesRight = false;
+
+    if (collision >= 20) {
+      const unblockedDirection = collision - 20;
+      goesUp = !DirectionHelper.goesUp(unblockedDirection);
+      goesDown = !DirectionHelper.goesDown(unblockedDirection);
+      goesLeft = !DirectionHelper.goesLeft(unblockedDirection);
+      goesRight = !DirectionHelper.goesRight(unblockedDirection);
+    } else if (collision > 10) {
       const blockedDirection = collision - 10;
+      goesUp = DirectionHelper.goesUp(blockedDirection);
+      goesDown = DirectionHelper.goesDown(blockedDirection);
+      goesLeft = DirectionHelper.goesLeft(blockedDirection);
+      goesRight = DirectionHelper.goesRight(blockedDirection);
+    } else if (collision === 4) {
+      goesDown = true;
+      goesUp = true;
+    } else if (collision === 5) {
+      goesLeft = true;
+      goesRight = true;
+    }
+
+    if (collision > 3) {
       const pieceWidth = Math.floor(realDrawWidth / 4);
       const pieceHeight = Math.floor(realDrawHeight / 4);
       context.fillStyle = '#FF00FF';
 
-      if (DirectionHelper.goesUp(blockedDirection)) {
+      if (goesUp) {
         context.fillRect(x, y, realDrawWidth, pieceHeight);
       }
-      if (DirectionHelper.goesDown(blockedDirection)) {
+      if (goesDown) {
         context.fillRect(x, y + realDrawHeight - pieceHeight, realDrawWidth, pieceHeight);
       }
 
-      if (DirectionHelper.goesLeft(blockedDirection)) {
+      if (goesLeft) {
         context.fillRect(x, y, pieceWidth, realDrawHeight);
       }
 
-      if (DirectionHelper.goesRight(blockedDirection)) {
+      if (goesRight) {
         context.fillRect(x + realDrawWidth - pieceWidth, y, pieceWidth, realDrawHeight);
       }
     }
@@ -4746,22 +4825,22 @@ class WindowCycloneGrid extends Window_Base {
     const context = this.contents.context;
     context.save();
 
-    const drawCustomSideCollisions = (blockedDirection, drawX, drawY) => {
+    const drawCustomSideCollisions = (goesUp, goesDown, goesLeft, goesRight, drawX, drawY) => {
       context.fillStyle = colors[2];
       const pieceWidth = Math.floor(drawWidth / 4);
       const pieceHeight = Math.floor(drawHeight / 4);
 
-      if (DirectionHelper.goesUp(blockedDirection)) {
+      if (goesUp) {
         context.fillRect(drawX, drawY, drawWidth, pieceHeight);
       }
-      if (DirectionHelper.goesDown(blockedDirection)) {
+      if (goesDown) {
         context.fillRect(drawX, drawY + drawHeight - pieceHeight, drawWidth, pieceHeight);
       }
 
-      if (DirectionHelper.goesLeft(blockedDirection)) {
+      if (goesLeft) {
         context.fillRect(drawX, drawY, pieceWidth, drawHeight);
       }
-      if (DirectionHelper.goesRight(blockedDirection)) {
+      if (goesRight) {
         context.fillRect(drawX + drawWidth - pieceWidth, drawY, pieceWidth, drawHeight);
       }
     };
@@ -4785,8 +4864,33 @@ class WindowCycloneGrid extends Window_Base {
           context.fillStyle = color;
           context.fillRect(drawX, drawY, drawWidth, drawHeight);
 
-          if (collision > 10) {
-            drawCustomSideCollisions(collision - 10, drawX, drawY);
+          let goesUp = false;
+          let goesDown = false;
+          let goesLeft = false;
+          let goesRight = false;
+
+          if (collision >= 20) {
+            const d = collision - 20;
+            goesUp = !DirectionHelper.goesUp(d);
+            goesDown = !DirectionHelper.goesDown(d);
+            goesLeft = !DirectionHelper.goesLeft(d);
+            goesRight = !DirectionHelper.goesRight(d);
+          } else if (collision > 10) {
+            const d = collision - 10;
+            goesUp = DirectionHelper.goesUp(d);
+            goesDown = DirectionHelper.goesDown(d);
+            goesLeft = DirectionHelper.goesLeft(d);
+            goesRight = DirectionHelper.goesRight(d);
+          } else if (collision === 4) {
+            goesUp = true;
+            goesDown = true;
+          } else if (collision === 5) {
+            goesLeft = true;
+            goesRight = true;
+          }
+
+          if (collision > 3) {
+            drawCustomSideCollisions(goesUp, goesDown, goesLeft, goesRight, drawX, drawY);
           }
         }
       }
@@ -5499,13 +5603,20 @@ class WindowCycloneMapEditor extends Window_Command {
     this.addCommand(19, 'collision', true, 19);
 
     this.addCommand(14, 'collision', true, 14);
-    this.addCommand(1, 'collision', true, 1);
+    this.addCommand(20, 'collision', true, 20);
     this.addCommand(16, 'collision', true, 16);
 
     this.addCommand(11, 'collision', true, 11);
     this.addCommand(12, 'collision', true, 12);
     this.addCommand(13, 'collision', true, 13);
 
+    this.addCommand(22, 'collision', true, 22);
+    this.addCommand(26, 'collision', true, 26);
+    this.addCommand(24, 'collision', true, 24);
+    this.addCommand(28, 'collision', true, 28);
+
+    this.addCommand(4, 'collision', true, 4);
+    this.addCommand(5, 'collision', true, 5);
   }
 
   ensureSelectionVisible() {

@@ -125,13 +125,20 @@ class WindowCycloneMapEditor extends Window_Command {
     this.addCommand(19, 'collision', true, 19);
 
     this.addCommand(14, 'collision', true, 14);
-    this.addCommand(1, 'collision', true, 1);
+    this.addCommand(20, 'collision', true, 20);
     this.addCommand(16, 'collision', true, 16);
 
     this.addCommand(11, 'collision', true, 11);
     this.addCommand(12, 'collision', true, 12);
     this.addCommand(13, 'collision', true, 13);
 
+    this.addCommand(22, 'collision', true, 22);
+    this.addCommand(26, 'collision', true, 26);
+    this.addCommand(24, 'collision', true, 24);
+    this.addCommand(28, 'collision', true, 28);
+
+    this.addCommand(4, 'collision', true, 4);
+    this.addCommand(5, 'collision', true, 5);
   }
 
   ensureSelectionVisible() {
