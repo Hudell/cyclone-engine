@@ -98,12 +98,15 @@ const addPixelMovementToClass = (classRef) => {
       return false;
     }
 
-    update(...args) {
+    updateHitbox() {
       this.width = this.getWidth();
       this.height = this.getHeight();
       this.hitboxX = this.getHitboxX();
       this.hitboxY = this.getHitboxY();
+    }
 
+    update(...args) {
+      this.updateHitbox();
       $super.update.call(this, ...args);
     }
 

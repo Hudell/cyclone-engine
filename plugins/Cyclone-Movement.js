@@ -1396,12 +1396,15 @@ const addPixelMovementToClass = (classRef) => {
       return false;
     }
 
-    update(...args) {
+    updateHitbox() {
       this.width = this.getWidth();
       this.height = this.getHeight();
       this.hitboxX = this.getHitboxX();
       this.hitboxY = this.getHitboxY();
+    }
 
+    update(...args) {
+      this.updateHitbox();
       $super.update.call(this, ...args);
     }
 
@@ -2950,7 +2953,9 @@ CycloneMovement.patchClass(Game_Player, $super => class {
   }
 
   getLandingXOffset(vehicle, x, y, direction) {
-    for (let i = 1; i < CycloneMovement.stepCount; i++) {
+    const maxOffset = this.isInAirship() ? Math.ceil(CycloneMovement.stepCount / 2) : CycloneMovement.stepCount;
+
+    for (let i = 1; i < maxOffset; i++) {
       const offset = CycloneMovement.stepSize * i;
       if (this.isValidLandingPosition(vehicle, x - offset, y, direction)) {
         return -offset;
@@ -2965,7 +2970,9 @@ CycloneMovement.patchClass(Game_Player, $super => class {
   }
 
   getLandingYOffset(vehicle, x, y, direction) {
-    for (let i = 1; i < CycloneMovement.stepCount; i++) {
+    const maxOffset = this.isInAirship() ? Math.ceil(CycloneMovement.stepCount / 2) : CycloneMovement.stepCount;
+
+    for (let i = 1; i < maxOffset; i++) {
       const offset = CycloneMovement.stepSize * i;
       if (this.isValidLandingPosition(vehicle, x, y - offset, direction)) {
         return -offset;
@@ -2986,23 +2993,28 @@ CycloneMovement.patchClass(Game_Player, $super => class {
     let vehicleY = this.y;
     const { stepCount } = CycloneMovement;
 
-    switch(direction) {
-      case 2:
-        x = Math.round(this.x * stepCount) / stepCount;
-        y = Math.ceil((this.y + this.hitboxY + this.height) * stepCount) / stepCount;
-        break;
-      case 4:
-        x = Math.floor((this.x - this.defaultHitboxX - this.defaultWidth) * stepCount) / stepCount;
-        y = Math.round(this.y * stepCount) / stepCount;
-        break;
-      case 6:
-        x = Math.ceil((this.x + this.hitboxX + this.width) * stepCount) / stepCount;
-        y = Math.round(this.y * stepCount) / stepCount;
-        break;
-      case 8:
-        x = Math.round(this.x * stepCount) / stepCount;
-        y = Math.floor((this.y - this.defaultHitboxY - this.defaultHeight) * stepCount) / stepCount;
-        break;
+    if (this.isInAirship()) {
+      x = Math.round(this.x * stepCount) / stepCount;
+      y = Math.round(this.y * stepCount) / stepCount;
+    } else {
+      switch(direction) {
+        case 2:
+          x = Math.round(this.x * stepCount) / stepCount;
+          y = Math.ceil((this.y + this.hitboxY + this.height) * stepCount) / stepCount;
+          break;
+        case 4:
+          x = Math.floor((this.x - this.defaultHitboxX - this.defaultWidth) * stepCount) / stepCount;
+          y = Math.round(this.y * stepCount) / stepCount;
+          break;
+        case 6:
+          x = Math.ceil((this.x + this.hitboxX + this.width) * stepCount) / stepCount;
+          y = Math.round(this.y * stepCount) / stepCount;
+          break;
+        case 8:
+          x = Math.round(this.x * stepCount) / stepCount;
+          y = Math.floor((this.y - this.defaultHitboxY - this.defaultHeight) * stepCount) / stepCount;
+          break;
+      }
     }
 
     if (this.isValidLandingPosition(vehicle, x, y, direction)) {
@@ -3014,7 +3026,7 @@ CycloneMovement.patchClass(Game_Player, $super => class {
       };
     }
 
-    if (CycloneMovement.isVertical(direction)) {
+    if (CycloneMovement.isVertical(direction) || this.isInAirship()) {
       const xOffset = this.getLandingXOffset(vehicle, x, y, direction);
       if (xOffset !== 0) {
         return {
@@ -3025,7 +3037,9 @@ CycloneMovement.patchClass(Game_Player, $super => class {
         };
       }
 
-      return false;
+      if (!this.isInAirship()) {
+        return false;
+      }
     }
 
     const yOffset = this.getLandingYOffset(vehicle, x, y, direction);
@@ -3060,23 +3074,25 @@ CycloneMovement.patchClass(Game_Player, $super => class {
     this._followers.synchronize(this.x, this.y, direction);
     vehicle.getOff();
 
+    const oldVehicleY = vehicle._y;
+    const oldVehicleX = vehicle._x;
+
+    vehicle._x = target.vehicleX;
+    vehicle._y = target.vehicleY;
+    this._x = target.x;
+    this._y = target.y;
+    this._positionHistory = [];
+
     if (!this.isInAirship()) {
-      if (vehicle._x < target.vehicleX) {
+      if (oldVehicleX < target.vehicleX) {
         vehicle.setDirection(6);
-      } else if (vehicle._x > target.vehicleX) {
+      } else if (oldVehicleX > target.vehicleX) {
         vehicle.setDirection(4);
-      } else if (vehicle._y < target.vehicleY) {
+      } else if (oldVehicleY < target.vehicleY) {
         vehicle.setDirection(2);
-      } else if (vehicle._y > target.vehicleY) {
+      } else if (oldVehicleY > target.vehicleY) {
         vehicle.setDirection(8);
       }
-
-      vehicle._x = target.vehicleX;
-      vehicle._y = target.vehicleY;
-      this._x = target.x;
-      this._y = target.y;
-
-      this._positionHistory = [];
 
       this.updateAnimationCount();
       this.setTransparent(false);
@@ -3087,6 +3103,21 @@ CycloneMovement.patchClass(Game_Player, $super => class {
     this.setThrough(false);
     this.makeEncounterCount();
     this.gatherFollowers();
+  }
+
+  // Stop airship from setting the movement as through
+  updateVehicleGetOn() {
+    const oldThrough = this._through;
+    $super.updateVehicleGetOn.call(this);
+    this._through = oldThrough;
+  }
+
+  isThrough() {
+    if (!this._ignoreVehicle && this.isInAirship()) {
+      return true;
+    }
+
+    return $super.isThrough.call(this);
   }
 
   isPositionPassable(x, y, d) {
@@ -3119,6 +3150,7 @@ CycloneMovement.patchClass(Game_Player, $super => class {
   // Check if there's enough room for the player on that position
   canLandOn(x, y, direction) {
     this._ignoreVehicle = true;
+    this.updateHitbox();
     try {
       if (this.canPass(x, y, 2)) {
         return true;
@@ -3136,6 +3168,7 @@ CycloneMovement.patchClass(Game_Player, $super => class {
       return false;
     } finally {
       this._ignoreVehicle = false;
+      this.updateHitbox();
     }
   }
 
