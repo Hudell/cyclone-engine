@@ -69,6 +69,15 @@
  * @option 2
  * @option 1
  *
+ * @param collisionStepCount
+ * @text Collision Blocks per Tile
+ * @desc You can customize the map collision with the Cyclone Map Editor plugin
+ * @type select
+ * @default 1
+ * @option 4
+ * @option 2
+ * @option 1
+ *
  * @param followerStepsBehind
  * @text Follower Distance
  * @desc How many steps behind should the followers be? Min = 1 step, Max = 1 tile
@@ -84,22 +93,6 @@
  * @on Trigger
  * @off Skip
  * @default false
- *
- * @param triggerTouchEventAfterTeleport
- * @text Trigger Touch Event After Teleport
- * @desc
- * @type boolean
- * @on Trigger
- * @off Skip
- * @default false
- *
- * @param blockRepeatedTouchEvents
- * @text Block Repeated Touch Events
- * @desc if false, any touch triggered event will be executed after every step that the player takes inside that tile.
- * @type boolean
- * @on Block
- * @off Repeat
- * @default true
  *
  * @param ignoreEmptyEvents
  * @text Ignore Empty Events
@@ -133,5 +126,4 @@
  * @desc
  * @default false
  *
- * @orderAfter Yami_8DirEx
  **/

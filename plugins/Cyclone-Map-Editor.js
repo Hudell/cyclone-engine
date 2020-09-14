@@ -971,6 +971,89 @@ function throttle(fn, delay) {
   return debounced;
 }
 
+class DirectionHelper {
+  static goesLeft(d) {
+    return d && d % 3 === 1;
+  }
+
+  static goesRight(d) {
+    return d && d % 3 === 0;
+  }
+
+  static goesUp(d) {
+    return d >= 7 && d <= 9;
+  }
+
+  static goesDown(d) {
+    return d >= 1 && d <= 3;
+  }
+
+  static isDiagonal(d) {
+    return this.isVertical(d) && this.isHorizontal(d);
+  }
+
+  static isVertical(d) {
+    return this.goesDown(d) || this.goesUp(d);
+  }
+
+  static isHorizontal(d) {
+    return this.goesLeft(d) || this.goesRight(d);
+  }
+
+  static shareADirection(dir1, dir2) {
+    if (this.goesDown(dir1) && this.goesDown(dir2)) {
+      return true;
+    }
+
+    if (this.goesLeft(dir1) && this.goesLeft(dir2)) {
+      return true;
+    }
+
+    if (this.goesRight(dir1) && this.goesRight(dir2)) {
+      return true;
+    }
+
+    if (this.goesUp(dir1) && this.goesUp(dir2)) {
+      return true;
+    }
+
+    return false;
+  }
+
+  static getFirstDirection(diagonalDirection) {
+    if (!diagonalDirection) {
+      return diagonalDirection;
+    }
+
+    if (diagonalDirection > 6) {
+      return 8;
+    }
+    if (diagonalDirection < 4) {
+      return 2;
+    }
+    return diagonalDirection;
+  }
+
+  static getAlternativeDirection(direction, diagonalDirection) {
+    if (direction === diagonalDirection) {
+      return direction;
+    }
+
+    switch (diagonalDirection) {
+      case 7:
+        return direction == 8 ? 4 : 8;
+      case 9:
+        return direction == 8 ? 6 : 8;
+      case 1:
+        return direction == 2 ? 4 : 2;
+      case 3:
+        return direction == 2 ? 6 : 2;
+    }
+
+    return direction;
+  }
+}
+
 const layerVisibility = [true, true, true, true, true, false, true, false, false, false];
 let editorActive = true;
 let windowWidth = 216;
@@ -3266,6 +3349,48 @@ class CycloneMapEditor$1 extends CyclonePlugin {
     }
   }
 
+  static _getBlockCollision(i, j, count, tileId) {
+    if (tileId <= 3) {
+      return tileId;
+    }
+
+    const d = tileId - 10;
+    const up = DirectionHelper.goesUp(d) && j === 0;
+    const down = DirectionHelper.goesDown(d) && j === count -1;
+    const left = DirectionHelper.goesLeft(d) && i === 0;
+    const right = DirectionHelper.goesRight(d) && i === count - 1;
+
+    if (up) {
+      if (left) {
+        return 17;
+      }
+      if (right) {
+        return 19;
+      }
+      return 18;
+    }
+
+    if (down) {
+      if (left) {
+        return 11;
+      }
+      if (right) {
+        return 13;
+      }
+      return 12;
+    }
+
+    if (left) {
+      return 14;
+    }
+
+    if (right) {
+      return 16;
+    }
+
+    return 1;
+  }
+
   static _applySingleCollision(x, y, tileId, previewOnly = false) {
     if (previewOnly) {
       return;
@@ -3282,17 +3407,18 @@ class CycloneMapEditor$1 extends CyclonePlugin {
         const width = $gameMap.width() * 4;
         const index = (intY % height) * width + (intX % width);
 
+        const blockCollision = this._getBlockCollision(i, j, count, tileId);
         const oldTile = customCollisionTable[index] || 0;
-        if (currentChange[index] === undefined && oldTile !== tileId) {
+        if (currentChange[index] === undefined && oldTile !== blockCollision) {
           currentChange[index] = oldTile;
         }
 
-        if (!tileId) {
+        if (!blockCollision) {
           delete customCollisionTable[index];
           continue;
         }
 
-        customCollisionTable[index] = tileId;
+        customCollisionTable[index] = blockCollision;
       }
     }
   }
@@ -4281,6 +4407,56 @@ CycloneMapEditor.patchClass(Bitmap, $super => class {
       this.fillRect(drawX, drawY, halfWidth, halfHeight, '#00000066');
     }
   }
+
+  drawCollisionType(collision, x, y, drawWidth, drawHeight) {
+    if (collision === 0) {
+      return;
+    }
+
+    const realDrawWidth = drawWidth ?? CycloneMapEditor.tileWidth;
+    const realDrawHeight = drawHeight ?? CycloneMapEditor.tileHeight;
+
+    const colorIndex = collision <= 3 ? collision - 1 : 0;
+
+    const context = this.context;
+    context.save();
+
+    const color = ['#00FF00', '#FF0000', '#FF00FF'][colorIndex];
+    context.fillStyle = color;
+    context.fillRect(x, y, realDrawWidth, realDrawHeight);
+
+    if (collision > 10) {
+      const blockedDirection = collision - 10;
+      const pieceWidth = Math.floor(realDrawWidth / 4);
+      const pieceHeight = Math.floor(realDrawHeight / 4);
+      context.fillStyle = '#FF00FF';
+
+      if (DirectionHelper.goesUp(blockedDirection)) {
+        context.fillRect(x, y, realDrawWidth, pieceHeight);
+      }
+      if (DirectionHelper.goesDown(blockedDirection)) {
+        context.fillRect(x, y + realDrawHeight - pieceHeight, realDrawWidth, pieceHeight);
+      }
+
+      if (DirectionHelper.goesLeft(blockedDirection)) {
+        context.fillRect(x, y, pieceWidth, realDrawHeight);
+      }
+
+      if (DirectionHelper.goesRight(blockedDirection)) {
+        context.fillRect(x + realDrawWidth - pieceWidth, y, pieceWidth, realDrawHeight);
+      }
+    }
+
+    context.strokeStyle = '#000000';
+    context.beginPath();
+    context.moveTo(x, y);
+    context.lineTo(x + realDrawWidth, y);
+    context.stroke();
+    context.beginPath();
+    context.moveTo(x, y);
+    context.lineTo(x, y + realDrawHeight);
+    context.stroke();
+  }
 });
 
 CycloneMapEditor.patchClass(DataManager, $super => class {
@@ -4449,89 +4625,6 @@ CycloneMapEditor.patchClass(Game_Player, $super => class {
     CycloneMapEditor.requestCollisionRefresh();
   }
 });
-
-class DirectionHelper {
-  static goesLeft(d) {
-    return d && d % 3 === 1;
-  }
-
-  static goesRight(d) {
-    return d && d % 3 === 0;
-  }
-
-  static goesUp(d) {
-    return d >= 7 && d <= 9;
-  }
-
-  static goesDown(d) {
-    return d >= 1 && d <= 3;
-  }
-
-  static isDiagonal(d) {
-    return this.isVertical(d) && this.isHorizontal(d);
-  }
-
-  static isVertical(d) {
-    return this.goesDown(d) || this.goesUp(d);
-  }
-
-  static isHorizontal(d) {
-    return this.goesLeft(d) || this.goesRight(d);
-  }
-
-  static shareADirection(dir1, dir2) {
-    if (this.goesDown(dir1) && this.goesDown(dir2)) {
-      return true;
-    }
-
-    if (this.goesLeft(dir1) && this.goesLeft(dir2)) {
-      return true;
-    }
-
-    if (this.goesRight(dir1) && this.goesRight(dir2)) {
-      return true;
-    }
-
-    if (this.goesUp(dir1) && this.goesUp(dir2)) {
-      return true;
-    }
-
-    return false;
-  }
-
-  static getFirstDirection(diagonalDirection) {
-    if (!diagonalDirection) {
-      return diagonalDirection;
-    }
-
-    if (diagonalDirection > 6) {
-      return 8;
-    }
-    if (diagonalDirection < 4) {
-      return 2;
-    }
-    return diagonalDirection;
-  }
-
-  static getAlternativeDirection(direction, diagonalDirection) {
-    if (direction === diagonalDirection) {
-      return direction;
-    }
-
-    switch (diagonalDirection) {
-      case 7:
-        return direction == 8 ? 4 : 8;
-      case 9:
-        return direction == 8 ? 6 : 8;
-      case 1:
-        return direction == 2 ? 4 : 2;
-      case 3:
-        return direction == 2 ? 6 : 2;
-    }
-
-    return direction;
-  }
-}
 
 class WindowCycloneGrid extends Window_Base {
   initialize() {
@@ -5400,14 +5493,19 @@ class WindowCycloneMapEditor extends Window_Command {
     this.addCommand(0, 'collision', true, 0);
     this.addCommand(1, 'collision', true, 1);
     this.addCommand(2, 'collision', true, 2);
+
     this.addCommand(17, 'collision', true, 17);
     this.addCommand(18, 'collision', true, 18);
     this.addCommand(19, 'collision', true, 19);
+
     this.addCommand(14, 'collision', true, 14);
+    this.addCommand(1, 'collision', true, 1);
     this.addCommand(16, 'collision', true, 16);
+
     this.addCommand(11, 'collision', true, 11);
     this.addCommand(12, 'collision', true, 12);
     this.addCommand(13, 'collision', true, 13);
+
   }
 
   ensureSelectionVisible() {
@@ -5431,6 +5529,10 @@ class WindowCycloneMapEditor extends Window_Command {
   }
 
   colSpacing() {
+    if (CycloneMapEditor.currentLayer === Layers.collisions) {
+      return 0;
+    }
+
     return Math.floor((this.width - (this.maxCols() * this.itemWidth())) / this.maxCols());
   }
 
@@ -5439,6 +5541,10 @@ class WindowCycloneMapEditor extends Window_Command {
   }
 
   maxCols() {
+    if (CycloneMapEditor.currentLayer === Layers.collisions) {
+      return 3;
+    }
+
     return 8;
   }
 
@@ -5460,53 +5566,13 @@ class WindowCycloneMapEditor extends Window_Command {
     if (index === 0) {
       return;
     }
-
-    const rect = this.itemRect(index);
-    const x = rect.x;
-    const y = rect.y;
-    const drawWidth = rect.width;
-    const drawHeight = rect.height;
     const collision = this._list[index].ext ?? index;
-    const colorIndex = collision <= 3 ? collision - 1 : 0;
-
-    const context = this.contents.context;
-    context.save();
-
-    const color = ['#00FF00', '#FF0000', '#FF00FF'][colorIndex];
-    context.fillStyle = color;
-    context.fillRect(x, y, drawWidth, drawHeight);
-
-    if (collision > 10) {
-      const blockedDirection = collision - 10;
-      const pieceWidth = Math.floor(drawWidth / 4);
-      const pieceHeight = Math.floor(drawHeight / 4);
-      context.fillStyle = '#FF00FF';
-
-      if (DirectionHelper.goesUp(blockedDirection)) {
-        context.fillRect(x, y, drawWidth, pieceHeight);
-      }
-      if (DirectionHelper.goesDown(blockedDirection)) {
-        context.fillRect(x, y + drawHeight - pieceHeight, drawWidth, pieceHeight);
-      }
-
-      if (DirectionHelper.goesLeft(blockedDirection)) {
-        context.fillRect(x, y, pieceWidth, drawHeight);
-      }
-
-      if (DirectionHelper.goesRight(blockedDirection)) {
-        context.fillRect(x + drawWidth - pieceWidth, y, pieceWidth, drawHeight);
-      }
+    if (collision === 0) {
+      return;
     }
 
-    context.strokeStyle = '#000000';
-    context.beginPath();
-    context.moveTo(x, y);
-    context.lineTo(x + drawWidth, y);
-    context.stroke();
-    context.beginPath();
-    context.moveTo(x, y);
-    context.lineTo(x, y + drawHeight);
-    context.stroke();
+    const rect = this.itemRect(index);
+    this.contents.drawCollisionType(collision, rect.x, rect.y, rect.width, rect.height);
   }
 
   drawShadow(index) {
@@ -6330,20 +6396,7 @@ class SpriteMapEditorCursor extends Sprite {
       return;
     }
 
-    const color = ['#00FF00', '#FF0000', '#FF00FF'][(tileId -1) % 3];
-    this.bitmap.fillRect(x, y, drawWidth, drawHeight, color);
-
-    const context = this.bitmap.context;
-    context.save();
-    context.strokeStyle = '#000000';
-    context.beginPath();
-    context.moveTo(x, y);
-    context.lineTo(x + drawWidth, y);
-    context.stroke();
-    context.beginPath();
-    context.moveTo(x, y);
-    context.lineTo(x, y + drawHeight);
-    context.stroke();
+    this.bitmap.drawCollisionType(tileId, x, y, drawWidth, drawHeight);
   }
 
   updateTiles() {

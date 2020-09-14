@@ -3,6 +3,7 @@ import { Layers } from './constants';
 import { MapshotTileMap } from './mapshot/MapshotTileMap';
 import { LZString } from '../../Libs/lz-string.min';
 import { throttle } from '../../Utils/throttle';
+import { DirectionHelper } from '../../Utils/DirectionHelper';
 
 const layerVisibility = [true, true, true, true, true, false, true, false, false, false];
 let editorActive = true;
@@ -2299,6 +2300,48 @@ class CycloneMapEditor extends CyclonePlugin {
     }
   }
 
+  static _getBlockCollision(i, j, count, tileId) {
+    if (tileId <= 3) {
+      return tileId;
+    }
+
+    const d = tileId - 10;
+    const up = DirectionHelper.goesUp(d) && j === 0;
+    const down = DirectionHelper.goesDown(d) && j === count -1;
+    const left = DirectionHelper.goesLeft(d) && i === 0;
+    const right = DirectionHelper.goesRight(d) && i === count - 1;
+
+    if (up) {
+      if (left) {
+        return 17;
+      }
+      if (right) {
+        return 19;
+      }
+      return 18;
+    }
+
+    if (down) {
+      if (left) {
+        return 11;
+      }
+      if (right) {
+        return 13;
+      }
+      return 12;
+    }
+
+    if (left) {
+      return 14;
+    }
+
+    if (right) {
+      return 16;
+    }
+
+    return 1;
+  }
+
   static _applySingleCollision(x, y, tileId, previewOnly = false) {
     if (previewOnly) {
       return;
@@ -2315,17 +2358,18 @@ class CycloneMapEditor extends CyclonePlugin {
         const width = $gameMap.width() * 4;
         const index = (intY % height) * width + (intX % width);
 
+        const blockCollision = this._getBlockCollision(i, j, count, tileId);
         const oldTile = customCollisionTable[index] || 0;
-        if (currentChange[index] === undefined && oldTile !== tileId) {
+        if (currentChange[index] === undefined && oldTile !== blockCollision) {
           currentChange[index] = oldTile;
         }
 
-        if (!tileId) {
+        if (!blockCollision) {
           delete customCollisionTable[index];
           continue;
         }
 
-        customCollisionTable[index] = tileId;
+        customCollisionTable[index] = blockCollision;
       }
     }
   }

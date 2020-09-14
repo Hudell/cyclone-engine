@@ -165,20 +165,7 @@ class SpriteMapEditorCursor extends Sprite {
       return;
     }
 
-    const color = ['#00FF00', '#FF0000', '#FF00FF'][(tileId -1) % 3];
-    this.bitmap.fillRect(x, y, drawWidth, drawHeight, color);
-
-    const context = this.bitmap.context;
-    context.save();
-    context.strokeStyle = '#000000';
-    context.beginPath();
-    context.moveTo(x, y);
-    context.lineTo(x + drawWidth, y);
-    context.stroke();
-    context.beginPath();
-    context.moveTo(x, y);
-    context.lineTo(x, y + drawHeight);
-    context.stroke();
+    this.bitmap.drawCollisionType(tileId, x, y, drawWidth, drawHeight);
   }
 
   updateTiles() {

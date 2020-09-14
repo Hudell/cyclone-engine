@@ -17,14 +17,14 @@ CycloneMovement.patchClass(Game_Player, $super => class {
   }
 
   getWidth() {
-    if (this.isInVehicle()) {
+    if (this.isInAnyVehicle()) {
       return 1;
     }
 
     return this.defaultWidth;
   }
   getHeight() {
-    if (this.isInVehicle()) {
+    if (this.isInAnyVehicle()) {
       return 1;
     }
 
@@ -32,7 +32,7 @@ CycloneMovement.patchClass(Game_Player, $super => class {
   }
 
   getHitboxX() {
-    if (this.isInVehicle()) {
+    if (this.isInAnyVehicle()) {
       return 0;
     }
 
@@ -40,11 +40,19 @@ CycloneMovement.patchClass(Game_Player, $super => class {
   }
 
   getHitboxY() {
-    if (this.isInVehicle()) {
+    if (this.isInAnyVehicle()) {
       return 0;
     }
 
     return this.defaultHitboxY;
+  }
+
+  isInAnyVehicle() {
+    if (this._ignoreVehicle) {
+      return false;
+    }
+
+    return this._vehicleType !== 'walk';
   }
 
   moveByInput() {
@@ -64,7 +72,6 @@ CycloneMovement.patchClass(Game_Player, $super => class {
     }
 
     alternativeD = CycloneMovement.getAlternativeDirection(direction, diagonalDirection);
-    CycloneMovement.clearCheckedTiles();
 
     if (direction === 0) {
       return;
@@ -117,7 +124,7 @@ CycloneMovement.patchClass(Game_Player, $super => class {
       return true;
     }
 
-    if (this.isInVehicle()) {
+    if (this.isInAnyVehicle()) {
       return false;
     }
 
@@ -365,14 +372,6 @@ CycloneMovement.patchClass(Game_Player, $super => class {
       return;
     }
 
-    if (!CycloneMovement.blockRepeatedTouchEvents) {
-      return $super.startMapEvent.call(this, tileX, tileY, triggers, normal);
-    }
-
-    if (CycloneMovement.isTileChecked(tileX, tileY)) {
-      return;
-    }
-
     let anyStarted = false;
 
     const events = $gameMap.eventsXy(tileX, tileY);
@@ -380,8 +379,6 @@ CycloneMovement.patchClass(Game_Player, $super => class {
       if (!this.shouldTriggerEvent(event, triggers, normal)) {
         continue;
       }
-
-      CycloneMovement.markEventAsChecked(event);
 
       event.start();
       anyStarted = true;
@@ -392,6 +389,24 @@ CycloneMovement.patchClass(Game_Player, $super => class {
     }
 
     return anyStarted;
+  }
+
+  checkEventTriggerHere(triggers) {
+    if (!this.canStartLocalEvents()) {
+      return;
+    }
+
+    // Remove "Player Touch" and "Event Touch" from possible trigers
+    const newTriggers = [];
+    for (const t of triggers) {
+      if (t !== 1 && t !== 2) {
+        newTriggers.push(t);
+      }
+    }
+
+    if (newTriggers.length) {
+      this.startMapEvent(this.left, this.top, newTriggers, false);
+    }
   }
 
   startMapEvent(x, y, triggers, normal) {
@@ -427,6 +442,21 @@ CycloneMovement.patchClass(Game_Player, $super => class {
       if (!$gameMap.isEventRunning()) {
         this.checkEventTriggerThere([1, 2]);
         $gameMap.setupStartingEvent();
+      }
+    }
+  }
+
+  updateMove() {
+    const newPositions = [];
+    this.iterateNewTiles((x, y) => {
+      newPositions.push({x, y});
+    });
+
+    $super.updateMove.call(this);
+
+    for (const {x, y} of newPositions) {
+      if (!$gameMap.isEventRunning()) {
+        this.startMapEvent(x, y, [1, 2], false);
       }
     }
   }
@@ -523,7 +553,7 @@ CycloneMovement.patchClass(Game_Player, $super => class {
       this._vehicleType = 'boat';
     }
 
-    if (this.isInVehicle()) {
+    if (this.isInAnyVehicle()) {
       this._vehicleGettingOn = true;
 
       if (!this.isInAirship()) {

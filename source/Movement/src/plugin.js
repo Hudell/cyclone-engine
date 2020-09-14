@@ -3,7 +3,6 @@ import { LZString } from '../../Libs/lz-string.min';
 import { DirectionHelper } from '../../Utils/DirectionHelper';
 
 let currentMapCollisionTable = false;
-const checkedTiles = new Set();
 
 class CycloneMovement extends CyclonePlugin {
   static register() {
@@ -12,18 +11,17 @@ class CycloneMovement extends CyclonePlugin {
     super.register({
       stepCount: {
         type: 'int',
-        defaultValue: 4,
+        defaultValue: 1,
+      },
+      collisionStepCount: {
+        type: 'int',
+        defaultValue: 1,
       },
       followerStepsBehind: {
         type: 'int',
         defaultValue: 3,
       },
       triggerAllEvents: 'boolean',
-      triggerTouchEventAfterTeleport: 'boolean',
-      blockRepeatedTouchEvents: {
-        type: 'booelan',
-        defaultValue: true,
-      },
       ignoreEmptyEvents: {
         type: 'boolean',
         defaultValue: true,
@@ -37,14 +35,12 @@ class CycloneMovement extends CyclonePlugin {
     });
 
     this.stepCount = [1, 2, 4].includes(this.params.stepCount) ? this.params.stepCount : 1;
-    this.collisionStepCount = Math.min(4, this.stepCount);
+    this.collisionStepCount = Math.min(this.stepCount, [1, 2, 4].includes(this.params.collisionStepCount) ? this.params.stepCount : 1);
     this.stepSize = 1 / this.stepCount;
     this.collisionSize = 1 / this.collisionStepCount;
     this.followerStepsBehind = Number(this.params.followerStepsBehind || 1).clamp(1, this.stepCount);
     this.triggerAllEvents = this.params.triggerAllEvents === true;
     this.autoLeaveVehicles = this.params.autoLeaveVehicles === true;
-    this.triggerTouchEventAfterTeleport = this.params.triggerTouchEventAfterTeleport === true;
-    this.blockRepeatedTouchEvents = this.params.blockRepeatedTouchEvents !== false;
     this.ignoreEmptyEvents = this.params.ignoreEmptyEvents !== false;
     this.diagonalPathfinding = this.params.diagonalPathfinding !== false;
     this.disableMouseMovement = this.params.disableMouseMovement === true;
@@ -234,20 +230,104 @@ class CycloneMovement extends CyclonePlugin {
     return (intY % height) * width + (intX % width);
   }
 
+  // If the collision is using less than 4 blocks per tile, then merge the sub-blocks into bigger blocks.
+  // This is needed for the directional passabilities to work properly
+  // eslint-disable-next-line complexity
+  static _mergeCustomCollisions(x, y, data) {
+    const radix = data.radix ?? 10;
+    if (this.collisionStepCount === 4) {
+      const editorIndex = this.collisionIndex(x, y);
+      return parseInt(data.collision[editorIndex], radix) || 0;
+    }
+
+    // merge every sub-block into a single one
+    const diffCount = Math.floor(4 / this.collisionStepCount);
+    const diffSize = 1 / diffCount;
+    let result = false;
+    let blockUp = false;
+    let blockDown = false;
+    let blockRight = false;
+    let blockLeft = false;
+
+    for (let blockX = 0; blockX < diffCount; blockX++) {
+      for (let blockY = 0; blockY < diffCount; blockY++) {
+        const editorIndex = this.collisionIndex(x + blockX * diffSize, y + blockY * diffSize, true);
+        const customCollision = parseInt(data.collision[editorIndex], radix) || 0;
+
+        if (customCollision === 2) {
+          return 2;
+        }
+
+        if (customCollision > 10) {
+          const d = customCollision - 10;
+          if (DirectionHelper.goesUp(d) && blockY === 0) {
+            blockUp = true;
+          }
+
+          if (DirectionHelper.goesDown(d) && blockY === diffCount - 1) {
+            blockDown = true;
+          }
+
+          if (DirectionHelper.goesLeft(d) && blockX === 0) {
+            blockLeft = true;
+          }
+
+          if (DirectionHelper.goesRight(d) && blockX === diffCount - 1) {
+            blockRight = true;
+          }
+        } else if (result === false) {
+          result = customCollision;
+        }
+      }
+    }
+
+    if (blockLeft && blockRight && blockDown && blockUp) {
+      return 2;
+    }
+
+    if (blockUp) {
+      if (blockLeft) {
+        return 17;
+      }
+      if (blockRight) {
+        return 19;
+      }
+
+      return 18;
+    }
+
+    if (blockDown) {
+      if (blockLeft) {
+        return 11;
+      }
+      if (blockRight) {
+        return 13;
+      }
+      return 12;
+    }
+
+    if (blockLeft) {
+      return 14;
+    }
+
+    if (blockRight) {
+      return 16;
+    }
+
+    return result || 0;
+  }
+
   static setupCustomCollision(compressedData) {
     const data = CycloneMovement.parseCollisionData(compressedData);
     if (!data || !data.collision) {
       return;
     }
 
-    const radix = data.radix ?? 10;
     const increment = this.collisionSize;
 
     for (let x = 0; x < $dataMap.width; x += increment) {
       for (let y = 0; y < $dataMap.height; y += increment) {
-        const editorIndex = this.collisionIndex(x, y);
-        const customCollision = parseInt(data.collision[editorIndex], radix) || 0;
-
+        const customCollision = this._mergeCustomCollisions(x, y, data);
         if (customCollision > 0) {
           this.setBlockCollision(x, y, customCollision);
         }
@@ -335,26 +415,6 @@ class CycloneMovement extends CyclonePlugin {
   static tileIdx(x, y) {
     const width = $dataMap.width;
     return y * width + x || 0;
-  }
-
-  static markTileAsChecked(x, y) {
-    const idx = this.tileIdx(x, y);
-    checkedTiles.add(idx);
-  }
-
-  static isTileChecked(x, y) {
-    const idx = this.tileIdx(x, y);
-    return checkedTiles.has(idx);
-  }
-
-  static clearCheckedTiles() {
-    checkedTiles.clear();
-  }
-
-  static markEventAsChecked(event) {
-    if (this.blockRepeatedTouchEvents && event.isTriggerIn([1, 2])) {
-      this.markTileAsChecked(event.x, event.y);
-    }
   }
 }
 

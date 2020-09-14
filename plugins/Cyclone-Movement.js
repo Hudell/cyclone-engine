@@ -69,6 +69,15 @@
  * @option 2
  * @option 1
  *
+ * @param collisionStepCount
+ * @text Collision Blocks per Tile
+ * @desc You can customize the map collision with the Cyclone Map Editor plugin
+ * @type select
+ * @default 1
+ * @option 4
+ * @option 2
+ * @option 1
+ *
  * @param followerStepsBehind
  * @text Follower Distance
  * @desc How many steps behind should the followers be? Min = 1 step, Max = 1 tile
@@ -84,22 +93,6 @@
  * @on Trigger
  * @off Skip
  * @default false
- *
- * @param triggerTouchEventAfterTeleport
- * @text Trigger Touch Event After Teleport
- * @desc
- * @type boolean
- * @on Trigger
- * @off Skip
- * @default false
- *
- * @param blockRepeatedTouchEvents
- * @text Block Repeated Touch Events
- * @desc if false, any touch triggered event will be executed after every step that the player takes inside that tile.
- * @type boolean
- * @on Block
- * @off Repeat
- * @default true
  *
  * @param ignoreEmptyEvents
  * @text Ignore Empty Events
@@ -133,7 +126,6 @@
  * @desc
  * @default false
  *
- * @orderAfter Yami_8DirEx
  **/
 (function () {
 'use strict';
@@ -784,7 +776,6 @@ class DirectionHelper {
 }
 
 let currentMapCollisionTable = false;
-const checkedTiles = new Set();
 
 class CycloneMovement$1 extends CyclonePlugin {
   static register() {
@@ -793,18 +784,17 @@ class CycloneMovement$1 extends CyclonePlugin {
     super.register({
       stepCount: {
         type: 'int',
-        defaultValue: 4,
+        defaultValue: 1,
+      },
+      collisionStepCount: {
+        type: 'int',
+        defaultValue: 1,
       },
       followerStepsBehind: {
         type: 'int',
         defaultValue: 3,
       },
       triggerAllEvents: 'boolean',
-      triggerTouchEventAfterTeleport: 'boolean',
-      blockRepeatedTouchEvents: {
-        type: 'booelan',
-        defaultValue: true,
-      },
       ignoreEmptyEvents: {
         type: 'boolean',
         defaultValue: true,
@@ -818,14 +808,12 @@ class CycloneMovement$1 extends CyclonePlugin {
     });
 
     this.stepCount = [1, 2, 4].includes(this.params.stepCount) ? this.params.stepCount : 1;
-    this.collisionStepCount = Math.min(4, this.stepCount);
+    this.collisionStepCount = Math.min(this.stepCount, [1, 2, 4].includes(this.params.collisionStepCount) ? this.params.stepCount : 1);
     this.stepSize = 1 / this.stepCount;
     this.collisionSize = 1 / this.collisionStepCount;
     this.followerStepsBehind = Number(this.params.followerStepsBehind || 1).clamp(1, this.stepCount);
     this.triggerAllEvents = this.params.triggerAllEvents === true;
     this.autoLeaveVehicles = this.params.autoLeaveVehicles === true;
-    this.triggerTouchEventAfterTeleport = this.params.triggerTouchEventAfterTeleport === true;
-    this.blockRepeatedTouchEvents = this.params.blockRepeatedTouchEvents !== false;
     this.ignoreEmptyEvents = this.params.ignoreEmptyEvents !== false;
     this.diagonalPathfinding = this.params.diagonalPathfinding !== false;
     this.disableMouseMovement = this.params.disableMouseMovement === true;
@@ -1015,20 +1003,104 @@ class CycloneMovement$1 extends CyclonePlugin {
     return (intY % height) * width + (intX % width);
   }
 
+  // If the collision is using less than 4 blocks per tile, then merge the sub-blocks into bigger blocks.
+  // This is needed for the directional passabilities to work properly
+  // eslint-disable-next-line complexity
+  static _mergeCustomCollisions(x, y, data) {
+    const radix = data.radix ?? 10;
+    if (this.collisionStepCount === 4) {
+      const editorIndex = this.collisionIndex(x, y);
+      return parseInt(data.collision[editorIndex], radix) || 0;
+    }
+
+    // merge every sub-block into a single one
+    const diffCount = Math.floor(4 / this.collisionStepCount);
+    const diffSize = 1 / diffCount;
+    let result = false;
+    let blockUp = false;
+    let blockDown = false;
+    let blockRight = false;
+    let blockLeft = false;
+
+    for (let blockX = 0; blockX < diffCount; blockX++) {
+      for (let blockY = 0; blockY < diffCount; blockY++) {
+        const editorIndex = this.collisionIndex(x + blockX * diffSize, y + blockY * diffSize, true);
+        const customCollision = parseInt(data.collision[editorIndex], radix) || 0;
+
+        if (customCollision === 2) {
+          return 2;
+        }
+
+        if (customCollision > 10) {
+          const d = customCollision - 10;
+          if (DirectionHelper.goesUp(d) && blockY === 0) {
+            blockUp = true;
+          }
+
+          if (DirectionHelper.goesDown(d) && blockY === diffCount - 1) {
+            blockDown = true;
+          }
+
+          if (DirectionHelper.goesLeft(d) && blockX === 0) {
+            blockLeft = true;
+          }
+
+          if (DirectionHelper.goesRight(d) && blockX === diffCount - 1) {
+            blockRight = true;
+          }
+        } else if (result === false) {
+          result = customCollision;
+        }
+      }
+    }
+
+    if (blockLeft && blockRight && blockDown && blockUp) {
+      return 2;
+    }
+
+    if (blockUp) {
+      if (blockLeft) {
+        return 17;
+      }
+      if (blockRight) {
+        return 19;
+      }
+
+      return 18;
+    }
+
+    if (blockDown) {
+      if (blockLeft) {
+        return 11;
+      }
+      if (blockRight) {
+        return 13;
+      }
+      return 12;
+    }
+
+    if (blockLeft) {
+      return 14;
+    }
+
+    if (blockRight) {
+      return 16;
+    }
+
+    return result || 0;
+  }
+
   static setupCustomCollision(compressedData) {
     const data = CycloneMovement$1.parseCollisionData(compressedData);
     if (!data || !data.collision) {
       return;
     }
 
-    const radix = data.radix ?? 10;
     const increment = this.collisionSize;
 
     for (let x = 0; x < $dataMap.width; x += increment) {
       for (let y = 0; y < $dataMap.height; y += increment) {
-        const editorIndex = this.collisionIndex(x, y);
-        const customCollision = parseInt(data.collision[editorIndex], radix) || 0;
-
+        const customCollision = this._mergeCustomCollisions(x, y, data);
         if (customCollision > 0) {
           this.setBlockCollision(x, y, customCollision);
         }
@@ -1117,26 +1189,6 @@ class CycloneMovement$1 extends CyclonePlugin {
     const width = $dataMap.width;
     return y * width + x || 0;
   }
-
-  static markTileAsChecked(x, y) {
-    const idx = this.tileIdx(x, y);
-    checkedTiles.add(idx);
-  }
-
-  static isTileChecked(x, y) {
-    const idx = this.tileIdx(x, y);
-    return checkedTiles.has(idx);
-  }
-
-  static clearCheckedTiles() {
-    checkedTiles.clear();
-  }
-
-  static markEventAsChecked(event) {
-    if (this.blockRepeatedTouchEvents && event.isTriggerIn([1, 2])) {
-      this.markTileAsChecked(event.x, event.y);
-    }
-  }
 }
 
 globalThis.CycloneMovement = CycloneMovement$1;
@@ -1190,37 +1242,6 @@ CycloneMovement.patchClass(Game_Map, $super => class {
 
 const addPixelMovementToClass = (classRef) => {
   CycloneMovement.patchClass(classRef, $super => class {
-    get width() {
-      if (this._tempWidth !== undefined) {
-        return this._tempWidth;
-      }
-
-      return this.getWidth();
-    }
-    get height() {
-      if (this._tempHeight !== undefined) {
-        return this._tempHeight;
-      }
-
-      return this.getHeight();
-    }
-
-    get hitboxX() {
-      if (this._tempHitboxX !== undefined) {
-        return this._tempHitboxX;
-      }
-
-      return this.getHitboxX();
-    }
-
-    get hitboxY() {
-      if (this._tempHitboxY !== undefined) {
-        return this._tempHitboxY;
-      }
-
-      return this.getHitboxY();
-    }
-
     get left() {
       return this._x + this.hitboxX;
     }
@@ -1320,12 +1341,12 @@ const addPixelMovementToClass = (classRef) => {
     }
 
     update(...args) {
-      try {
-        this._canPassCache = {};
-        $super.update.call(this, ...args);
-      } finally {
-        delete this._canPassCache;
-      }
+      this.width = this.getWidth();
+      this.height = this.getHeight();
+      this.hitboxX = this.getHitboxX();
+      this.hitboxY = this.getHitboxY();
+
+      $super.update.call(this, ...args);
     }
 
     shouldPassThrough() {
@@ -1337,27 +1358,6 @@ const addPixelMovementToClass = (classRef) => {
     }
 
     canPass(x, y, d) {
-      if (!this._canPassCache) {
-        return this._canPass(x, y, d);
-      }
-
-      const index = CycloneMovement.collisionIndex(x, y);
-      let result = this._canPassCache?.[index]?.[d];
-
-      if (result !== undefined) {
-        return result;
-      }
-
-      result = this._canPass(x, y, d);
-      if (!this._canPassCache[index]) {
-        this._canPassCache[index] = new Array(10);
-      }
-
-      this._canPassCache[index][d] = result;
-      return result;
-    }
-
-    _canPass(x, y, d) {
       if (CycloneMovement.isDiagonal(d)) {
         const d1 = CycloneMovement.getFirstDirection(d);
         const d2 = CycloneMovement.getAlternativeDirection(d1, d);
@@ -1395,20 +1395,68 @@ const addPixelMovementToClass = (classRef) => {
     }
 
     canPassDiagonally(x, y, horz, vert) {
-      if (!this.canPass(x, y, vert)) {
-        return false;
-      }
-      if (!this.canPass(x, y, horz)) {
-        return false;
-      }
-
       const y2 = CycloneMovement.roundYWithDirection(y, vert);
-      if (!this.canPass(x, y2, horz)) {
+      const x2 = CycloneMovement.roundXWithDirection(x, horz);
+
+      if (!$gameMap.isValid(x2, y2)) {
         return false;
       }
 
-      const x2 = CycloneMovement.roundXWithDirection(x, horz);
-      if (!this.canPass(x2, y, vert)) {
+      if (this.shouldPassThrough()) {
+        return true;
+      }
+
+      // Can move vertically at the current position?
+      if (!this.isMapPassable(x, y, vert)) {
+        return false;
+      }
+
+      // Can move horizontally at the current position?
+      if (!this.isMapPassable(x, y, horz)) {
+        return false;
+      }
+
+      // Can move horizontally at the new Y position?
+      if (!this.isMapPassable(x, y2, horz)) {
+        return false;
+      }
+
+      // Can move vertically at the new X position?
+      if (!this.isMapPassable(x2, y, vert)) {
+        return false;
+      }
+
+      if (this.shouldSkipExtraPassabilityTests()) {
+        return true;
+      }
+
+      const reverseHorz = this.reverseDir(horz);
+      const reverseVert = this.reverseDir(vert);
+
+      // Can move vertically at the current position? (reverse)
+      if (!this.isMapPassable(x2, y2, reverseVert)) {
+        return false;
+      }
+
+      // Can move horizontally at the current position? (reverse)
+      if (!this.isMapPassable(x2, y2, reverseHorz)) {
+        return false;
+      }
+
+      // Can move horizontally at the new Y position? (reverse)
+      const y3 = CycloneMovement.roundYWithDirection(y2, vert);
+      if (!this.isMapPassable(x2, y3, reverseHorz)) {
+        return false;
+      }
+
+      // Can move vertically at the new X position? (reverse)
+      const x3 = CycloneMovement.roundXWithDirection(x2, horz);
+      if (!this.isMapPassable(x3, y2, reverseVert)) {
+        return false;
+      }
+
+      // Finally, check if the destination position doesn't have an event on it
+      if (this.isCollidedWithCharacters(x2, y2)) {
         return false;
       }
 
@@ -1806,6 +1854,40 @@ const addPixelMovementToClass = (classRef) => {
       return this.isTouchingPos(x, y);
     }
 
+    iterateNewTiles(callback) {
+      const firstX = Math.floor(this.firstCollisionXAt(this.x));
+      const firstRealX = Math.floor(this.firstCollisionXAt(this._realX));
+      const lastX = Math.floor(this.lastCollisionXAt(this.x));
+      const lastRealX = Math.floor(this.lastCollisionXAt(this._realX));
+      const firstY = Math.floor(this.firstCollisionYAt(this.y));
+      const firstRealY = Math.floor(this.firstCollisionYAt(this._realY));
+      const lastY = Math.floor(this.lastCollisionYAt(this.y));
+      const lastRealY = Math.floor(this.lastCollisionYAt(this._realY));
+
+      const left = Math.min(firstX, firstRealX);
+      const right = Math.max(lastX, lastRealX);
+      const top = Math.min(firstY, firstRealY);
+      const bottom = Math.max(lastY, lastRealY);
+
+      for (let x = left; x <= right; x++) {
+        const isNewX = x < firstRealX || x > lastRealX;
+
+        for (let y = top; y <= bottom; y++) {
+          const isNewY = y < firstRealY || y > lastRealY;
+
+          if (!isNewX && !isNewY) {
+            continue;
+          }
+
+          if (callback.call(this, x, y) === true) {
+            return true;
+          }
+        }
+      }
+
+      return false;
+    }
+
     iterateTiles(callback) {
       return this.runForAllTiles(this._x, this._y, callback);
     }
@@ -2050,7 +2132,7 @@ const addPixelMovementToClass = (classRef) => {
       this._cachedGoalX = goalX;
       this._cachedGoalY = goalY;
 
-      this._cacheTTL = 2 * CycloneMovement.collisionSize * CycloneMovement.collisionSize - 1;
+      this._cacheTTL = 2 * CycloneMovement.collisionStepCount * CycloneMovement.stepCount - 1;
     }
 
     _getDirectionFromDeltas(deltaX, deltaY) {
@@ -2217,14 +2299,14 @@ CycloneMovement.patchClass(Game_Player, $super => class {
   }
 
   getWidth() {
-    if (this.isInVehicle()) {
+    if (this.isInAnyVehicle()) {
       return 1;
     }
 
     return this.defaultWidth;
   }
   getHeight() {
-    if (this.isInVehicle()) {
+    if (this.isInAnyVehicle()) {
       return 1;
     }
 
@@ -2232,7 +2314,7 @@ CycloneMovement.patchClass(Game_Player, $super => class {
   }
 
   getHitboxX() {
-    if (this.isInVehicle()) {
+    if (this.isInAnyVehicle()) {
       return 0;
     }
 
@@ -2240,11 +2322,19 @@ CycloneMovement.patchClass(Game_Player, $super => class {
   }
 
   getHitboxY() {
-    if (this.isInVehicle()) {
+    if (this.isInAnyVehicle()) {
       return 0;
     }
 
     return this.defaultHitboxY;
+  }
+
+  isInAnyVehicle() {
+    if (this._ignoreVehicle) {
+      return false;
+    }
+
+    return this._vehicleType !== 'walk';
   }
 
   moveByInput() {
@@ -2264,7 +2354,6 @@ CycloneMovement.patchClass(Game_Player, $super => class {
     }
 
     alternativeD = CycloneMovement.getAlternativeDirection(direction, diagonalDirection);
-    CycloneMovement.clearCheckedTiles();
 
     if (direction === 0) {
       return;
@@ -2317,7 +2406,7 @@ CycloneMovement.patchClass(Game_Player, $super => class {
       return true;
     }
 
-    if (this.isInVehicle()) {
+    if (this.isInAnyVehicle()) {
       return false;
     }
 
@@ -2562,14 +2651,6 @@ CycloneMovement.patchClass(Game_Player, $super => class {
       return;
     }
 
-    if (!CycloneMovement.blockRepeatedTouchEvents) {
-      return $super.startMapEvent.call(this, tileX, tileY, triggers, normal);
-    }
-
-    if (CycloneMovement.isTileChecked(tileX, tileY)) {
-      return;
-    }
-
     let anyStarted = false;
 
     const events = $gameMap.eventsXy(tileX, tileY);
@@ -2577,8 +2658,6 @@ CycloneMovement.patchClass(Game_Player, $super => class {
       if (!this.shouldTriggerEvent(event, triggers, normal)) {
         continue;
       }
-
-      CycloneMovement.markEventAsChecked(event);
 
       event.start();
       anyStarted = true;
@@ -2589,6 +2668,24 @@ CycloneMovement.patchClass(Game_Player, $super => class {
     }
 
     return anyStarted;
+  }
+
+  checkEventTriggerHere(triggers) {
+    if (!this.canStartLocalEvents()) {
+      return;
+    }
+
+    // Remove "Player Touch" and "Event Touch" from possible trigers
+    const newTriggers = [];
+    for (const t of triggers) {
+      if (t !== 1 && t !== 2) {
+        newTriggers.push(t);
+      }
+    }
+
+    if (newTriggers.length) {
+      this.startMapEvent(this.left, this.top, newTriggers, false);
+    }
   }
 
   startMapEvent(x, y, triggers, normal) {
@@ -2624,6 +2721,21 @@ CycloneMovement.patchClass(Game_Player, $super => class {
       if (!$gameMap.isEventRunning()) {
         this.checkEventTriggerThere([1, 2]);
         $gameMap.setupStartingEvent();
+      }
+    }
+  }
+
+  updateMove() {
+    const newPositions = [];
+    this.iterateNewTiles((x, y) => {
+      newPositions.push({x, y});
+    });
+
+    $super.updateMove.call(this);
+
+    for (const {x, y} of newPositions) {
+      if (!$gameMap.isEventRunning()) {
+        this.startMapEvent(x, y, [1, 2], false);
       }
     }
   }
@@ -2720,7 +2832,7 @@ CycloneMovement.patchClass(Game_Player, $super => class {
       this._vehicleType = 'boat';
     }
 
-    if (this.isInVehicle()) {
+    if (this.isInAnyVehicle()) {
       this._vehicleGettingOn = true;
 
       if (!this.isInAirship()) {
@@ -3143,25 +3255,6 @@ CycloneMovement.patchClass(Game_Event, $super => class {
     }
 
     return false;
-  }
-});
-
-CycloneMovement.patchClass(Game_Interpreter, $super => class {
-  command201(...args) {
-    const result = $super.command201.call(this, ...args);
-
-    if ($gameParty.inBattle()) {
-      return result;
-    }
-
-    CycloneMovement.clearCheckedTiles();
-    if (!CycloneMovement.triggerTouchEventAfterTeleport) {
-      $gamePlayer.runForAllTiles((x, y) => {
-        CycloneMovement.markTileAsChecked(x, y);
-      });
-    }
-
-    return result;
   }
 });
 

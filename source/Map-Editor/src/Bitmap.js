@@ -1,3 +1,5 @@
+import { DirectionHelper } from '../../Utils/DirectionHelper';
+
 const regionColors = [
   '#e75858',
   '#c0986f',
@@ -215,5 +217,55 @@ CycloneMapEditor.patchClass(Bitmap, $super => class {
 
       this.fillRect(drawX, drawY, halfWidth, halfHeight, '#00000066');
     }
+  }
+
+  drawCollisionType(collision, x, y, drawWidth, drawHeight) {
+    if (collision === 0) {
+      return;
+    }
+
+    const realDrawWidth = drawWidth ?? CycloneMapEditor.tileWidth;
+    const realDrawHeight = drawHeight ?? CycloneMapEditor.tileHeight;
+
+    const colorIndex = collision <= 3 ? collision - 1 : 0;
+
+    const context = this.context;
+    context.save();
+
+    const color = ['#00FF00', '#FF0000', '#FF00FF'][colorIndex];
+    context.fillStyle = color;
+    context.fillRect(x, y, realDrawWidth, realDrawHeight);
+
+    if (collision > 10) {
+      const blockedDirection = collision - 10;
+      const pieceWidth = Math.floor(realDrawWidth / 4);
+      const pieceHeight = Math.floor(realDrawHeight / 4);
+      context.fillStyle = '#FF00FF';
+
+      if (DirectionHelper.goesUp(blockedDirection)) {
+        context.fillRect(x, y, realDrawWidth, pieceHeight);
+      }
+      if (DirectionHelper.goesDown(blockedDirection)) {
+        context.fillRect(x, y + realDrawHeight - pieceHeight, realDrawWidth, pieceHeight);
+      }
+
+      if (DirectionHelper.goesLeft(blockedDirection)) {
+        context.fillRect(x, y, pieceWidth, realDrawHeight);
+      }
+
+      if (DirectionHelper.goesRight(blockedDirection)) {
+        context.fillRect(x + realDrawWidth - pieceWidth, y, pieceWidth, realDrawHeight);
+      }
+    }
+
+    context.strokeStyle = '#000000';
+    context.beginPath();
+    context.moveTo(x, y);
+    context.lineTo(x + realDrawWidth, y);
+    context.stroke();
+    context.beginPath();
+    context.moveTo(x, y);
+    context.lineTo(x, y + realDrawHeight);
+    context.stroke();
   }
 });

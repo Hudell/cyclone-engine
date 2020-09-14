@@ -1,36 +1,5 @@
 const addPixelMovementToClass = (classRef) => {
   CycloneMovement.patchClass(classRef, $super => class {
-    get width() {
-      if (this._tempWidth !== undefined) {
-        return this._tempWidth;
-      }
-
-      return this.getWidth();
-    }
-    get height() {
-      if (this._tempHeight !== undefined) {
-        return this._tempHeight;
-      }
-
-      return this.getHeight();
-    }
-
-    get hitboxX() {
-      if (this._tempHitboxX !== undefined) {
-        return this._tempHitboxX;
-      }
-
-      return this.getHitboxX();
-    }
-
-    get hitboxY() {
-      if (this._tempHitboxY !== undefined) {
-        return this._tempHitboxY;
-      }
-
-      return this.getHitboxY();
-    }
-
     get left() {
       return this._x + this.hitboxX;
     }
@@ -130,12 +99,12 @@ const addPixelMovementToClass = (classRef) => {
     }
 
     update(...args) {
-      try {
-        this._canPassCache = {};
-        $super.update.call(this, ...args);
-      } finally {
-        delete this._canPassCache;
-      }
+      this.width = this.getWidth();
+      this.height = this.getHeight();
+      this.hitboxX = this.getHitboxX();
+      this.hitboxY = this.getHitboxY();
+
+      $super.update.call(this, ...args);
     }
 
     shouldPassThrough() {
@@ -147,27 +116,6 @@ const addPixelMovementToClass = (classRef) => {
     }
 
     canPass(x, y, d) {
-      if (!this._canPassCache) {
-        return this._canPass(x, y, d);
-      }
-
-      const index = CycloneMovement.collisionIndex(x, y);
-      let result = this._canPassCache?.[index]?.[d];
-
-      if (result !== undefined) {
-        return result;
-      }
-
-      result = this._canPass(x, y, d);
-      if (!this._canPassCache[index]) {
-        this._canPassCache[index] = new Array(10);
-      }
-
-      this._canPassCache[index][d] = result;
-      return result;
-    }
-
-    _canPass(x, y, d) {
       if (CycloneMovement.isDiagonal(d)) {
         const d1 = CycloneMovement.getFirstDirection(d);
         const d2 = CycloneMovement.getAlternativeDirection(d1, d);
@@ -205,20 +153,68 @@ const addPixelMovementToClass = (classRef) => {
     }
 
     canPassDiagonally(x, y, horz, vert) {
-      if (!this.canPass(x, y, vert)) {
-        return false;
-      }
-      if (!this.canPass(x, y, horz)) {
-        return false;
-      }
-
       const y2 = CycloneMovement.roundYWithDirection(y, vert);
-      if (!this.canPass(x, y2, horz)) {
+      const x2 = CycloneMovement.roundXWithDirection(x, horz);
+
+      if (!$gameMap.isValid(x2, y2)) {
         return false;
       }
 
-      const x2 = CycloneMovement.roundXWithDirection(x, horz);
-      if (!this.canPass(x2, y, vert)) {
+      if (this.shouldPassThrough()) {
+        return true;
+      }
+
+      // Can move vertically at the current position?
+      if (!this.isMapPassable(x, y, vert)) {
+        return false;
+      }
+
+      // Can move horizontally at the current position?
+      if (!this.isMapPassable(x, y, horz)) {
+        return false;
+      }
+
+      // Can move horizontally at the new Y position?
+      if (!this.isMapPassable(x, y2, horz)) {
+        return false;
+      }
+
+      // Can move vertically at the new X position?
+      if (!this.isMapPassable(x2, y, vert)) {
+        return false;
+      }
+
+      if (this.shouldSkipExtraPassabilityTests()) {
+        return true;
+      }
+
+      const reverseHorz = this.reverseDir(horz);
+      const reverseVert = this.reverseDir(vert);
+
+      // Can move vertically at the current position? (reverse)
+      if (!this.isMapPassable(x2, y2, reverseVert)) {
+        return false;
+      }
+
+      // Can move horizontally at the current position? (reverse)
+      if (!this.isMapPassable(x2, y2, reverseHorz)) {
+        return false;
+      }
+
+      // Can move horizontally at the new Y position? (reverse)
+      const y3 = CycloneMovement.roundYWithDirection(y2, vert);
+      if (!this.isMapPassable(x2, y3, reverseHorz)) {
+        return false;
+      }
+
+      // Can move vertically at the new X position? (reverse)
+      const x3 = CycloneMovement.roundXWithDirection(x2, horz);
+      if (!this.isMapPassable(x3, y2, reverseVert)) {
+        return false;
+      }
+
+      // Finally, check if the destination position doesn't have an event on it
+      if (this.isCollidedWithCharacters(x2, y2)) {
         return false;
       }
 
@@ -616,6 +612,40 @@ const addPixelMovementToClass = (classRef) => {
       return this.isTouchingPos(x, y);
     }
 
+    iterateNewTiles(callback) {
+      const firstX = Math.floor(this.firstCollisionXAt(this.x));
+      const firstRealX = Math.floor(this.firstCollisionXAt(this._realX));
+      const lastX = Math.floor(this.lastCollisionXAt(this.x));
+      const lastRealX = Math.floor(this.lastCollisionXAt(this._realX));
+      const firstY = Math.floor(this.firstCollisionYAt(this.y));
+      const firstRealY = Math.floor(this.firstCollisionYAt(this._realY));
+      const lastY = Math.floor(this.lastCollisionYAt(this.y));
+      const lastRealY = Math.floor(this.lastCollisionYAt(this._realY));
+
+      const left = Math.min(firstX, firstRealX);
+      const right = Math.max(lastX, lastRealX);
+      const top = Math.min(firstY, firstRealY);
+      const bottom = Math.max(lastY, lastRealY);
+
+      for (let x = left; x <= right; x++) {
+        const isNewX = x < firstRealX || x > lastRealX;
+
+        for (let y = top; y <= bottom; y++) {
+          const isNewY = y < firstRealY || y > lastRealY;
+
+          if (!isNewX && !isNewY) {
+            continue;
+          }
+
+          if (callback.call(this, x, y) === true) {
+            return true;
+          }
+        }
+      }
+
+      return false;
+    }
+
     iterateTiles(callback) {
       return this.runForAllTiles(this._x, this._y, callback);
     }
@@ -860,7 +890,7 @@ const addPixelMovementToClass = (classRef) => {
       this._cachedGoalX = goalX;
       this._cachedGoalY = goalY;
 
-      this._cacheTTL = 2 * CycloneMovement.collisionSize * CycloneMovement.collisionSize - 1;
+      this._cacheTTL = 2 * CycloneMovement.collisionStepCount * CycloneMovement.stepCount - 1;
     }
 
     _getDirectionFromDeltas(deltaX, deltaY) {
