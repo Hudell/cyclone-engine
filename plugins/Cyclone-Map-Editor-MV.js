@@ -101,6 +101,10 @@ function _createClass(Constructor, protoProps, staticProps) { if (protoProps) _d
  * ===========================================================================
  * Change Log
  * ===========================================================================
+ * 2020-09-14 - Version 1.05.00
+ *   * Added new collision options;
+ *   * Changed data compression algorithm;
+ *
  * 2020-09-10 - Version 1.04.00
  *   * Added option to customize the collision in blocks of 1/4 of a tile.
  *   * Added options to export the collision map to an image
@@ -204,7 +208,7 @@ function _createClass(Constructor, protoProps, staticProps) { if (protoProps) _d
  * @type select
  * @default 1
  * @desc How many collision blocks per tile should the editor show?
- * @option 4
+ * @option 1
  * @option 2
  * @option 1
  *

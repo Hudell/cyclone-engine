@@ -61,6 +61,10 @@
  * ===========================================================================
  * Change Log
  * ===========================================================================
+ * 2020-09-14 - Version 1.05.00
+ *   * Added new collision options;
+ *   * Changed data compression algorithm;
+ *
  * 2020-09-10 - Version 1.04.00
  *   * Added option to customize the collision in blocks of 1/4 of a tile.
  *   * Added options to export the collision map to an image
