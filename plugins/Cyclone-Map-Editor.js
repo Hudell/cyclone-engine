@@ -62,6 +62,9 @@
  * ===========================================================================
  * Change Log
  * ===========================================================================
+ * 2020-09-14 - Version 1.05.01
+ *   * Fixed small delay on integration between movement and map editor.
+ *
  * 2020-09-14 - Version 1.05.00
  *   * Added new collision options;
  *   * Changed data compression algorithm;
@@ -1197,18 +1200,27 @@ const refreshTilemap = throttle(() => {
 
 const refreshCollision = throttle(() => {
   if (TouchInput.isPressed()) {
-    return refreshCollision();
+    setTimeout(() => {
+      refreshCollision();
+    }, 1);
   }
   if (window.CycloneMovement) {
     window.CycloneMovement.setupCollision();
   }
 }, 200);
 
-const saveExtraData = throttle(() => {
+const saveExtraData = throttle((refreshCollisionToo = false) => {
   if (TouchInput.isPressed()) {
-    return saveExtraData();
+    setTimeout(() => {
+      saveExtraData(refreshCollisionToo);
+    }, 1);
+    return;
   }
+
   CycloneMapEditor$1.saveExtraData();
+  if (refreshCollisionToo) {
+    refreshCollision();
+  }
 }, 200);
 
 class CycloneMapEditor$1 extends CyclonePlugin {
@@ -3634,6 +3646,7 @@ class CycloneMapEditor$1 extends CyclonePlugin {
       return;
     }
 
+    console.log('apply rectangle');
     this.ensureLayerVisibility();
     const gridRatio = this.getGridRatio();
     let initialRow = 0;
@@ -3695,8 +3708,10 @@ class CycloneMapEditor$1 extends CyclonePlugin {
 
   static refreshTilemap() {
     previewChanges = {};
-    saveExtraData();
-    refreshCollision();
+    if (currentLayer === Layers.collisions) {
+      saveExtraData(true);
+    }
+
     if (TouchInput.isLongPressed()) {
       refreshTilemap();
     } else {

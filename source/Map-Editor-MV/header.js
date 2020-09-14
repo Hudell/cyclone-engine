@@ -61,6 +61,9 @@
  * ===========================================================================
  * Change Log
  * ===========================================================================
+ * 2020-09-14 - Version 1.05.01
+ *   * Fixed small delay on integration between movement and map editor.
+ *
  * 2020-09-14 - Version 1.05.00
  *   * Added new collision options;
  *   * Changed data compression algorithm;

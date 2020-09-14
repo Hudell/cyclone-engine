@@ -101,6 +101,9 @@ function _createClass(Constructor, protoProps, staticProps) { if (protoProps) _d
  * ===========================================================================
  * Change Log
  * ===========================================================================
+ * 2020-09-14 - Version 1.05.01
+ *   * Fixed small delay on integration between movement and map editor.
+ *
  * 2020-09-14 - Version 1.05.00
  *   * Added new collision options;
  *   * Changed data compression algorithm;
@@ -2048,7 +2051,9 @@ function _createClass(Constructor, protoProps, staticProps) { if (protoProps) _d
 
   var refreshCollision = throttle(function () {
     if (TouchInput.isPressed()) {
-      return refreshCollision();
+      setTimeout(function () {
+        refreshCollision();
+      }, 1);
     }
 
     if (window.CycloneMovement) {
@@ -2056,11 +2061,20 @@ function _createClass(Constructor, protoProps, staticProps) { if (protoProps) _d
     }
   }, 200);
   var saveExtraData = throttle(function () {
+    var refreshCollisionToo = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : false;
+
     if (TouchInput.isPressed()) {
-      return saveExtraData();
+      setTimeout(function () {
+        saveExtraData(refreshCollisionToo);
+      }, 1);
+      return;
     }
 
     CycloneMapEditor$1.saveExtraData();
+
+    if (refreshCollisionToo) {
+      refreshCollision();
+    }
   }, 200);
 
   var CycloneMapEditor$1 = /*#__PURE__*/function (_CyclonePlugin) {
@@ -4595,6 +4609,7 @@ function _createClass(Constructor, protoProps, staticProps) { if (protoProps) _d
           return;
         }
 
+        console.log('apply rectangle');
         this.ensureLayerVisibility();
         var gridRatio = this.getGridRatio();
         var initialRow = 0;
@@ -4662,8 +4677,10 @@ function _createClass(Constructor, protoProps, staticProps) { if (protoProps) _d
       key: "refreshTilemap",
       value: function refreshTilemap() {
         previewChanges = {};
-        saveExtraData();
-        refreshCollision();
+
+        if (currentLayer === Layers.collisions) {
+          saveExtraData(true);
+        }
 
         if (TouchInput.isLongPressed()) {
           _refreshTilemap();

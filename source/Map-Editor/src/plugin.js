@@ -144,18 +144,27 @@ const refreshTilemap = throttle(() => {
 
 const refreshCollision = throttle(() => {
   if (TouchInput.isPressed()) {
-    return refreshCollision();
+    setTimeout(() => {
+      refreshCollision();
+    }, 1);
   }
   if (window.CycloneMovement) {
     window.CycloneMovement.setupCollision();
   }
 }, 200);
 
-const saveExtraData = throttle(() => {
+const saveExtraData = throttle((refreshCollisionToo = false) => {
   if (TouchInput.isPressed()) {
-    return saveExtraData();
+    setTimeout(() => {
+      saveExtraData(refreshCollisionToo);
+    }, 1);
+    return;
   }
+
   CycloneMapEditor.saveExtraData();
+  if (refreshCollisionToo) {
+    refreshCollision();
+  }
 }, 200);
 
 class CycloneMapEditor extends CyclonePlugin {
@@ -2581,6 +2590,7 @@ class CycloneMapEditor extends CyclonePlugin {
       return;
     }
 
+    console.log('apply rectangle');
     this.ensureLayerVisibility();
     const gridRatio = this.getGridRatio();
     let initialRow = 0;
@@ -2642,8 +2652,10 @@ class CycloneMapEditor extends CyclonePlugin {
 
   static refreshTilemap() {
     previewChanges = {};
-    saveExtraData();
-    refreshCollision();
+    if (currentLayer === Layers.collisions) {
+      saveExtraData(true);
+    }
+
     if (TouchInput.isLongPressed()) {
       refreshTilemap();
     } else {
