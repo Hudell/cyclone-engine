@@ -164,7 +164,7 @@
  * @type select
  * @default 1
  * @desc How many collision blocks per tile should the editor show?
- * @option 4
+ * @option 1
  * @option 2
  * @option 1
  *

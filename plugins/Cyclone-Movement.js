@@ -903,10 +903,19 @@ class CycloneMovement$1 extends CyclonePlugin {
     return $gameMap.roundY(this.yWithDirection(y, d, stepSize));
   }
 
+  static decompress(data) {
+    if (!data.startsWith('v=')) {
+      return LZString.decompress(data);
+    }
+
+    const idx = data.indexOf(';') + 1;
+    return LZString.decompressFromBase64(data.substring(idx));
+  }
+
   static parseCollisionData(note) {
     let json;
     try {
-      json = LZString.decompress(note);
+      json = this.decompress(note);
     } catch(e) {
       console.error('Failed to decompress data from CycloneMapEditor event.');
       console.log(note);

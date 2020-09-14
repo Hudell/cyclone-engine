@@ -57,7 +57,7 @@ function _createClass(Constructor, protoProps, staticProps) { if (protoProps) _d
  *   `"Ybbd8"'     Y88'     `"Ybbd8"' 88  `"YbbdP"'  88       88  `"Ybbd8"'
  *                 d8'
  *                d8'                                                       MV
- * Live  Map Editor                                                  by Hudell
+ * Live Map Editor                                                   by Hudell
  * ===========================================================================
  * Terms of Use
  * ===========================================================================
@@ -1824,6 +1824,112 @@ function _createClass(Constructor, protoProps, staticProps) { if (protoProps) _d
     return debounced;
   }
 
+  var DirectionHelper = /*#__PURE__*/function () {
+    function DirectionHelper() {
+      _classCallCheck(this, DirectionHelper);
+    }
+
+    _createClass(DirectionHelper, null, [{
+      key: "goesLeft",
+      value: function goesLeft(d) {
+        return d && d % 3 === 1;
+      }
+    }, {
+      key: "goesRight",
+      value: function goesRight(d) {
+        return d && d % 3 === 0;
+      }
+    }, {
+      key: "goesUp",
+      value: function goesUp(d) {
+        return d >= 7 && d <= 9;
+      }
+    }, {
+      key: "goesDown",
+      value: function goesDown(d) {
+        return d >= 1 && d <= 3;
+      }
+    }, {
+      key: "isDiagonal",
+      value: function isDiagonal(d) {
+        return this.isVertical(d) && this.isHorizontal(d);
+      }
+    }, {
+      key: "isVertical",
+      value: function isVertical(d) {
+        return this.goesDown(d) || this.goesUp(d);
+      }
+    }, {
+      key: "isHorizontal",
+      value: function isHorizontal(d) {
+        return this.goesLeft(d) || this.goesRight(d);
+      }
+    }, {
+      key: "shareADirection",
+      value: function shareADirection(dir1, dir2) {
+        if (this.goesDown(dir1) && this.goesDown(dir2)) {
+          return true;
+        }
+
+        if (this.goesLeft(dir1) && this.goesLeft(dir2)) {
+          return true;
+        }
+
+        if (this.goesRight(dir1) && this.goesRight(dir2)) {
+          return true;
+        }
+
+        if (this.goesUp(dir1) && this.goesUp(dir2)) {
+          return true;
+        }
+
+        return false;
+      }
+    }, {
+      key: "getFirstDirection",
+      value: function getFirstDirection(diagonalDirection) {
+        if (!diagonalDirection) {
+          return diagonalDirection;
+        }
+
+        if (diagonalDirection > 6) {
+          return 8;
+        }
+
+        if (diagonalDirection < 4) {
+          return 2;
+        }
+
+        return diagonalDirection;
+      }
+    }, {
+      key: "getAlternativeDirection",
+      value: function getAlternativeDirection(direction, diagonalDirection) {
+        if (direction === diagonalDirection) {
+          return direction;
+        }
+
+        switch (diagonalDirection) {
+          case 7:
+            return direction == 8 ? 4 : 8;
+
+          case 9:
+            return direction == 8 ? 6 : 8;
+
+          case 1:
+            return direction == 2 ? 4 : 2;
+
+          case 3:
+            return direction == 2 ? 6 : 2;
+        }
+
+        return direction;
+      }
+    }]);
+
+    return DirectionHelper;
+  }();
+
   var layerVisibility = [true, true, true, true, true, false, true, false, false, false];
   var editorActive = true;
   var windowWidth = 216;
@@ -2534,10 +2640,11 @@ function _createClass(Constructor, protoProps, staticProps) { if (protoProps) _d
       key: "applyExtraData",
       value: function applyExtraData(data) {
         customCollisionTable = {};
+        var radix = (data === null || data === void 0 ? void 0 : data.radix) || 10;
 
         if (data === null || data === void 0 ? void 0 : data.collision) {
           for (var i = 0; i < data.collision.length; i++) {
-            var col = Number(data.collision[i] || 0);
+            var col = parseInt(data.collision[i], radix) || 0;
 
             if (col) {
               customCollisionTable[i] = col;
@@ -2546,12 +2653,32 @@ function _createClass(Constructor, protoProps, staticProps) { if (protoProps) _d
         }
       }
     }, {
+      key: "dataVersion",
+      value: function dataVersion() {
+        return '01';
+      }
+    }, {
+      key: "compress",
+      value: function compress(data) {
+        return "v=".concat(this.dataVersion(), ";") + LZString.compressToBase64(data);
+      }
+    }, {
+      key: "decompress",
+      value: function decompress(data) {
+        if (!data.startsWith('v=')) {
+          return LZString.decompress(data);
+        }
+
+        var idx = data.indexOf(';') + 1;
+        return LZString.decompressFromBase64(data.substring(idx));
+      }
+    }, {
       key: "parseExtraData",
       value: function parseExtraData(note) {
         var json;
 
         try {
-          json = LZString.decompress(note);
+          json = this.decompress(note);
         } catch (e) {
           console.error('Failed to decompress data from CycloneMapEditor event.');
           console.log(note);
@@ -2603,24 +2730,30 @@ function _createClass(Constructor, protoProps, staticProps) { if (protoProps) _d
     }, {
       key: "getExtraData",
       value: function getExtraData() {
+        var radix = 36;
         var collision = new Array($dataMap.width * $dataMap.height * 16);
 
         for (var i = 0; i < collision.length; i++) {
           if (customCollisionTable[i]) {
-            collision[i] = customCollisionTable[i];
+            if (customCollisionTable[i] >= radix) {
+              throw new Error('Invalid collision value: ', customCollisionTable[i]);
+            }
+
+            collision[i] = Number(customCollisionTable[i]).toString(radix);
           } else {
-            collision[i] = 0;
+            collision[i] = '0';
           }
         }
 
         return {
+          radix: radix,
           collision: collision.join('')
         };
       }
     }, {
       key: "getExtraDataJson",
       value: function getExtraDataJson() {
-        return LZString.compress(JSON.stringify(this.getExtraData(), null, 0));
+        return this.compress(JSON.stringify(this.getExtraData(), null, 0));
       }
     }, {
       key: "saveExtraData",
@@ -4132,6 +4265,107 @@ function _createClass(Constructor, protoProps, staticProps) { if (protoProps) _d
 
           this.maybeUpdateTileNeighbors(x, y, z, updateNeighbors, previewOnly);
         }
+      } // eslint-disable-next-line complexity
+
+    }, {
+      key: "_getBlockCollision",
+      value: function _getBlockCollision(i, j, count, tileId) {
+        if (tileId <= 3) {
+          return tileId;
+        }
+
+        var goesUp = false;
+        var goesDown = false;
+        var goesRight = false;
+        var goesLeft = false;
+
+        if (tileId >= 20) {
+          var d = tileId - 20;
+          goesUp = !DirectionHelper.goesUp(d);
+          goesDown = !DirectionHelper.goesDown(d);
+          goesLeft = !DirectionHelper.goesLeft(d);
+          goesRight = !DirectionHelper.goesRight(d);
+        } else if (tileId > 10) {
+          var _d = tileId - 10;
+
+          goesUp = DirectionHelper.goesUp(_d);
+          goesDown = DirectionHelper.goesDown(_d);
+          goesLeft = DirectionHelper.goesLeft(_d);
+          goesRight = DirectionHelper.goesRight(_d);
+        } else if (tileId === 4) {
+          goesUp = true;
+          goesDown = true;
+        } else if (tileId === 5) {
+          goesLeft = true;
+          goesRight = true;
+        }
+
+        var up = goesUp && j === 0;
+        var down = goesDown && j === count - 1;
+        var left = goesLeft && i === 0;
+        var right = goesRight && i === count - 1;
+
+        if (up) {
+          if (left) {
+            if (right) {
+              if (down) {
+                return 20;
+              }
+
+              return 22;
+            }
+
+            if (down) {
+              return 26;
+            }
+
+            return 17;
+          }
+
+          if (right) {
+            if (down) {
+              return 24;
+            }
+
+            return 19;
+          }
+
+          if (down) {
+            return 4;
+          }
+
+          return 18;
+        }
+
+        if (down) {
+          if (left) {
+            if (right) {
+              return 28;
+            }
+
+            return 11;
+          }
+
+          if (right) {
+            return 13;
+          }
+
+          return 12;
+        }
+
+        if (left) {
+          if (right) {
+            return 5;
+          }
+
+          return 14;
+        }
+
+        if (right) {
+          return 16;
+        }
+
+        return 1;
       }
     }, {
       key: "_applySingleCollision",
@@ -4152,18 +4386,21 @@ function _createClass(Constructor, protoProps, staticProps) { if (protoProps) _d
             var height = $gameMap.height() * 4;
             var width = $gameMap.width() * 4;
             var index = intY % height * width + intX % width;
+
+            var blockCollision = this._getBlockCollision(i, j, count, tileId);
+
             var oldTile = customCollisionTable[index] || 0;
 
-            if (currentChange[index] === undefined && oldTile !== tileId) {
+            if (currentChange[index] === undefined && oldTile !== blockCollision) {
               currentChange[index] = oldTile;
             }
 
-            if (!tileId) {
+            if (!blockCollision) {
               delete customCollisionTable[index];
               continue;
             }
 
-            customCollisionTable[index] = tileId;
+            customCollisionTable[index] = blockCollision;
           }
         }
       }
@@ -5685,6 +5922,78 @@ function _createClass(Constructor, protoProps, staticProps) { if (protoProps) _d
             this.fillRect(drawX, drawY, halfWidth, halfHeight, '#00000066');
           }
         }
+      }, {
+        key: "drawCollisionType",
+        value: function drawCollisionType(collision, x, y, drawWidth, drawHeight) {
+          if (collision === 0) {
+            return;
+          }
+
+          var realDrawWidth = drawWidth !== null && drawWidth !== void 0 ? drawWidth : CycloneMapEditor.tileWidth;
+          var realDrawHeight = drawHeight !== null && drawHeight !== void 0 ? drawHeight : CycloneMapEditor.tileHeight;
+          var colorIndex = collision <= 3 ? collision - 1 : 0;
+          var context = this.context;
+          context.save();
+          var color = ['#00FF00', '#FF0000', '#FF00FF'][colorIndex];
+          context.fillStyle = color;
+          context.fillRect(x, y, realDrawWidth, realDrawHeight);
+          var goesUp = false;
+          var goesDown = false;
+          var goesLeft = false;
+          var goesRight = false;
+
+          if (collision >= 20) {
+            var unblockedDirection = collision - 20;
+            goesUp = !DirectionHelper.goesUp(unblockedDirection);
+            goesDown = !DirectionHelper.goesDown(unblockedDirection);
+            goesLeft = !DirectionHelper.goesLeft(unblockedDirection);
+            goesRight = !DirectionHelper.goesRight(unblockedDirection);
+          } else if (collision > 10) {
+            var blockedDirection = collision - 10;
+            goesUp = DirectionHelper.goesUp(blockedDirection);
+            goesDown = DirectionHelper.goesDown(blockedDirection);
+            goesLeft = DirectionHelper.goesLeft(blockedDirection);
+            goesRight = DirectionHelper.goesRight(blockedDirection);
+          } else if (collision === 4) {
+            goesDown = true;
+            goesUp = true;
+          } else if (collision === 5) {
+            goesLeft = true;
+            goesRight = true;
+          }
+
+          if (collision > 3) {
+            var pieceWidth = Math.floor(realDrawWidth / 4);
+            var pieceHeight = Math.floor(realDrawHeight / 4);
+            context.fillStyle = '#FF00FF';
+
+            if (goesUp) {
+              context.fillRect(x, y, realDrawWidth, pieceHeight);
+            }
+
+            if (goesDown) {
+              context.fillRect(x, y + realDrawHeight - pieceHeight, realDrawWidth, pieceHeight);
+            }
+
+            if (goesLeft) {
+              context.fillRect(x, y, pieceWidth, realDrawHeight);
+            }
+
+            if (goesRight) {
+              context.fillRect(x + realDrawWidth - pieceWidth, y, pieceWidth, realDrawHeight);
+            }
+          }
+
+          context.strokeStyle = '#000000';
+          context.beginPath();
+          context.moveTo(x, y);
+          context.lineTo(x + realDrawWidth, y);
+          context.stroke();
+          context.beginPath();
+          context.moveTo(x, y);
+          context.lineTo(x, y + realDrawHeight);
+          context.stroke();
+        }
       }]);
 
       return _class;
@@ -6000,29 +6309,31 @@ function _createClass(Constructor, protoProps, staticProps) { if (protoProps) _d
         var upBlocked = !this.checkTilePassability(mapX, mapY, 8);
         var leftBlocked = !this.checkTilePassability(mapX, mapY, 4);
         var rightBlocked = !this.checkTilePassability(mapX, mapY, 6);
+        var same = downBlocked === upBlocked && downBlocked === leftBlocked && downBlocked === rightBlocked;
 
-        if (downBlocked && upBlocked && leftBlocked && rightBlocked) {
-          this.contents.fillRect(x, y, drawWidth, drawHeight, '#FF000066');
+        if (downBlocked && same) {
+          this.contents.fillRect(x, y, drawWidth, drawHeight, '#FF000033');
           return;
         }
 
-        var pieceHeight = Math.floor(drawHeight / 4);
-        var pieceWidth = Math.floor(drawWidth / 4);
+        var sideHeight = 2;
+        var sideWidth = 2;
+        this.contents.fillRect(x, y, drawWidth, drawHeight, '#00FF0033');
 
         if (downBlocked) {
-          this.contents.fillRect(x, y + drawHeight - pieceHeight, drawWidth, pieceHeight, '#FF00FFAA');
+          this.contents.fillRect(x, y + drawHeight - sideHeight, drawWidth, sideHeight, '#FF00FFAA');
         }
 
         if (upBlocked) {
-          this.contents.fillRect(x, y, drawWidth, pieceHeight, '#FF00FFAA');
+          this.contents.fillRect(x, y, drawWidth, sideHeight, '#FF00FFAA');
         }
 
         if (leftBlocked) {
-          this.contents.fillRect(x, y, pieceWidth, drawHeight, '#FF00FFAA');
+          this.contents.fillRect(x, y, sideWidth, drawHeight, '#FF00FFAA');
         }
 
         if (rightBlocked) {
-          this.contents.fillRect(x + drawWidth - pieceWidth, y, pieceWidth, drawHeight, '#FF00FFAA');
+          this.contents.fillRect(x + drawWidth - sideWidth, y, sideWidth, drawHeight, '#FF00FFAA');
         }
       }
     }, {
@@ -6037,7 +6348,31 @@ function _createClass(Constructor, protoProps, staticProps) { if (protoProps) _d
         var tileHeight = CycloneMapEditor.tileHeight;
         var drawWidth = tileWidth / 4;
         var drawHeight = tileHeight / 4;
-        var colors = ['#00FF0066', '#FF0000AA', '#FF00FFFF'];
+        var colors = ['#00FF00AA', '#FF0000AA', '#FF00FFFF'];
+        var context = this.contents.context;
+        context.save();
+
+        var drawCustomSideCollisions = function drawCustomSideCollisions(goesUp, goesDown, goesLeft, goesRight, drawX, drawY) {
+          context.fillStyle = colors[2];
+          var pieceWidth = Math.floor(drawWidth / 4);
+          var pieceHeight = Math.floor(drawHeight / 4);
+
+          if (goesUp) {
+            context.fillRect(drawX, drawY, drawWidth, pieceHeight);
+          }
+
+          if (goesDown) {
+            context.fillRect(drawX, drawY + drawHeight - pieceHeight, drawWidth, pieceHeight);
+          }
+
+          if (goesLeft) {
+            context.fillRect(drawX, drawY, pieceWidth, drawHeight);
+          }
+
+          if (goesRight) {
+            context.fillRect(drawX + drawWidth - pieceWidth, drawY, pieceWidth, drawHeight);
+          }
+        };
 
         for (var cellX = 0; cellX < 4; cellX++) {
           for (var cellY = 0; cellY < 4; cellY++) {
@@ -6048,13 +6383,48 @@ function _createClass(Constructor, protoProps, staticProps) { if (protoProps) _d
             if (customCollisionTable[index]) {
               var drawX = x + cellX * drawWidth;
               var drawY = y + cellY * drawHeight;
-              this.contents.clearRect(drawX, drawY, drawWidth, drawHeight);
-              var colorIndex = customCollisionTable[index] - 1;
-              var color = colors[colorIndex % colors.length];
-              this.contents.fillRect(drawX, drawY, drawWidth, drawHeight, color);
+              context.clearRect(drawX, drawY, drawWidth, drawHeight);
+              var collision = customCollisionTable[index];
+              var colorIndex = collision <= 3 ? collision - 1 : 0;
+              var color = colors[colorIndex];
+              context.fillStyle = color;
+              context.fillRect(drawX, drawY, drawWidth, drawHeight);
+              var goesUp = false;
+              var goesDown = false;
+              var goesLeft = false;
+              var goesRight = false;
+
+              if (collision >= 20) {
+                var d = collision - 20;
+                goesUp = !DirectionHelper.goesUp(d);
+                goesDown = !DirectionHelper.goesDown(d);
+                goesLeft = !DirectionHelper.goesLeft(d);
+                goesRight = !DirectionHelper.goesRight(d);
+              } else if (collision > 10) {
+                var _d2 = collision - 10;
+
+                goesUp = DirectionHelper.goesUp(_d2);
+                goesDown = DirectionHelper.goesDown(_d2);
+                goesLeft = DirectionHelper.goesLeft(_d2);
+                goesRight = DirectionHelper.goesRight(_d2);
+              } else if (collision === 4) {
+                goesUp = true;
+                goesDown = true;
+              } else if (collision === 5) {
+                goesLeft = true;
+                goesRight = true;
+              }
+
+              if (collision > 3) {
+                drawCustomSideCollisions(goesUp, goesDown, goesLeft, goesRight, drawX, drawY);
+              }
             }
           }
         }
+
+        context.restore();
+
+        this.contents._baseTexture.update();
       }
     }, {
       key: "maybeDrawCollisions",
@@ -6095,10 +6465,10 @@ function _createClass(Constructor, protoProps, staticProps) { if (protoProps) _d
           return false;
         }
 
-        this.drawCellGrid(x, y);
-        this.maybeDrawRegions(x, y);
         this.maybeDrawCollisions(x, y);
+        this.maybeDrawRegions(x, y);
         this.maybeDrawTags(x, y);
+        this.drawCellGrid(x, y);
       }
     }, {
       key: "refresh",
@@ -6886,6 +7256,21 @@ function _createClass(Constructor, protoProps, staticProps) { if (protoProps) _d
         this.addCommand(0, 'collision', true, 0);
         this.addCommand(1, 'collision', true, 1);
         this.addCommand(2, 'collision', true, 2);
+        this.addCommand(17, 'collision', true, 17);
+        this.addCommand(18, 'collision', true, 18);
+        this.addCommand(19, 'collision', true, 19);
+        this.addCommand(14, 'collision', true, 14);
+        this.addCommand(20, 'collision', true, 20);
+        this.addCommand(16, 'collision', true, 16);
+        this.addCommand(11, 'collision', true, 11);
+        this.addCommand(12, 'collision', true, 12);
+        this.addCommand(13, 'collision', true, 13);
+        this.addCommand(22, 'collision', true, 22);
+        this.addCommand(26, 'collision', true, 26);
+        this.addCommand(24, 'collision', true, 24);
+        this.addCommand(28, 'collision', true, 28);
+        this.addCommand(4, 'collision', true, 4);
+        this.addCommand(5, 'collision', true, 5);
       }
     }, {
       key: "ensureSelectionVisible",
@@ -6912,6 +7297,10 @@ function _createClass(Constructor, protoProps, staticProps) { if (protoProps) _d
     }, {
       key: "colSpacing",
       value: function colSpacing() {
+        if (CycloneMapEditor.currentLayer === Layers.collisions) {
+          return 0;
+        }
+
         return Math.floor((this.width - this.maxCols() * this.itemWidth()) / this.maxCols());
       }
     }, {
@@ -6922,6 +7311,10 @@ function _createClass(Constructor, protoProps, staticProps) { if (protoProps) _d
     }, {
       key: "maxCols",
       value: function maxCols() {
+        if (CycloneMapEditor.currentLayer === Layers.collisions) {
+          return 3;
+        }
+
         return 8;
       }
     }, {
@@ -6944,28 +7337,20 @@ function _createClass(Constructor, protoProps, staticProps) { if (protoProps) _d
     }, {
       key: "drawCollision",
       value: function drawCollision(index) {
+        var _this$_list$index$ext;
+
         if (index === 0) {
           return;
         }
 
+        var collision = (_this$_list$index$ext = this._list[index].ext) !== null && _this$_list$index$ext !== void 0 ? _this$_list$index$ext : index;
+
+        if (collision === 0) {
+          return;
+        }
+
         var rect = this.itemRect(index);
-        var x = rect.x;
-        var y = rect.y;
-        var drawWidth = rect.width;
-        var drawHeight = rect.height;
-        var color = ['#00FF00', '#FF0000', '#FF00FF'][(index - 1) % 3];
-        this.contents.fillRect(x, y, drawWidth, drawHeight, color);
-        var context = this.contents.context;
-        context.save();
-        context.strokeStyle = '#000000';
-        context.beginPath();
-        context.moveTo(x, y);
-        context.lineTo(x + drawWidth, y);
-        context.stroke();
-        context.beginPath();
-        context.moveTo(x, y);
-        context.lineTo(x, y + drawHeight);
-        context.stroke();
+        this.contents.drawCollisionType(collision, rect.x, rect.y, rect.width, rect.height);
       }
     }, {
       key: "drawShadow",
@@ -7934,19 +8319,7 @@ function _createClass(Constructor, protoProps, staticProps) { if (protoProps) _d
           return;
         }
 
-        var color = ['#00FF00', '#FF0000', '#FF00FF'][(tileId - 1) % 3];
-        this.bitmap.fillRect(x, y, drawWidth, drawHeight, color);
-        var context = this.bitmap.context;
-        context.save();
-        context.strokeStyle = '#000000';
-        context.beginPath();
-        context.moveTo(x, y);
-        context.lineTo(x + drawWidth, y);
-        context.stroke();
-        context.beginPath();
-        context.moveTo(x, y);
-        context.lineTo(x, y + drawHeight);
-        context.stroke();
+        this.bitmap.drawCollisionType(tileId, x, y, drawWidth, drawHeight);
       }
     }, {
       key: "updateTiles",
@@ -8187,48 +8560,6 @@ function _createClass(Constructor, protoProps, staticProps) { if (protoProps) _d
       return _class10;
     }();
   });
-  CycloneMapEditor.patchClass(Scene_Boot, function ($super) {
-    return /*#__PURE__*/function () {
-      function _class11() {
-        _classCallCheck(this, _class11);
-      }
-
-      _createClass(_class11, [{
-        key: "resizeScreen",
-        value: function resizeScreen() {
-          if (Utils.isNwjs() && $dataSystem.advanced.screenWidth < 1280) {
-            var minWidth = Math.min(1920, screen.availWidth - (window.outerWidth - window.innerWidth));
-            var minHeight = Math.min(1080, screen.availHeight - (window.outerHeight - window.innerHeight));
-            var _$dataSystem$advanced = $dataSystem.advanced,
-                screenWidth = _$dataSystem$advanced.screenWidth,
-                screenHeight = _$dataSystem$advanced.screenHeight,
-                uiAreaWidth = _$dataSystem$advanced.uiAreaWidth,
-                uiAreaHeight = _$dataSystem$advanced.uiAreaHeight;
-
-            if (screenWidth < minWidth) {
-              $dataSystem.advanced.screenWidth = minWidth;
-            }
-
-            if (uiAreaWidth < minWidth) {
-              $dataSystem.advanced.uiAreaWidth = minWidth;
-            }
-
-            if (screenHeight < minHeight) {
-              $dataSystem.advanced.screenHeight = minHeight;
-            }
-
-            if (uiAreaHeight < minHeight) {
-              $dataSystem.advanced.uiAreaHeight = minHeight;
-            }
-          }
-
-          $super.resizeScreen.call(this);
-        }
-      }]);
-
-      return _class11;
-    }();
-  });
 
   WindowCycloneGrid.prototype.initialize = function () {
     var width = Graphics.width;
@@ -8348,6 +8679,53 @@ function _createClass(Constructor, protoProps, staticProps) { if (protoProps) _d
   WindowCycloneMapEditorStatus.prototype.standardPadding = function () {
     return 8;
   };
+
+  CycloneMapEditor.patchClass(Scene_Boot, function ($super) {
+    return /*#__PURE__*/function () {
+      function _class11() {
+        _classCallCheck(this, _class11);
+      }
+
+      _createClass(_class11, [{
+        key: "resizeScreen",
+        value: function resizeScreen() {
+          if (Utils.isNwjs() && Graphics.width < 1280) {
+            var minWidth = Math.min(1920, screen.availWidth - (window.outerWidth - window.innerWidth));
+            var minHeight = Math.min(1080, screen.availHeight - (window.outerHeight - window.innerHeight));
+
+            if (Graphics.width < minWidth) {
+              Graphics.width = minWidth;
+            }
+
+            if (Graphics.boxWidth < minWidth) {
+              Graphics.boxWidth = minWidth;
+            }
+
+            if (Graphics.height < minHeight) {
+              Graphics.height = minHeight;
+            }
+
+            if (Graphics.boxHeight < minHeight) {
+              Graphics.boxHeight = minHeight;
+            }
+
+            var xDelta = Graphics.width - window.innerWidth;
+            var yDelta = Graphics.height - window.innerHeight;
+            window.moveBy(-xDelta / 2, -yDelta / 2);
+            window.resizeBy(xDelta, yDelta);
+          }
+        }
+      }, {
+        key: "start",
+        value: function start() {
+          $super.start.call(this);
+          this.resizeScreen();
+        }
+      }]);
+
+      return _class11;
+    }();
+  });
 
   CycloneMapEditor.isFullScreen = function () {
     // MV's _isFullScreen was broken, it would return the opposite value

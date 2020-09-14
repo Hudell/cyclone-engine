@@ -1950,10 +1950,27 @@ class CycloneMapEditor$1 extends CyclonePlugin {
     }
   }
 
+  static dataVersion() {
+    return '01';
+  }
+
+  static compress(data) {
+    return `v=${ this.dataVersion() };` + LZString.compressToBase64(data);
+  }
+
+  static decompress(data) {
+    if (!data.startsWith('v=')) {
+      return LZString.decompress(data);
+    }
+
+    const idx = data.indexOf(';') + 1;
+    return LZString.decompressFromBase64(data.substring(idx));
+  }
+
   static parseExtraData(note) {
     let json;
     try {
-      json = LZString.decompress(note);
+      json = this.decompress(note);
     } catch(e) {
       console.error('Failed to decompress data from CycloneMapEditor event.');
       console.log(note);
@@ -2013,7 +2030,7 @@ class CycloneMapEditor$1 extends CyclonePlugin {
   }
 
   static getExtraDataJson() {
-    return LZString.compress(JSON.stringify(this.getExtraData(), null, 0));
+    return this.compress(JSON.stringify(this.getExtraData(), null, 0));
   }
 
   static saveExtraData() {
