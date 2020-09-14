@@ -581,7 +581,7 @@ const addPixelMovementToClass = (classRef) => {
         return false;
       }
 
-      if (left >= lastX) {
+      if (left > lastX) {
         return false;
       }
 
@@ -589,7 +589,7 @@ const addPixelMovementToClass = (classRef) => {
         return false;
       }
 
-      if (top >= lastY) {
+      if (top > lastY) {
         return false;
       }
 

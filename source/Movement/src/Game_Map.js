@@ -40,6 +40,6 @@ CycloneMovement.patchClass(Game_Map, $super => class {
     const a2 = Math.pow(b, 2) + Math.pow(c, 2);
     const a = Math.sqrt(a2);
 
-    return Math.floor(a * CycloneMovement.collisionSize) / CycloneMovement.collisionSize;
+    return a;
   }
 });

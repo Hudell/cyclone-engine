@@ -1292,7 +1292,7 @@ CycloneMovement.patchClass(Game_Map, $super => class {
     const a2 = Math.pow(b, 2) + Math.pow(c, 2);
     const a = Math.sqrt(a2);
 
-    return Math.floor(a * CycloneMovement.collisionSize) / CycloneMovement.collisionSize;
+    return a;
   }
 });
 
@@ -1879,7 +1879,7 @@ const addPixelMovementToClass = (classRef) => {
         return false;
       }
 
-      if (left >= lastX) {
+      if (left > lastX) {
         return false;
       }
 
@@ -1887,7 +1887,7 @@ const addPixelMovementToClass = (classRef) => {
         return false;
       }
 
-      if (top >= lastY) {
+      if (top > lastY) {
         return false;
       }
 
@@ -2828,6 +2828,8 @@ CycloneMovement.patchClass(Game_Player, $super => class {
 
       if (wasMoving) {
         this.updateEncounterCount();
+      } else {
+        $gameTemp.clearDestination();
       }
 
       if (wasMoving || Input.dir4 !== 0) {
@@ -3455,6 +3457,16 @@ CycloneMovement.patchClass(Game_Temp, $super => class {
       clearTimeout(timeout);
       timeout = false;
     }
+  }
+});
+
+CycloneMovement.patchClass(Game_Party, $super => class {
+  steps() {
+    return Math.floor(this._steps);
+  }
+
+  increaseSteps() {
+    this._steps += CycloneMovement.stepSize;
   }
 });
 

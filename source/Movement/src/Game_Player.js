@@ -490,6 +490,8 @@ CycloneMovement.patchClass(Game_Player, $super => class {
 
       if (wasMoving) {
         this.updateEncounterCount();
+      } else {
+        $gameTemp.clearDestination();
       }
 
       if (wasMoving || Input.dir4 !== 0) {
