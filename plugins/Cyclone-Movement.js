@@ -1405,6 +1405,7 @@ const addPixelMovementToClass = (classRef) => {
 
     update(...args) {
       this.updateHitbox();
+      this.updateIsMoving();
       $super.update.call(this, ...args);
     }
 
@@ -1809,6 +1810,7 @@ const addPixelMovementToClass = (classRef) => {
         this._y = Math.round(CycloneMovement.roundYWithDirection(this._y, d) * stepCount) / stepCount;
         this._realX = CycloneMovement.xWithDirection(this._x, this.reverseDir(d));
         this._realY = CycloneMovement.yWithDirection(this._y, this.reverseDir(d));
+        this.updateIsMoving();
 
         this.updateAnimationCount();
         this.addNewPosition(this._x, this._y);
@@ -1827,6 +1829,7 @@ const addPixelMovementToClass = (classRef) => {
         this._y = CycloneMovement.roundYWithDirection(this._y, vert);
         this._realX = CycloneMovement.xWithDirection(this._x, this.reverseDir(horz));
         this._realY = CycloneMovement.yWithDirection(this._y, this.reverseDir(vert));
+        this.updateIsMoving();
 
         this.updateAnimationCount();
         this.addNewPosition(this._x, this._y);
@@ -2335,6 +2338,38 @@ const addPixelMovementToClass = (classRef) => {
 
       return this._findDirectionTo(goalX, goalY);
     }
+
+    originalIsMoving() {
+      return $super.isMoving.call(this);
+    }
+
+    isMoving() {
+      return this._isMoving;
+    }
+
+    updateIsMoving() {
+      this._isMoving = this.originalIsMoving();
+    }
+
+    setPosition(...args) {
+      $super.setPosition.call(this, ...args);
+      this.updateIsMoving();
+    }
+
+    copyPosition(character) {
+      $super.copyPosition.call(this, character);
+      this.updateIsMoving();
+    }
+
+    updateJump() {
+      $super.updateJump.call(this);
+      this.updateIsMoving();
+    }
+
+    jump(...args) {
+      $super.jump.call(this, ...args);
+      this.updateIsMoving();
+    }
   });
 };
 
@@ -2645,6 +2680,11 @@ CycloneMovement.patchClass(Game_Player, $super => class {
         this.moveDiagonally(6, 2);
         break;
     }
+  }
+
+  updateDashing() {
+    this.updateIsMoving();
+    $super.updateDashing.call(this);
   }
 
   moveStraight(d) {

@@ -309,6 +309,11 @@ CycloneMovement.patchClass(Game_Player, $super => class {
     }
   }
 
+  updateDashing() {
+    this.updateIsMoving();
+    $super.updateDashing.call(this);
+  }
+
   moveStraight(d) {
     if (this.isMovementSucceeded()) {
       this._followers.updateMove();
