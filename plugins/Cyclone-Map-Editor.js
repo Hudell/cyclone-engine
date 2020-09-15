@@ -4830,10 +4830,6 @@ CycloneMapEditor.patchClass(Game_Map, $super => class {
 
   getPassageBitType(flag, d) {
     const bit = (1 << (d / 2 - 1)) & 0x0f;
-    // if ((flag & 0x10) !== 0) {
-    //   // [*] No effect on passage
-    //   return;
-    // }
     if ((flag & bit) === 0) {
       // [o] Passable
       return true;
@@ -4865,6 +4861,46 @@ CycloneMapEditor.patchClass(Game_Map, $super => class {
     }
 
     return TilePassageType.free;
+  }
+
+  tileIdIsBush(tileId) {
+    const flags = this.tilesetFlags();
+    const flag = flags[tileId];
+
+    return (flag & 0x40) !== 0;
+  }
+
+  tileIdIsLadder(tileId) {
+    const flags = this.tilesetFlags();
+    const flag = flags[tileId];
+
+    return (flag & 0x20) !== 0;
+  }
+
+  tileIdIsCounter(tileId) {
+    const flags = this.tilesetFlags();
+    const flag = flags[tileId];
+
+    return (flag & 0x80) !== 0;
+  }
+
+  tileIdIsDamage(tileId) {
+    const flags = this.tilesetFlags();
+    const flag = flags[tileId];
+
+    return (flag & 0x100) !== 0;
+  }
+
+  tileIdTerrainTag(tileId) {
+    const flags = this.tilesetFlags();
+    const flag = flags[tileId];
+
+    const tag = flag >> 12;
+    if (tag > 0) {
+      return tag;
+    }
+
+    return 0;
   }
 });
 
@@ -5983,7 +6019,7 @@ class WindowCycloneMapEditor extends Window_Command {
     }
 
     if (!this._needsRedraw && CycloneMapEditor.changingTileProps) {
-      this.drawTileProp(tileId, rect);
+      this.drawTileProp(this.commandName(index), rect);
     }
   }
 
@@ -6091,23 +6127,45 @@ class WindowCycloneMapEditor extends Window_Command {
   }
 
   drawTileLadder(tileId, rect) {
+    if (!$gameMap.tileIdIsLadder(tileId)) {
+      return;
+    }
 
+    this.contents.drawText('YES', rect.x, rect.y, rect.width, rect.height, 'center');
   }
 
   drawTileBush(tileId, rect) {
+    if (!$gameMap.tileIdIsBush(tileId)) {
+      return;
+    }
 
+    this.contents.drawText('~~~', rect.x, rect.y, rect.width, rect.height - 8, 'center');
+    this.contents.drawText('~~~', rect.x, rect.y + 8, rect.width, rect.height - 8, 'center');
   }
 
   drawTileCounter(tileId, rect) {
+    if (!$gameMap.tileIdIsCounter(tileId)) {
+      return;
+    }
 
+    this.contents.drawText('YES', rect.x, rect.y, rect.width, rect.height, 'center');
   }
 
   drawTileDamage(tileId, rect) {
+    if (!$gameMap.tileIdIsDamage(tileId)) {
+      return;
+    }
 
+    this.contents.drawText('DMG', rect.x, rect.y, rect.width, rect.height, 'center');
   }
 
   drawTileTerrain(tileId, rect) {
+    const tag = $gameMap.tileIdTerrainTag(tileId);
+    if (!tag) {
+      return;
+    }
 
+    this.contents.drawText(tag, rect.x, rect.y, rect.width, rect.height, 'center');
   }
 
   drawAllItems() {

@@ -6292,10 +6292,7 @@ function _createClass(Constructor, protoProps, staticProps) { if (protoProps) _d
       }, {
         key: "getPassageBitType",
         value: function getPassageBitType(flag, d) {
-          var bit = 1 << d / 2 - 1 & 0x0f; // if ((flag & 0x10) !== 0) {
-          //   // [*] No effect on passage
-          //   return;
-          // }
+          var bit = 1 << d / 2 - 1 & 0x0f;
 
           if ((flag & bit) === 0) {
             // [o] Passable
@@ -6331,6 +6328,47 @@ function _createClass(Constructor, protoProps, staticProps) { if (protoProps) _d
           }
 
           return TilePassageType.free;
+        }
+      }, {
+        key: "tileIdIsBush",
+        value: function tileIdIsBush(tileId) {
+          var flags = this.tilesetFlags();
+          var flag = flags[tileId];
+          return (flag & 0x40) !== 0;
+        }
+      }, {
+        key: "tileIdIsLadder",
+        value: function tileIdIsLadder(tileId) {
+          var flags = this.tilesetFlags();
+          var flag = flags[tileId];
+          return (flag & 0x20) !== 0;
+        }
+      }, {
+        key: "tileIdIsCounter",
+        value: function tileIdIsCounter(tileId) {
+          var flags = this.tilesetFlags();
+          var flag = flags[tileId];
+          return (flag & 0x80) !== 0;
+        }
+      }, {
+        key: "tileIdIsDamage",
+        value: function tileIdIsDamage(tileId) {
+          var flags = this.tilesetFlags();
+          var flag = flags[tileId];
+          return (flag & 0x100) !== 0;
+        }
+      }, {
+        key: "tileIdTerrainTag",
+        value: function tileIdTerrainTag(tileId) {
+          var flags = this.tilesetFlags();
+          var flag = flags[tileId];
+          var tag = flag >> 12;
+
+          if (tag > 0) {
+            return tag;
+          }
+
+          return 0;
         }
       }]);
 
@@ -7633,7 +7671,7 @@ function _createClass(Constructor, protoProps, staticProps) { if (protoProps) _d
         }
 
         if (!this._needsRedraw && CycloneMapEditor.changingTileProps) {
-          this.drawTileProp(tileId, rect);
+          this.drawTileProp(this.commandName(index), rect);
         }
       }
     }, {
@@ -7744,19 +7782,52 @@ function _createClass(Constructor, protoProps, staticProps) { if (protoProps) _d
       value: function drawTilePassage4(tileId, rect) {}
     }, {
       key: "drawTileLadder",
-      value: function drawTileLadder(tileId, rect) {}
+      value: function drawTileLadder(tileId, rect) {
+        if (!$gameMap.tileIdIsLadder(tileId)) {
+          return;
+        }
+
+        this.contents.drawText('YES', rect.x, rect.y, rect.width, rect.height, 'center');
+      }
     }, {
       key: "drawTileBush",
-      value: function drawTileBush(tileId, rect) {}
+      value: function drawTileBush(tileId, rect) {
+        if (!$gameMap.tileIdIsBush(tileId)) {
+          return;
+        }
+
+        this.contents.drawText('~~~', rect.x, rect.y, rect.width, rect.height - 8, 'center');
+        this.contents.drawText('~~~', rect.x, rect.y + 8, rect.width, rect.height - 8, 'center');
+      }
     }, {
       key: "drawTileCounter",
-      value: function drawTileCounter(tileId, rect) {}
+      value: function drawTileCounter(tileId, rect) {
+        if (!$gameMap.tileIdIsCounter(tileId)) {
+          return;
+        }
+
+        this.contents.drawText('YES', rect.x, rect.y, rect.width, rect.height, 'center');
+      }
     }, {
       key: "drawTileDamage",
-      value: function drawTileDamage(tileId, rect) {}
+      value: function drawTileDamage(tileId, rect) {
+        if (!$gameMap.tileIdIsDamage(tileId)) {
+          return;
+        }
+
+        this.contents.drawText('DMG', rect.x, rect.y, rect.width, rect.height, 'center');
+      }
     }, {
       key: "drawTileTerrain",
-      value: function drawTileTerrain(tileId, rect) {}
+      value: function drawTileTerrain(tileId, rect) {
+        var tag = $gameMap.tileIdTerrainTag(tileId);
+
+        if (!tag) {
+          return;
+        }
+
+        this.contents.drawText(tag, rect.x, rect.y, rect.width, rect.height, 'center');
+      }
     }, {
       key: "drawAllItems",
       value: function drawAllItems() {

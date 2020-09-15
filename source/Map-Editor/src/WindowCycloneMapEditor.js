@@ -291,7 +291,7 @@ class WindowCycloneMapEditor extends Window_Command {
     }
 
     if (!this._needsRedraw && CycloneMapEditor.changingTileProps) {
-      this.drawTileProp(tileId, rect);
+      this.drawTileProp(this.commandName(index), rect);
     }
   }
 
@@ -399,23 +399,45 @@ class WindowCycloneMapEditor extends Window_Command {
   }
 
   drawTileLadder(tileId, rect) {
+    if (!$gameMap.tileIdIsLadder(tileId)) {
+      return;
+    }
 
+    this.contents.drawText('YES', rect.x, rect.y, rect.width, rect.height, 'center');
   }
 
   drawTileBush(tileId, rect) {
+    if (!$gameMap.tileIdIsBush(tileId)) {
+      return;
+    }
 
+    this.contents.drawText('~~~', rect.x, rect.y, rect.width, rect.height - 8, 'center');
+    this.contents.drawText('~~~', rect.x, rect.y + 8, rect.width, rect.height - 8, 'center');
   }
 
   drawTileCounter(tileId, rect) {
+    if (!$gameMap.tileIdIsCounter(tileId)) {
+      return;
+    }
 
+    this.contents.drawText('YES', rect.x, rect.y, rect.width, rect.height, 'center');
   }
 
   drawTileDamage(tileId, rect) {
+    if (!$gameMap.tileIdIsDamage(tileId)) {
+      return;
+    }
 
+    this.contents.drawText('DMG', rect.x, rect.y, rect.width, rect.height, 'center');
   }
 
   drawTileTerrain(tileId, rect) {
+    const tag = $gameMap.tileIdTerrainTag(tileId);
+    if (!tag) {
+      return;
+    }
 
+    this.contents.drawText(tag, rect.x, rect.y, rect.width, rect.height, 'center');
   }
 
   drawAllItems() {

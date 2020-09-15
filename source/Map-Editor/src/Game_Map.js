@@ -116,10 +116,6 @@ CycloneMapEditor.patchClass(Game_Map, $super => class {
 
   getPassageBitType(flag, d) {
     const bit = (1 << (d / 2 - 1)) & 0x0f;
-    // if ((flag & 0x10) !== 0) {
-    //   // [*] No effect on passage
-    //   return;
-    // }
     if ((flag & bit) === 0) {
       // [o] Passable
       return true;
@@ -151,5 +147,45 @@ CycloneMapEditor.patchClass(Game_Map, $super => class {
     }
 
     return TilePassageType.free;
+  }
+
+  tileIdIsBush(tileId) {
+    const flags = this.tilesetFlags();
+    const flag = flags[tileId];
+
+    return (flag & 0x40) !== 0;
+  }
+
+  tileIdIsLadder(tileId) {
+    const flags = this.tilesetFlags();
+    const flag = flags[tileId];
+
+    return (flag & 0x20) !== 0;
+  }
+
+  tileIdIsCounter(tileId) {
+    const flags = this.tilesetFlags();
+    const flag = flags[tileId];
+
+    return (flag & 0x80) !== 0;
+  }
+
+  tileIdIsDamage(tileId) {
+    const flags = this.tilesetFlags();
+    const flag = flags[tileId];
+
+    return (flag & 0x100) !== 0;
+  }
+
+  tileIdTerrainTag(tileId) {
+    const flags = this.tilesetFlags();
+    const flag = flags[tileId];
+
+    const tag = flag >> 12;
+    if (tag > 0) {
+      return tag;
+    }
+
+    return 0;
   }
 });
