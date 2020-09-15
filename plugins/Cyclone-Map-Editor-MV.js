@@ -1295,6 +1295,25 @@ function _createClass(Constructor, protoProps, staticProps) { if (protoProps) _d
     collisions: 8,
     tags: 9
   };
+  var Tools = {
+    eraser: 'eraser',
+    pencil: 'pencil',
+    rectangle: 'rectangle',
+    fill: 'fill',
+    passage: 'passage',
+    passage4: 'passage4',
+    ladder: 'ladder',
+    bush: 'bush',
+    counter: 'counter',
+    damage: 'damage',
+    terrain: 'terrain'
+  };
+  var tilePropTools = [Tools.passage, Tools.passage4, Tools.ladder, Tools.bush, Tools.counter, Tools.damage, Tools.terrain];
+  var TilePassageType = {
+    free: 0,
+    blocked: 1,
+    star: 2
+  };
 
   var MapshotTileMap = /*#__PURE__*/function (_Bitmap) {
     _inherits(MapshotTileMap, _Bitmap);
@@ -2215,7 +2234,7 @@ function _createClass(Constructor, protoProps, staticProps) { if (protoProps) _d
         });
         var fileMenu = new nw.Menu();
         fileMenu.append(new nw.MenuItem({
-          label: 'Save',
+          label: 'Save Current Map',
           key: 's',
           modifiers: 'ctrl',
           click: this.makeMenuEvent(function () {
@@ -2223,7 +2242,7 @@ function _createClass(Constructor, protoProps, staticProps) { if (protoProps) _d
           })
         }));
         fileMenu.append(new nw.MenuItem({
-          label: 'Reload',
+          label: 'Reload Current Map',
           key: 'r',
           modifiers: 'ctrl',
           click: this.makeMenuEvent(function () {
@@ -2352,7 +2371,7 @@ function _createClass(Constructor, protoProps, staticProps) { if (protoProps) _d
           label: 'Map',
           submenu: mapMenu
         }));
-        var drawMenu = new nw.Menu();
+        var modeMenu = new nw.Menu();
         this.pencilMenu = new nw.MenuItem({
           label: 'Pencil',
           type: 'checkbox',
@@ -2362,7 +2381,7 @@ function _createClass(Constructor, protoProps, staticProps) { if (protoProps) _d
             CycloneMapEditor$1.pencilButton();
           })
         });
-        drawMenu.append(this.pencilMenu);
+        modeMenu.append(this.pencilMenu);
         this.rectangleMenu = new nw.MenuItem({
           label: 'Rectangle',
           type: 'checkbox',
@@ -2372,7 +2391,7 @@ function _createClass(Constructor, protoProps, staticProps) { if (protoProps) _d
             CycloneMapEditor$1.rectangleButton();
           })
         });
-        drawMenu.append(this.rectangleMenu);
+        modeMenu.append(this.rectangleMenu);
         this.fillMenu = new nw.MenuItem({
           label: 'Flood Fill',
           type: 'checkbox',
@@ -2382,8 +2401,8 @@ function _createClass(Constructor, protoProps, staticProps) { if (protoProps) _d
             CycloneMapEditor$1.fillButton();
           })
         });
-        drawMenu.append(this.fillMenu);
-        drawMenu.append(new nw.MenuItem({
+        modeMenu.append(this.fillMenu);
+        modeMenu.append(new nw.MenuItem({
           type: 'separator'
         }));
         this.eraserMenu = new nw.MenuItem({
@@ -2395,10 +2414,95 @@ function _createClass(Constructor, protoProps, staticProps) { if (protoProps) _d
             CycloneMapEditor$1.eraserButton();
           })
         });
-        drawMenu.append(this.eraserMenu);
+        modeMenu.append(this.eraserMenu);
+        modeMenu.append(new nw.MenuItem({
+          type: 'separator'
+        }));
+        var tilesetPropsMenu = new nw.Menu();
+        this.tilePassageMenu = new nw.MenuItem({
+          label: 'Passage',
+          type: 'checkbox',
+          checked: currentTool === Tools.passage,
+          key: 'p',
+          modifiers: 'shift',
+          click: this.makeMenuEvent(function () {
+            CycloneMapEditor$1.toolButton(Tools.passage);
+          })
+        });
+        tilesetPropsMenu.append(this.tilePassageMenu);
+        this.tilePassage4Menu = new nw.MenuItem({
+          label: 'Passage (4 dir)',
+          type: 'checkbox',
+          checked: currentTool === Tools.passage4,
+          key: 'o',
+          modifiers: 'shift',
+          click: this.makeMenuEvent(function () {
+            CycloneMapEditor$1.toolButton(Tools.passage4);
+          })
+        });
+        tilesetPropsMenu.append(this.tilePassage4Menu);
+        this.tileLadderMenu = new nw.MenuItem({
+          label: 'Ladder',
+          type: 'checkbox',
+          checked: currentTool === Tools.ladder,
+          key: 'l',
+          modifiers: 'shift',
+          click: this.makeMenuEvent(function () {
+            CycloneMapEditor$1.toolButton(Tools.ladder);
+          })
+        });
+        tilesetPropsMenu.append(this.tileLadderMenu);
+        this.tileBushMenu = new nw.MenuItem({
+          label: 'Bush',
+          type: 'checkbox',
+          checked: currentTool === Tools.bush,
+          key: 'b',
+          modifiers: 'shift',
+          click: this.makeMenuEvent(function () {
+            CycloneMapEditor$1.toolButton(Tools.bush);
+          })
+        });
+        tilesetPropsMenu.append(this.tileBushMenu);
+        this.tileCounterMenu = new nw.MenuItem({
+          label: 'Counter',
+          type: 'checkbox',
+          checked: currentTool === Tools.counter,
+          key: 'c',
+          modifiers: 'shift',
+          click: this.makeMenuEvent(function () {
+            CycloneMapEditor$1.toolButton(Tools.counter);
+          })
+        });
+        tilesetPropsMenu.append(this.tileCounterMenu);
+        this.tileDamageMenu = new nw.MenuItem({
+          label: 'Damage',
+          type: 'checkbox',
+          checked: currentTool === Tools.damage,
+          key: 'd',
+          modifiers: 'shift',
+          click: this.makeMenuEvent(function () {
+            CycloneMapEditor$1.toolButton(Tools.damage);
+          })
+        });
+        tilesetPropsMenu.append(this.tileDamageMenu);
+        this.tileTerrainMenu = new nw.MenuItem({
+          label: 'Terrain Tag',
+          type: 'checkbox',
+          checked: currentTool === Tools.terrain,
+          key: 't',
+          modifiers: 'shift',
+          click: this.makeMenuEvent(function () {
+            CycloneMapEditor$1.toolButton(Tools.terrain);
+          })
+        });
+        tilesetPropsMenu.append(this.tileTerrainMenu);
+        modeMenu.append(new nw.MenuItem({
+          label: 'Tile Properties',
+          submenu: tilesetPropsMenu
+        }));
         menu.append(new nw.MenuItem({
-          label: 'Draw',
-          submenu: drawMenu
+          label: 'Mode',
+          submenu: modeMenu
         }));
         var layerMenu = new nw.Menu();
         this.autoLayerButton = new nw.MenuItem({
@@ -3386,10 +3490,17 @@ function _createClass(Constructor, protoProps, staticProps) { if (protoProps) _d
         rectangleStartMouseY = 0;
 
         if (Utils.isNwjs()) {
-          this.pencilMenu.checked = currentTool === 'pencil';
-          this.rectangleMenu.checked = currentTool === 'rectangle';
-          this.fillMenu.checked = currentTool === 'fill';
-          this.eraserMenu.checked = currentTool === 'eraser';
+          this.pencilMenu.checked = currentTool === Tools.pencil;
+          this.rectangleMenu.checked = currentTool === Tools.rectangle;
+          this.fillMenu.checked = currentTool === Tools.fill;
+          this.eraserMenu.checked = currentTool === Tools.eraser;
+          this.tilePassageMenu.checked = currentTool === Tools.passage;
+          this.tilePassage4Menu.checked = currentTool === Tools.passage4;
+          this.tileLadderMenu.checked = currentTool === Tools.ladder;
+          this.tileBushMenu.checked = currentTool === Tools.bush;
+          this.tileCounterMenu.checked = currentTool === Tools.counter;
+          this.tileDamageMenu.checked = currentTool === Tools.damage;
+          this.tileTerrainMenu.checked = currentTool === Tools.terrain;
         }
 
         this.refreshMapEditor();
@@ -3397,43 +3508,36 @@ function _createClass(Constructor, protoProps, staticProps) { if (protoProps) _d
     }, {
       key: "pencilButton",
       value: function pencilButton() {
-        if (!(SceneManager._scene instanceof Scene_Map)) {
-          return;
-        }
-
-        currentTool = 'pencil';
-        lastDrawingTool = 'pencil';
-        this.updateCurrentTool();
+        this.toolButton(Tools.pencil);
       }
     }, {
       key: "rectangleButton",
       value: function rectangleButton() {
-        if (!(SceneManager._scene instanceof Scene_Map)) {
-          return;
-        }
-
-        currentTool = 'rectangle';
-        lastDrawingTool = 'rectangle';
-        this.updateCurrentTool();
+        this.toolButton(Tools.rectangle);
       }
     }, {
       key: "fillButton",
       value: function fillButton() {
-        if (!(SceneManager._scene instanceof Scene_Map)) {
-          return;
-        }
-
-        currentTool = 'fill';
-        this.updateCurrentTool();
+        this.toolButton(Tools.fill);
       }
     }, {
       key: "eraserButton",
       value: function eraserButton() {
+        this.toolButton(Tools.eraser);
+      }
+    }, {
+      key: "toolButton",
+      value: function toolButton(toolType) {
         if (!(SceneManager._scene instanceof Scene_Map)) {
           return;
         }
 
-        currentTool = 'eraser';
+        currentTool = toolType;
+
+        if ([Tools.pencil, Tools.rectangle].includes(toolType)) {
+          lastDrawingTool = toolType;
+        }
+
         this.updateCurrentTool();
       }
     }, {
@@ -4020,6 +4124,10 @@ function _createClass(Constructor, protoProps, staticProps) { if (protoProps) _d
     }, {
       key: "undoLastChange",
       value: function undoLastChange() {
+        if (this.changingTileProps) {
+          return;
+        }
+
         if (changeHistory.length === 0) {
           SoundManager.playBuzzer();
           return;
@@ -4055,6 +4163,10 @@ function _createClass(Constructor, protoProps, staticProps) { if (protoProps) _d
     }, {
       key: "redoLastUndoneChange",
       value: function redoLastUndoneChange() {
+        if (this.changingTileProps) {
+          return;
+        }
+
         if (undoHistory.length === 0) {
           SoundManager.playBuzzer();
           return;
@@ -5711,6 +5823,11 @@ function _createClass(Constructor, protoProps, staticProps) { if (protoProps) _d
         // }
 
       }
+    }, {
+      key: "changingTileProps",
+      get: function get() {
+        return tilePropTools.includes(currentTool);
+      }
     }]);
 
     return CycloneMapEditor$1;
@@ -6164,6 +6281,56 @@ function _createClass(Constructor, protoProps, staticProps) { if (protoProps) _d
           var lastY = this._displayY;
           this._displayY = Math.max(this._displayY - distance, -extraTiles);
           this._parallaxY += this._displayY - lastY;
+        }
+      }, {
+        key: "checkTileIdPassage",
+        value: function checkTileIdPassage(tileId, d) {
+          var flags = this.tilesetFlags();
+          var flag = flags[tileId];
+          return this.getPassageBitType(flag, d);
+        }
+      }, {
+        key: "getPassageBitType",
+        value: function getPassageBitType(flag, d) {
+          var bit = 1 << d / 2 - 1 & 0x0f; // if ((flag & 0x10) !== 0) {
+          //   // [*] No effect on passage
+          //   return;
+          // }
+
+          if ((flag & bit) === 0) {
+            // [o] Passable
+            return true;
+          }
+
+          if ((flag & bit) === bit) {
+            // [x] Impassable
+            return false;
+          }
+        }
+      }, {
+        key: "checkTileIdPassageType",
+        value: function checkTileIdPassageType(tileId) {
+          var flags = this.tilesetFlags();
+          var flag = flags[tileId];
+
+          if ((flag & 0x10) !== 0) {
+            if (tileId < Tilemap.TILE_ID_A1) {
+              return TilePassageType.star;
+            }
+
+            return TilePassageType.free;
+          }
+
+          var top = this.getPassageBitType(flag, 8);
+          var bottom = this.getPassageBitType(flag, 2);
+          var left = this.getPassageBitType(flag, 4);
+          var right = this.getPassageBitType(flag, 6);
+
+          if (top === false && bottom === false && left === false && right === false) {
+            return TilePassageType.blocked;
+          }
+
+          return TilePassageType.free;
         }
       }]);
 
@@ -6844,6 +7011,10 @@ function _createClass(Constructor, protoProps, staticProps) { if (protoProps) _d
         var symbol = this.commandSymbol(index);
         var rect = this.itemRect(index);
 
+        if (CycloneMapEditor.changingTileProps && ['undo', 'redo'].includes(symbol)) {
+          return;
+        }
+
         if (symbol === CycloneMapEditor.currentTool) {
           this.contents.fillRect(rect.x, rect.y + 2, rect.width, rect.height, '#00FF0066');
           this.contents.fillRect(rect.x - 2, rect.y, rect.width + 4, 4, '#000000');
@@ -7246,6 +7417,11 @@ function _createClass(Constructor, protoProps, staticProps) { if (protoProps) _d
     }, {
       key: "makeCommandList",
       value: function makeCommandList() {
+        if (CycloneMapEditor.changingTileProps) {
+          this.makeTileList();
+          return;
+        }
+
         if (this._manualTileSelected) {
           this.makeManualTilesList();
           return;
@@ -7311,9 +7487,12 @@ function _createClass(Constructor, protoProps, staticProps) { if (protoProps) _d
     }, {
       key: "redraw",
       value: function redraw() {
-        Window_Selectable.prototype.refresh.call(this); // Force the tilemap cursor to redraw too
+        Window_Selectable.prototype.refresh.call(this);
 
-        SceneManager._scene._spriteset._mapEditorCursor.updateDrawing();
+        if (!CycloneMovement.changingTileProps) {
+          // Force the tilemap cursor to redraw too
+          SceneManager._scene._spriteset._mapEditorCursor.updateDrawing();
+        }
       }
     }, {
       key: "colSpacing",
@@ -7440,7 +7619,8 @@ function _createClass(Constructor, protoProps, staticProps) { if (protoProps) _d
         }
 
         var rect = this.itemRect(index);
-        var bitmap = this.contents.drawTile(this._list[index].ext, rect.x, rect.y, this.itemWidth(), this.itemHeight());
+        var tileId = this._list[index].ext;
+        var bitmap = this.contents.drawTile(tileId, rect.x, rect.y, this.itemWidth(), this.itemHeight());
 
         if (!bitmap) {
           return;
@@ -7448,10 +7628,135 @@ function _createClass(Constructor, protoProps, staticProps) { if (protoProps) _d
 
         if (!bitmap.isReady() && bitmap._loadListeners.length < 2) {
           bitmap.addLoadListener(function () {
-            _this19._needsRefresh = true;
+            _this19._needsRedraw = true;
           });
         }
+
+        if (!this._needsRedraw && CycloneMapEditor.changingTileProps) {
+          this.drawTileProp(tileId, rect);
+        }
       }
+    }, {
+      key: "drawTileProp",
+      value: function drawTileProp(tileId, rect) {
+        if (Input.isPressed('shift')) {
+          return;
+        }
+
+        switch (CycloneMapEditor.currentTool) {
+          case Tools.passage:
+            return this.drawTilePassage(tileId, rect);
+
+          case Tools.passage4:
+            return this.drawTilePassage4(tileId, rect);
+
+          case Tools.ladder:
+            return this.drawTileLadder(tileId, rect);
+
+          case Tools.bush:
+            return this.drawTileBush(tileId, rect);
+
+          case Tools.counter:
+            return this.drawTileCounter(tileId, rect);
+
+          case Tools.damage:
+            return this.drawTileDamage(tileId, rect);
+
+          case Tools.terrain:
+            return this.drawTileTerrain(tileId, rect);
+        }
+      }
+    }, {
+      key: "drawTilePassage",
+      value: function drawTilePassage(tileId, rect) {
+        var passageType = $gameMap.checkTileIdPassageType(tileId);
+        var context = this.contents.context;
+
+        if (passageType === TilePassageType.blocked) {
+          context.strokeStyle = '#000000';
+          context.lineWidth = 6;
+          context.beginPath();
+          context.moveTo(rect.x + 8, rect.y + 8);
+          context.lineTo(rect.x + rect.width - 8, rect.y + rect.height - 8);
+          context.stroke();
+          context.beginPath();
+          context.moveTo(rect.x + rect.width - 8, rect.y + 8);
+          context.lineTo(rect.x + 8, rect.y + rect.height - 8);
+          context.stroke();
+          context.strokeStyle = '#FFFFFF';
+          context.lineWidth = 4;
+          context.beginPath();
+          context.moveTo(rect.x + 8, rect.y + 8);
+          context.lineTo(rect.x + rect.width - 8, rect.y + rect.height - 8);
+          context.stroke();
+          context.beginPath();
+          context.moveTo(rect.x + rect.width - 8, rect.y + 8);
+          context.lineTo(rect.x + 8, rect.y + rect.height - 8);
+          context.stroke();
+          return;
+        }
+
+        if (passageType === TilePassageType.star) {
+          var rot = Math.PI / 5;
+          var step = Math.PI / 5;
+          var outerRadius = Math.floor(Math.min(rect.width, rect.height) / 3);
+          var innerRadius = Math.floor(Math.min(rect.width, rect.height) / 6);
+          var baseX = Math.floor(rect.x + rect.width / 2);
+          var baseY = Math.floor(rect.y + rect.height / 2);
+          context.beginPath();
+          context.moveTo(baseX, baseY - outerRadius);
+
+          for (var i = 0; i < 5; i++) {
+            var _x13 = baseX + Math.cos(rot) * outerRadius;
+
+            var y = baseY + Math.sin(rot) * outerRadius;
+            context.lineTo(_x13, y);
+            rot += step;
+            var inX = baseX + Math.cos(rot) * innerRadius;
+            var inY = baseY + Math.sin(rot) * innerRadius;
+            context.lineTo(inX, inY);
+            rot += step;
+          }
+
+          context.lineTo(baseX, baseY - outerRadius);
+          context.closePath();
+          context.lineWidth = 5;
+          context.strokeStyle = '#000000';
+          context.stroke();
+          context.fillStyle = '#FFFFFF';
+          context.fill();
+          return;
+        }
+
+        context.strokeStyle = '#000000';
+        context.lineWidth = 8;
+        context.beginPath();
+        context.arc(Math.floor(rect.x + rect.width / 2), Math.floor(rect.y + rect.height / 2), Math.floor(Math.min(rect.width - 10, rect.height - 10) / 2), 0, Math.PI * 2, false);
+        context.stroke();
+        context.strokeStyle = '#FFFFFF';
+        context.lineWidth = 4;
+        context.beginPath();
+        context.arc(Math.floor(rect.x + rect.width / 2), Math.floor(rect.y + rect.height / 2), Math.floor(Math.min(rect.width - 10, rect.height - 10) / 2), 0, Math.PI * 2, false);
+        context.stroke();
+      }
+    }, {
+      key: "drawTilePassage4",
+      value: function drawTilePassage4(tileId, rect) {}
+    }, {
+      key: "drawTileLadder",
+      value: function drawTileLadder(tileId, rect) {}
+    }, {
+      key: "drawTileBush",
+      value: function drawTileBush(tileId, rect) {}
+    }, {
+      key: "drawTileCounter",
+      value: function drawTileCounter(tileId, rect) {}
+    }, {
+      key: "drawTileDamage",
+      value: function drawTileDamage(tileId, rect) {}
+    }, {
+      key: "drawTileTerrain",
+      value: function drawTileTerrain(tileId, rect) {}
     }, {
       key: "drawAllItems",
       value: function drawAllItems() {
@@ -7510,14 +7815,17 @@ function _createClass(Constructor, protoProps, staticProps) { if (protoProps) _d
 
         var selectionWidth = CycloneMapEditor.tileDrawWidth * colDrawCount;
         var selectionHeight = CycloneMapEditor.tileDrawHeight * rowDrawCount;
-        this.contents.fillRect(x, y, selectionWidth, 4, '#000000');
-        this.contents.fillRect(x, y + selectionHeight - 4, selectionWidth, 4, '#000000');
-        this.contents.fillRect(x, y, 4, selectionHeight, '#000000');
-        this.contents.fillRect(x + selectionWidth - 4, y, 4, selectionHeight, '#000000');
-        this.contents.fillRect(x + 2, y + 2, selectionWidth - 4, 2, '#FFFFFF');
-        this.contents.fillRect(x + 2, y + selectionHeight - 4, selectionWidth - 4, 2, '#FFFFFF');
-        this.contents.fillRect(x + 2, y + 2, 2, selectionHeight - 4, '#FFFFFF');
-        this.contents.fillRect(x + selectionWidth - 4, y + 2, 2, selectionHeight - 4, '#FFFFFF');
+        var context = this.contents.context;
+        context.fillStyle = '#000000';
+        context.fillRect(x - 1, y - 1, selectionWidth + 2, 4);
+        context.fillRect(x - 1, y + selectionHeight - 2, selectionWidth + 2, 4);
+        context.fillRect(x - 1, y, 4, selectionHeight);
+        context.fillRect(x + selectionWidth - 1, y, 4, selectionHeight);
+        context.fillStyle = '#FFFFFF';
+        context.fillRect(x + 2, y + 2, selectionWidth - 3, 2);
+        context.fillRect(x + 2, y + selectionHeight - 4, selectionWidth - 3, 2);
+        context.fillRect(x + 2, y + 2, 2, selectionHeight - 4);
+        context.fillRect(x + selectionWidth - 3, y + 2, 2, selectionHeight - 4);
       }
     }, {
       key: "isSelectedTile",
@@ -7537,6 +7845,10 @@ function _createClass(Constructor, protoProps, staticProps) { if (protoProps) _d
     }, {
       key: "drawSelection",
       value: function drawSelection() {
+        if (CycloneMapEditor.changingTileProps) {
+          return;
+        }
+
         if (CycloneMapEditor.messySelection) {
           this.drawMessySelection();
           return;
@@ -7621,8 +7933,8 @@ function _createClass(Constructor, protoProps, staticProps) { if (protoProps) _d
         var selectionIndex = 0;
 
         for (var y = topRow; y < topRow + CycloneMapEditor.tileRows; y++) {
-          for (var _x13 = leftCol; _x13 < leftCol + CycloneMapEditor.tileCols; _x13++) {
-            var newIndex = y * maxCols + _x13;
+          for (var _x14 = leftCol; _x14 < leftCol + CycloneMapEditor.tileCols; _x14++) {
+            var newIndex = y * maxCols + _x14;
             var newTileId = this.commandName(newIndex);
             CycloneMapEditor.selectedTileList[selectionIndex] = newTileId;
             selectionIndex++;
@@ -7676,7 +7988,7 @@ function _createClass(Constructor, protoProps, staticProps) { if (protoProps) _d
         }
 
         if (this._mouseDown) {
-          if (!TouchInput.isPressed()) {
+          if (!TouchInput.isPressed() || CycloneMapEditor.changingTileProps) {
             this.finalizeTileSelection();
           } else if (TouchInput.isMoved()) {
             if (prevCols !== CycloneMapEditor.tileCols || prevRows !== CycloneMapEditor.tileRows) {
@@ -7768,7 +8080,7 @@ function _createClass(Constructor, protoProps, staticProps) { if (protoProps) _d
       value: function processTouchScroll() {
         if (TouchInput.isTriggered() && this.isTouchedInsideFrame()) {
           this.startSelectingTile();
-        } else if (CycloneMapEditor.isRightButtonDown && !CycloneMapEditor.wasRightButtonDown && !this._mouseDown) {
+        } else if (CycloneMapEditor.isRightButtonDown && !CycloneMapEditor.wasRightButtonDown && !this._mouseDown && !CycloneMapEditor.changingTileProps) {
           this.toggleManualTiles();
           return;
         }
@@ -7781,8 +8093,16 @@ function _createClass(Constructor, protoProps, staticProps) { if (protoProps) _d
     }, {
       key: "update",
       value: function update() {
-        if (this._needsRefresh) {
-          this.refresh();
+        var shift = Input.isPressed('shift');
+
+        if (shift !== this._oldShift) {
+          this._needsRedraw = true;
+          this._oldShift = shift;
+        }
+
+        if (this._needsRedraw) {
+          this._needsRedraw = false;
+          this.redraw();
         }
 
         _get(_getPrototypeOf(WindowCycloneMapEditor.prototype), "update", this).call(this);
@@ -8183,6 +8503,9 @@ function _createClass(Constructor, protoProps, staticProps) { if (protoProps) _d
             }
 
             return this.updateRectangle();
+
+          default:
+            return this.updateOther();
         }
       }
     }, {
@@ -8272,10 +8595,10 @@ function _createClass(Constructor, protoProps, staticProps) { if (protoProps) _d
                 row++;
               }
 
-              var _x14 = column * CycloneMapEditor.tileWidth;
+              var _x15 = column * CycloneMapEditor.tileWidth;
 
               var y = row * CycloneMapEditor.tileHeight;
-              this.bitmap.drawTile(tileId, _x14, y);
+              this.bitmap.drawTile(tileId, _x15, y);
               column++;
             }
           } catch (err) {
@@ -8308,18 +8631,18 @@ function _createClass(Constructor, protoProps, staticProps) { if (protoProps) _d
               row++;
             }
 
-            var _x15 = column * CycloneMapEditor.tileWidth;
+            var _x16 = column * CycloneMapEditor.tileWidth;
 
             var y = row * CycloneMapEditor.tileHeight;
 
             if (CycloneMapEditor.currentLayer === 5) {
-              this.bitmap.drawRegion(tileId, _x15, y);
+              this.bitmap.drawRegion(tileId, _x16, y);
             } else if (CycloneMapEditor.currentLayer === 4) {
-              this.bitmap.drawShadow(tileId, _x15, y);
+              this.bitmap.drawShadow(tileId, _x16, y);
             } else if (CycloneMapEditor.currentLayer === 8) {
-              this.drawCollision(tileId, _x15, y);
+              this.drawCollision(tileId, _x16, y);
             } else {
-              this.bitmap.drawTile(tileId, _x15, y);
+              this.bitmap.drawTile(tileId, _x16, y);
             }
 
             column++;
@@ -8341,6 +8664,11 @@ function _createClass(Constructor, protoProps, staticProps) { if (protoProps) _d
         }
 
         this.bitmap.drawCollisionType(tileId, x, y, drawWidth, drawHeight);
+      }
+    }, {
+      key: "updateOther",
+      value: function updateOther() {
+        this.bitmap.clear();
       }
     }, {
       key: "updateTiles",

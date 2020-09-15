@@ -35,6 +35,8 @@ class SpriteMapEditorCursor extends Sprite {
         }
 
         return this.updateRectangle();
+      default:
+        return this.updateOther();
     }
   }
 
@@ -166,6 +168,10 @@ class SpriteMapEditorCursor extends Sprite {
     }
 
     this.bitmap.drawCollisionType(tileId, x, y, drawWidth, drawHeight);
+  }
+
+  updateOther() {
+    this.bitmap.clear();
   }
 
   updateTiles() {

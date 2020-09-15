@@ -1,4 +1,4 @@
-import { Layers } from './constants';
+import { Layers, Tools, TilePassageType } from './constants';
 
 class WindowCycloneMapEditor extends Window_Command {
   initialize() {
@@ -89,6 +89,11 @@ class WindowCycloneMapEditor extends Window_Command {
   }
 
   makeCommandList() {
+    if (CycloneMapEditor.changingTileProps) {
+      this.makeTileList();
+      return;
+    }
+
     if (this._manualTileSelected) {
       this.makeManualTilesList();
       return;
@@ -157,8 +162,10 @@ class WindowCycloneMapEditor extends Window_Command {
   redraw() {
     Window_Selectable.prototype.refresh.call(this);
 
-    // Force the tilemap cursor to redraw too
-    SceneManager._scene._spriteset._mapEditorCursor.updateDrawing();
+    if (!CycloneMovement.changingTileProps) {
+      // Force the tilemap cursor to redraw too
+      SceneManager._scene._spriteset._mapEditorCursor.updateDrawing();
+    }
   }
 
   colSpacing() {
@@ -249,7 +256,6 @@ class WindowCycloneMapEditor extends Window_Command {
     context.stroke();
   }
 
-
   drawItem(index) {
     this.resetTextColor();
     this.changePaintOpacity(this.isCommandEnabled(index));
@@ -272,16 +278,144 @@ class WindowCycloneMapEditor extends Window_Command {
     }
 
     const rect = this.itemRect(index);
-    const bitmap = this.contents.drawTile(this._list[index].ext, rect.x, rect.y, this.itemWidth(), this.itemHeight());
+    const tileId = this._list[index].ext;
+    const bitmap = this.contents.drawTile(tileId, rect.x, rect.y, this.itemWidth(), this.itemHeight());
     if (!bitmap) {
       return;
     }
 
     if (!bitmap.isReady() && bitmap._loadListeners.length < 2) {
       bitmap.addLoadListener(() => {
-        this._needsRefresh = true;
+        this._needsRedraw = true;
       });
     }
+
+    if (!this._needsRedraw && CycloneMapEditor.changingTileProps) {
+      this.drawTileProp(tileId, rect);
+    }
+  }
+
+  drawTileProp(tileId, rect) {
+    if (Input.isPressed('shift')) {
+      return;
+    }
+
+    switch(CycloneMapEditor.currentTool) {
+      case Tools.passage:
+        return this.drawTilePassage(tileId, rect);
+      case Tools.passage4:
+        return this.drawTilePassage4(tileId, rect);
+      case Tools.ladder:
+        return this.drawTileLadder(tileId, rect);
+      case Tools.bush:
+        return this.drawTileBush(tileId, rect);
+      case Tools.counter:
+        return this.drawTileCounter(tileId, rect);
+      case Tools.damage:
+        return this.drawTileDamage(tileId, rect);
+      case Tools.terrain:
+        return this.drawTileTerrain(tileId, rect);
+    }
+  }
+
+  drawTilePassage(tileId, rect) {
+    const passageType = $gameMap.checkTileIdPassageType(tileId);
+    const context = this.contents.context;
+
+    if (passageType === TilePassageType.blocked) {
+      context.strokeStyle = '#000000';
+      context.lineWidth = 6;
+      context.beginPath();
+      context.moveTo(rect.x + 8, rect.y + 8);
+      context.lineTo(rect.x + rect.width - 8, rect.y + rect.height - 8);
+      context.stroke();
+
+      context.beginPath();
+      context.moveTo(rect.x + rect.width - 8, rect.y + 8);
+      context.lineTo(rect.x + 8, rect.y + rect.height - 8);
+      context.stroke();
+
+      context.strokeStyle = '#FFFFFF';
+      context.lineWidth = 4;
+      context.beginPath();
+      context.moveTo(rect.x + 8, rect.y + 8);
+      context.lineTo(rect.x + rect.width - 8, rect.y + rect.height - 8);
+      context.stroke();
+
+      context.beginPath();
+      context.moveTo(rect.x + rect.width - 8, rect.y + 8);
+      context.lineTo(rect.x + 8, rect.y + rect.height - 8);
+      context.stroke();
+
+      return;
+    }
+
+    if (passageType === TilePassageType.star) {
+      let rot = Math.PI / 5;
+      const step = Math.PI / 5;
+      const outerRadius = Math.floor(Math.min(rect.width, rect.height) / 3);
+      const innerRadius = Math.floor(Math.min(rect.width, rect.height) / 6);
+      const baseX = Math.floor(rect.x + (rect.width / 2));
+      const baseY = Math.floor(rect.y + (rect.height / 2));
+
+      context.beginPath();
+      context.moveTo(baseX, baseY - outerRadius);
+      for (let i = 0; i < 5; i++) {
+        const x = baseX + Math.cos(rot) * outerRadius;
+        const y = baseY + Math.sin(rot) * outerRadius;
+        context.lineTo(x, y);
+        rot += step;
+
+        const inX = baseX + Math.cos(rot) * innerRadius;
+        const inY = baseY + Math.sin(rot) * innerRadius;
+        context.lineTo(inX, inY);
+        rot += step;
+      }
+      context.lineTo(baseX, baseY - outerRadius);
+      context.closePath();
+      context.lineWidth = 5;
+      context.strokeStyle = '#000000';
+      context.stroke();
+      context.fillStyle = '#FFFFFF';
+      context.fill();
+      return;
+    }
+
+    context.strokeStyle = '#000000';
+    context.lineWidth = 8;
+    context.beginPath();
+    context.arc(Math.floor(rect.x + rect.width / 2), Math.floor(rect.y + rect.height / 2), Math.floor(Math.min(rect.width - 10, rect.height - 10) / 2), 0, Math.PI * 2, false);
+    context.stroke();
+
+    context.strokeStyle = '#FFFFFF';
+    context.lineWidth = 4;
+    context.beginPath();
+    context.arc(Math.floor(rect.x + rect.width / 2), Math.floor(rect.y + rect.height / 2), Math.floor(Math.min(rect.width - 10, rect.height - 10) / 2), 0, Math.PI * 2, false);
+    context.stroke();
+  }
+
+  drawTilePassage4(tileId, rect) {
+
+  }
+
+  drawTileLadder(tileId, rect) {
+
+  }
+
+  drawTileBush(tileId, rect) {
+
+  }
+
+  drawTileCounter(tileId, rect) {
+
+  }
+
+  drawTileDamage(tileId, rect) {
+
+  }
+
+  drawTileTerrain(tileId, rect) {
+
   }
 
   drawAllItems() {
@@ -325,15 +459,19 @@ class WindowCycloneMapEditor extends Window_Command {
     const selectionWidth = CycloneMapEditor.tileDrawWidth * colDrawCount;
     const selectionHeight = CycloneMapEditor.tileDrawHeight * rowDrawCount;
 
-    this.contents.fillRect(x, y, selectionWidth, 4, '#000000');
-    this.contents.fillRect(x, y + selectionHeight - 4, selectionWidth, 4, '#000000');
-    this.contents.fillRect(x, y, 4, selectionHeight, '#000000');
-    this.contents.fillRect(x + selectionWidth - 4, y, 4, selectionHeight, '#000000');
+    const context = this.contents.context;
+    context.fillStyle = '#000000';
 
-    this.contents.fillRect(x + 2, y + 2, selectionWidth - 4, 2, '#FFFFFF');
-    this.contents.fillRect(x + 2, y + selectionHeight - 4, selectionWidth - 4, 2, '#FFFFFF');
-    this.contents.fillRect(x + 2, y + 2, 2, selectionHeight - 4, '#FFFFFF');
-    this.contents.fillRect(x + selectionWidth - 4, y + 2, 2, selectionHeight - 4, '#FFFFFF');
+    context.fillRect(x - 1, y - 1, selectionWidth + 2, 4);
+    context.fillRect(x - 1, y + selectionHeight - 2, selectionWidth + 2, 4);
+    context.fillRect(x - 1, y, 4, selectionHeight);
+    context.fillRect(x + selectionWidth - 1, y, 4, selectionHeight);
+
+    context.fillStyle = '#FFFFFF';
+    context.fillRect(x + 2, y + 2, selectionWidth - 3, 2);
+    context.fillRect(x + 2, y + selectionHeight - 4, selectionWidth - 3, 2);
+    context.fillRect(x + 2, y + 2, 2, selectionHeight - 4);
+    context.fillRect(x + selectionWidth - 3, y + 2, 2, selectionHeight - 4);
   }
 
   isSelectedTile(tileId) {
@@ -351,6 +489,10 @@ class WindowCycloneMapEditor extends Window_Command {
   }
 
   drawSelection() {
+    if (CycloneMapEditor.changingTileProps) {
+      return;
+    }
+
     if (CycloneMapEditor.messySelection) {
       this.drawMessySelection();
       return;
@@ -476,7 +618,7 @@ class WindowCycloneMapEditor extends Window_Command {
     }
 
     if (this._mouseDown) {
-      if (!TouchInput.isPressed()) {
+      if (!TouchInput.isPressed() || CycloneMapEditor.changingTileProps) {
         this.finalizeTileSelection();
       } else if (TouchInput.isMoved()) {
         if (prevCols !== CycloneMapEditor.tileCols || prevRows !== CycloneMapEditor.tileRows) {
@@ -559,7 +701,7 @@ class WindowCycloneMapEditor extends Window_Command {
   processTouchScroll() {
     if (TouchInput.isTriggered() && this.isTouchedInsideFrame()) {
       this.startSelectingTile();
-    } else if (CycloneMapEditor.isRightButtonDown && !CycloneMapEditor.wasRightButtonDown && !this._mouseDown) {
+    } else if (CycloneMapEditor.isRightButtonDown && !CycloneMapEditor.wasRightButtonDown && !this._mouseDown && !CycloneMapEditor.changingTileProps) {
       this.toggleManualTiles();
       return;
     }
@@ -571,8 +713,15 @@ class WindowCycloneMapEditor extends Window_Command {
   }
 
   update() {
-    if (this._needsRefresh) {
-      this.refresh();
+    const shift = Input.isPressed('shift');
+    if (shift !== this._oldShift) {
+      this._needsRedraw = true;
+      this._oldShift = shift;
+    }
+
+    if (this._needsRedraw) {
+      this._needsRedraw = false;
+      this.redraw();
     }
 
     super.update();

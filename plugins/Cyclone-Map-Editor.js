@@ -771,6 +771,36 @@ const Layers = {
   tags: 9,
 };
 
+const Tools = {
+  eraser: 'eraser',
+  pencil: 'pencil',
+  rectangle: 'rectangle',
+  fill: 'fill',
+  passage: 'passage',
+  passage4: 'passage4',
+  ladder: 'ladder',
+  bush: 'bush',
+  counter: 'counter',
+  damage: 'damage',
+  terrain: 'terrain',
+};
+
+const tilePropTools = [
+  Tools.passage,
+  Tools.passage4,
+  Tools.ladder,
+  Tools.bush,
+  Tools.counter,
+  Tools.damage,
+  Tools.terrain,
+];
+
+const TilePassageType = {
+  free: 0,
+  blocked: 1,
+  star: 2,
+};
+
 class MapshotTileMap extends Bitmap {
   constructor() {
     const tileWidth = $gameMap.tileWidth();
@@ -1398,6 +1428,10 @@ class CycloneMapEditor$1 extends CyclonePlugin {
     // }
   }
 
+  static get changingTileProps() {
+    return tilePropTools.includes(currentTool);
+  }
+
   static register() {
     super.initialize('CycloneMapEditor');
 
@@ -1504,7 +1538,7 @@ class CycloneMapEditor$1 extends CyclonePlugin {
 
     const fileMenu = new nw.Menu();
     fileMenu.append(new nw.MenuItem( {
-      label: 'Save',
+      label: 'Save Current Map',
       key: 's',
       modifiers: 'ctrl',
       click: this.makeMenuEvent(() => {
@@ -1512,7 +1546,7 @@ class CycloneMapEditor$1 extends CyclonePlugin {
       })
     }));
     fileMenu.append(new nw.MenuItem( {
-      label: 'Reload',
+      label: 'Reload Current Map',
       key: 'r',
       modifiers: 'ctrl',
       click: this.makeMenuEvent(() => {
@@ -1646,7 +1680,7 @@ class CycloneMapEditor$1 extends CyclonePlugin {
       submenu: mapMenu,
     }));
 
-    const drawMenu = new nw.Menu();
+    const modeMenu = new nw.Menu();
     this.pencilMenu = new nw.MenuItem( {
       label: 'Pencil',
       type: 'checkbox',
@@ -1656,7 +1690,7 @@ class CycloneMapEditor$1 extends CyclonePlugin {
         CycloneMapEditor$1.pencilButton();
       })
     });
-    drawMenu.append(this.pencilMenu);
+    modeMenu.append(this.pencilMenu);
     this.rectangleMenu = new nw.MenuItem( {
       label: 'Rectangle',
       type: 'checkbox',
@@ -1666,7 +1700,7 @@ class CycloneMapEditor$1 extends CyclonePlugin {
         CycloneMapEditor$1.rectangleButton();
       })
     });
-    drawMenu.append(this.rectangleMenu);
+    modeMenu.append(this.rectangleMenu);
     this.fillMenu = new nw.MenuItem( {
       label: 'Flood Fill',
       type: 'checkbox',
@@ -1676,8 +1710,8 @@ class CycloneMapEditor$1 extends CyclonePlugin {
         CycloneMapEditor$1.fillButton();
       })
     });
-    drawMenu.append(this.fillMenu);
-    drawMenu.append(new nw.MenuItem( {type: 'separator'}));
+    modeMenu.append(this.fillMenu);
+    modeMenu.append(new nw.MenuItem( {type: 'separator'}));
     this.eraserMenu = new nw.MenuItem( {
       label: 'Eraser',
       type: 'checkbox',
@@ -1687,11 +1721,102 @@ class CycloneMapEditor$1 extends CyclonePlugin {
         CycloneMapEditor$1.eraserButton();
       })
     });
-    drawMenu.append(this.eraserMenu);
+    modeMenu.append(this.eraserMenu);
+    modeMenu.append(new nw.MenuItem( {type: 'separator'}));
+
+    const tilesetPropsMenu = new nw.Menu();
+    this.tilePassageMenu = new nw.MenuItem({
+      label: 'Passage',
+      type: 'checkbox',
+      checked: currentTool === Tools.passage,
+      key: 'p',
+      modifiers: 'shift',
+      click: this.makeMenuEvent(() => {
+        CycloneMapEditor$1.toolButton(Tools.passage);
+      }),
+    });
+    tilesetPropsMenu.append(this.tilePassageMenu);
+
+    this.tilePassage4Menu = new nw.MenuItem({
+      label: 'Passage (4 dir)',
+      type: 'checkbox',
+      checked: currentTool === Tools.passage4,
+      key: 'o',
+      modifiers: 'shift',
+      click: this.makeMenuEvent(() => {
+        CycloneMapEditor$1.toolButton(Tools.passage4);
+      }),
+    });
+    tilesetPropsMenu.append(this.tilePassage4Menu);
+
+    this.tileLadderMenu = new nw.MenuItem({
+      label: 'Ladder',
+      type: 'checkbox',
+      checked: currentTool === Tools.ladder,
+      key: 'l',
+      modifiers: 'shift',
+      click: this.makeMenuEvent(() => {
+        CycloneMapEditor$1.toolButton(Tools.ladder);
+      }),
+    });
+    tilesetPropsMenu.append(this.tileLadderMenu);
+
+    this.tileBushMenu = new nw.MenuItem({
+      label: 'Bush',
+      type: 'checkbox',
+      checked: currentTool === Tools.bush,
+      key: 'b',
+      modifiers: 'shift',
+      click: this.makeMenuEvent(() => {
+        CycloneMapEditor$1.toolButton(Tools.bush);
+      }),
+    });
+    tilesetPropsMenu.append(this.tileBushMenu);
+
+    this.tileCounterMenu = new nw.MenuItem({
+      label: 'Counter',
+      type: 'checkbox',
+      checked: currentTool === Tools.counter,
+      key: 'c',
+      modifiers: 'shift',
+      click: this.makeMenuEvent(() => {
+        CycloneMapEditor$1.toolButton(Tools.counter);
+      }),
+    });
+    tilesetPropsMenu.append(this.tileCounterMenu);
+
+    this.tileDamageMenu = new nw.MenuItem({
+      label: 'Damage',
+      type: 'checkbox',
+      checked: currentTool === Tools.damage,
+      key: 'd',
+      modifiers: 'shift',
+      click: this.makeMenuEvent(() => {
+        CycloneMapEditor$1.toolButton(Tools.damage);
+      }),
+    });
+    tilesetPropsMenu.append(this.tileDamageMenu);
+
+    this.tileTerrainMenu = new nw.MenuItem({
+      label: 'Terrain Tag',
+      type: 'checkbox',
+      checked: currentTool === Tools.terrain,
+      key: 't',
+      modifiers: 'shift',
+      click: this.makeMenuEvent(() => {
+        CycloneMapEditor$1.toolButton(Tools.terrain);
+      }),
+    });
+    tilesetPropsMenu.append(this.tileTerrainMenu);
+
+    modeMenu.append(new nw.MenuItem({
+      label: 'Tile Properties',
+      submenu: tilesetPropsMenu,
+    }));
 
     menu.append(new nw.MenuItem({
-      label: 'Draw',
-      submenu: drawMenu,
+      label: 'Mode',
+      submenu: modeMenu,
     }));
 
     const layerMenu = new nw.Menu();
@@ -2588,53 +2713,48 @@ class CycloneMapEditor$1 extends CyclonePlugin {
     rectangleStartMouseY = 0;
 
     if (Utils.isNwjs()) {
-      this.pencilMenu.checked = currentTool === 'pencil';
-      this.rectangleMenu.checked = currentTool === 'rectangle';
-      this.fillMenu.checked = currentTool === 'fill';
-      this.eraserMenu.checked = currentTool === 'eraser';
+      this.pencilMenu.checked = currentTool === Tools.pencil;
+      this.rectangleMenu.checked = currentTool === Tools.rectangle;
+      this.fillMenu.checked = currentTool === Tools.fill;
+      this.eraserMenu.checked = currentTool === Tools.eraser;
+
+      this.tilePassageMenu.checked = currentTool === Tools.passage;
+      this.tilePassage4Menu.checked = currentTool === Tools.passage4;
+      this.tileLadderMenu.checked = currentTool === Tools.ladder;
+      this.tileBushMenu.checked = currentTool === Tools.bush;
+      this.tileCounterMenu.checked = currentTool === Tools.counter;
+      this.tileDamageMenu.checked = currentTool === Tools.damage;
+      this.tileTerrainMenu.checked = currentTool === Tools.terrain;
     }
 
     this.refreshMapEditor();
   }
 
   static pencilButton() {
-    if (!(SceneManager._scene instanceof Scene_Map)) {
-      return;
-    }
-
-    currentTool = 'pencil';
-    lastDrawingTool = 'pencil';
-
-    this.updateCurrentTool();
+    this.toolButton(Tools.pencil);
   }
 
   static rectangleButton() {
-    if (!(SceneManager._scene instanceof Scene_Map)) {
-      return;
-    }
-
-    currentTool = 'rectangle';
-    lastDrawingTool = 'rectangle';
-
-    this.updateCurrentTool();
+    this.toolButton(Tools.rectangle);
   }
 
   static fillButton() {
-    if (!(SceneManager._scene instanceof Scene_Map)) {
-      return;
-    }
-
-    currentTool = 'fill';
-    this.updateCurrentTool();
+    this.toolButton(Tools.fill);
   }
 
   static eraserButton() {
+    this.toolButton(Tools.eraser);
+  }
+
+  static toolButton(toolType) {
     if (!(SceneManager._scene instanceof Scene_Map)) {
       return;
     }
 
-    currentTool = 'eraser';
-
+    currentTool = toolType;
+    if ([Tools.pencil, Tools.rectangle].includes(toolType)) {
+      lastDrawingTool = toolType;
+    }
     this.updateCurrentTool();
   }
 
@@ -3147,6 +3267,10 @@ class CycloneMapEditor$1 extends CyclonePlugin {
   }
 
   static undoLastChange() {
+    if (this.changingTileProps) {
+      return;
+    }
+
     if (changeHistory.length === 0) {
       SoundManager.playBuzzer();
       return;
@@ -3179,6 +3303,10 @@ class CycloneMapEditor$1 extends CyclonePlugin {
   }
 
   static redoLastUndoneChange() {
+    if (this.changingTileProps) {
+      return;
+    }
+
     if (undoHistory.length === 0) {
       SoundManager.playBuzzer();
       return;
@@ -4692,6 +4820,52 @@ CycloneMapEditor.patchClass(Game_Map, $super => class {
     this._displayY = Math.max(this._displayY - distance, -extraTiles);
     this._parallaxY += this._displayY - lastY;
   }
+
+  checkTileIdPassage(tileId, d) {
+    const flags = this.tilesetFlags();
+    const flag = flags[tileId];
+
+    return this.getPassageBitType(flag, d);
+  }
+
+  getPassageBitType(flag, d) {
+    const bit = (1 << (d / 2 - 1)) & 0x0f;
+    // if ((flag & 0x10) !== 0) {
+    //   // [*] No effect on passage
+    //   return;
+    // }
+    if ((flag & bit) === 0) {
+      // [o] Passable
+      return true;
+    }
+    if ((flag & bit) === bit) {
+      // [x] Impassable
+      return false;
+    }
+  }
+
+  checkTileIdPassageType(tileId) {
+    const flags = this.tilesetFlags();
+    const flag = flags[tileId];
+
+    if ((flag & 0x10) !== 0) {
+      if (tileId < Tilemap.TILE_ID_A1) {
+        return TilePassageType.star;
+      }
+      return TilePassageType.free;
+    }
+
+    const top = this.getPassageBitType(flag, 8);
+    const bottom = this.getPassageBitType(flag, 2);
+    const left = this.getPassageBitType(flag, 4);
+    const right = this.getPassageBitType(flag, 6);
+
+    if (top === false && bottom === false && left === false && right === false) {
+      return TilePassageType.blocked;
+    }
+
+    return TilePassageType.free;
+  }
 });
 
 CycloneMapEditor.patchClass(Game_Player, $super => class {
@@ -5275,6 +5449,10 @@ class WindowCycloneMapEditorCommands extends Window_Command {
     const symbol = this.commandSymbol(index);
     const rect = this.itemRect(index);
 
+    if (CycloneMapEditor.changingTileProps && ['undo', 'redo'].includes(symbol)) {
+      return;
+    }
+
     if (symbol === CycloneMapEditor.currentTool) {
       this.contents.fillRect(rect.x, rect.y + 2, rect.width, rect.height, '#00FF0066');
 
@@ -5603,6 +5781,11 @@ class WindowCycloneMapEditor extends Window_Command {
   }
 
   makeCommandList() {
+    if (CycloneMapEditor.changingTileProps) {
+      this.makeTileList();
+      return;
+    }
+
     if (this._manualTileSelected) {
       this.makeManualTilesList();
       return;
@@ -5671,8 +5854,10 @@ class WindowCycloneMapEditor extends Window_Command {
   redraw() {
     Window_Selectable.prototype.refresh.call(this);
 
-    // Force the tilemap cursor to redraw too
-    SceneManager._scene._spriteset._mapEditorCursor.updateDrawing();
+    if (!CycloneMovement.changingTileProps) {
+      // Force the tilemap cursor to redraw too
+      SceneManager._scene._spriteset._mapEditorCursor.updateDrawing();
+    }
   }
 
   colSpacing() {
@@ -5763,7 +5948,6 @@ class WindowCycloneMapEditor extends Window_Command {
     context.stroke();
   }
 
-
   drawItem(index) {
     this.resetTextColor();
     this.changePaintOpacity(this.isCommandEnabled(index));
@@ -5786,16 +5970,144 @@ class WindowCycloneMapEditor extends Window_Command {
     }
 
     const rect = this.itemRect(index);
-    const bitmap = this.contents.drawTile(this._list[index].ext, rect.x, rect.y, this.itemWidth(), this.itemHeight());
+    const tileId = this._list[index].ext;
+    const bitmap = this.contents.drawTile(tileId, rect.x, rect.y, this.itemWidth(), this.itemHeight());
     if (!bitmap) {
       return;
     }
 
     if (!bitmap.isReady() && bitmap._loadListeners.length < 2) {
       bitmap.addLoadListener(() => {
-        this._needsRefresh = true;
+        this._needsRedraw = true;
       });
     }
+
+    if (!this._needsRedraw && CycloneMapEditor.changingTileProps) {
+      this.drawTileProp(tileId, rect);
+    }
+  }
+
+  drawTileProp(tileId, rect) {
+    if (Input.isPressed('shift')) {
+      return;
+    }
+
+    switch(CycloneMapEditor.currentTool) {
+      case Tools.passage:
+        return this.drawTilePassage(tileId, rect);
+      case Tools.passage4:
+        return this.drawTilePassage4(tileId, rect);
+      case Tools.ladder:
+        return this.drawTileLadder(tileId, rect);
+      case Tools.bush:
+        return this.drawTileBush(tileId, rect);
+      case Tools.counter:
+        return this.drawTileCounter(tileId, rect);
+      case Tools.damage:
+        return this.drawTileDamage(tileId, rect);
+      case Tools.terrain:
+        return this.drawTileTerrain(tileId, rect);
+    }
+  }
+
+  drawTilePassage(tileId, rect) {
+    const passageType = $gameMap.checkTileIdPassageType(tileId);
+    const context = this.contents.context;
+
+    if (passageType === TilePassageType.blocked) {
+      context.strokeStyle = '#000000';
+      context.lineWidth = 6;
+      context.beginPath();
+      context.moveTo(rect.x + 8, rect.y + 8);
+      context.lineTo(rect.x + rect.width - 8, rect.y + rect.height - 8);
+      context.stroke();
+
+      context.beginPath();
+      context.moveTo(rect.x + rect.width - 8, rect.y + 8);
+      context.lineTo(rect.x + 8, rect.y + rect.height - 8);
+      context.stroke();
+
+      context.strokeStyle = '#FFFFFF';
+      context.lineWidth = 4;
+      context.beginPath();
+      context.moveTo(rect.x + 8, rect.y + 8);
+      context.lineTo(rect.x + rect.width - 8, rect.y + rect.height - 8);
+      context.stroke();
+
+      context.beginPath();
+      context.moveTo(rect.x + rect.width - 8, rect.y + 8);
+      context.lineTo(rect.x + 8, rect.y + rect.height - 8);
+      context.stroke();
+
+      return;
+    }
+
+    if (passageType === TilePassageType.star) {
+      let rot = Math.PI / 5;
+      const step = Math.PI / 5;
+      const outerRadius = Math.floor(Math.min(rect.width, rect.height) / 3);
+      const innerRadius = Math.floor(Math.min(rect.width, rect.height) / 6);
+      const baseX = Math.floor(rect.x + (rect.width / 2));
+      const baseY = Math.floor(rect.y + (rect.height / 2));
+
+      context.beginPath();
+      context.moveTo(baseX, baseY - outerRadius);
+      for (let i = 0; i < 5; i++) {
+        const x = baseX + Math.cos(rot) * outerRadius;
+        const y = baseY + Math.sin(rot) * outerRadius;
+        context.lineTo(x, y);
+        rot += step;
+
+        const inX = baseX + Math.cos(rot) * innerRadius;
+        const inY = baseY + Math.sin(rot) * innerRadius;
+        context.lineTo(inX, inY);
+        rot += step;
+      }
+      context.lineTo(baseX, baseY - outerRadius);
+      context.closePath();
+      context.lineWidth = 5;
+      context.strokeStyle = '#000000';
+      context.stroke();
+      context.fillStyle = '#FFFFFF';
+      context.fill();
+      return;
+    }
+
+    context.strokeStyle = '#000000';
+    context.lineWidth = 8;
+    context.beginPath();
+    context.arc(Math.floor(rect.x + rect.width / 2), Math.floor(rect.y + rect.height / 2), Math.floor(Math.min(rect.width - 10, rect.height - 10) / 2), 0, Math.PI * 2, false);
+    context.stroke();
+
+    context.strokeStyle = '#FFFFFF';
+    context.lineWidth = 4;
+    context.beginPath();
+    context.arc(Math.floor(rect.x + rect.width / 2), Math.floor(rect.y + rect.height / 2), Math.floor(Math.min(rect.width - 10, rect.height - 10) / 2), 0, Math.PI * 2, false);
+    context.stroke();
+  }
+
+  drawTilePassage4(tileId, rect) {
+
+  }
+
+  drawTileLadder(tileId, rect) {
+
+  }
+
+  drawTileBush(tileId, rect) {
+
+  }
+
+  drawTileCounter(tileId, rect) {
+
+  }
+
+  drawTileDamage(tileId, rect) {
+
+  }
+
+  drawTileTerrain(tileId, rect) {
+
   }
 
   drawAllItems() {
@@ -5839,15 +6151,19 @@ class WindowCycloneMapEditor extends Window_Command {
     const selectionWidth = CycloneMapEditor.tileDrawWidth * colDrawCount;
     const selectionHeight = CycloneMapEditor.tileDrawHeight * rowDrawCount;
 
-    this.contents.fillRect(x, y, selectionWidth, 4, '#000000');
-    this.contents.fillRect(x, y + selectionHeight - 4, selectionWidth, 4, '#000000');
-    this.contents.fillRect(x, y, 4, selectionHeight, '#000000');
-    this.contents.fillRect(x + selectionWidth - 4, y, 4, selectionHeight, '#000000');
+    const context = this.contents.context;
+    context.fillStyle = '#000000';
 
-    this.contents.fillRect(x + 2, y + 2, selectionWidth - 4, 2, '#FFFFFF');
-    this.contents.fillRect(x + 2, y + selectionHeight - 4, selectionWidth - 4, 2, '#FFFFFF');
-    this.contents.fillRect(x + 2, y + 2, 2, selectionHeight - 4, '#FFFFFF');
-    this.contents.fillRect(x + selectionWidth - 4, y + 2, 2, selectionHeight - 4, '#FFFFFF');
+    context.fillRect(x - 1, y - 1, selectionWidth + 2, 4);
+    context.fillRect(x - 1, y + selectionHeight - 2, selectionWidth + 2, 4);
+    context.fillRect(x - 1, y, 4, selectionHeight);
+    context.fillRect(x + selectionWidth - 1, y, 4, selectionHeight);
+
+    context.fillStyle = '#FFFFFF';
+    context.fillRect(x + 2, y + 2, selectionWidth - 3, 2);
+    context.fillRect(x + 2, y + selectionHeight - 4, selectionWidth - 3, 2);
+    context.fillRect(x + 2, y + 2, 2, selectionHeight - 4);
+    context.fillRect(x + selectionWidth - 3, y + 2, 2, selectionHeight - 4);
   }
 
   isSelectedTile(tileId) {
@@ -5865,6 +6181,10 @@ class WindowCycloneMapEditor extends Window_Command {
   }
 
   drawSelection() {
+    if (CycloneMapEditor.changingTileProps) {
+      return;
+    }
+
     if (CycloneMapEditor.messySelection) {
       this.drawMessySelection();
       return;
@@ -5990,7 +6310,7 @@ class WindowCycloneMapEditor extends Window_Command {
     }
 
     if (this._mouseDown) {
-      if (!TouchInput.isPressed()) {
+      if (!TouchInput.isPressed() || CycloneMapEditor.changingTileProps) {
         this.finalizeTileSelection();
       } else if (TouchInput.isMoved()) {
         if (prevCols !== CycloneMapEditor.tileCols || prevRows !== CycloneMapEditor.tileRows) {
@@ -6073,7 +6393,7 @@ class WindowCycloneMapEditor extends Window_Command {
   processTouchScroll() {
     if (TouchInput.isTriggered() && this.isTouchedInsideFrame()) {
       this.startSelectingTile();
-    } else if (CycloneMapEditor.isRightButtonDown && !CycloneMapEditor.wasRightButtonDown && !this._mouseDown) {
+    } else if (CycloneMapEditor.isRightButtonDown && !CycloneMapEditor.wasRightButtonDown && !this._mouseDown && !CycloneMapEditor.changingTileProps) {
       this.toggleManualTiles();
       return;
     }
@@ -6085,8 +6405,15 @@ class WindowCycloneMapEditor extends Window_Command {
   }
 
   update() {
-    if (this._needsRefresh) {
-      this.refresh();
+    const shift = Input.isPressed('shift');
+    if (shift !== this._oldShift) {
+      this._needsRedraw = true;
+      this._oldShift = shift;
+    }
+
+    if (this._needsRedraw) {
+      this._needsRedraw = false;
+      this.redraw();
     }
 
     super.update();
@@ -6413,6 +6740,8 @@ class SpriteMapEditorCursor extends Sprite {
         }
 
         return this.updateRectangle();
+      default:
+        return this.updateOther();
     }
   }
 
@@ -6544,6 +6873,10 @@ class SpriteMapEditorCursor extends Sprite {
     }
 
     this.bitmap.drawCollisionType(tileId, x, y, drawWidth, drawHeight);
+  }
+
+  updateOther() {
+    this.bitmap.clear();
   }
 
   updateTiles() {
