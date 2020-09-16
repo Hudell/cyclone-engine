@@ -31,7 +31,7 @@ class WindowCycloneMapEditorCommands extends Window_Command {
     const x = Graphics.width - CycloneMapEditor.windowWidth;
     const y = 0;
     const w = CycloneMapEditor.windowWidth;
-    const h = Graphics.width < 1280 ? 50 : 74;
+    const h = (CycloneMapEditor.tileDrawWidth >= 48 && Graphics.width >= 1280) ? 74 : 50;
     super.initialize(new Rectangle(x, y, w, h));
     this.showBackgroundDimmer();
     this.configureHandlers();
@@ -155,7 +155,11 @@ class WindowCycloneMapEditorCommands extends Window_Command {
 
   lineHeight() {
     if (Graphics.width >= 1280) {
-      return super.lineHeight();
+      if (CycloneMapEditor.tileDrawWidth < 48) {
+        return 14;
+      }
+
+      return 36;
     }
 
     return 14;
@@ -200,7 +204,8 @@ class WindowCycloneMapEditorCommands extends Window_Command {
 
     const ctx = this.contents._canvas.getContext('2d');
     ctx.imageSmoothingEnabled = false;
-    ctx.drawImage(icon, rect.x + 1, rect.y, CycloneMapEditor.tileDrawWidth, CycloneMapEditor.tileDrawWidth);
+    const iconWidth = (CycloneMapEditor.tileDrawWidth >= 48 && Graphics.width >= 1280) ? 48 : 24;
+    ctx.drawImage(icon, rect.x + 1, rect.y, iconWidth, iconWidth);
   }
 
   drawAllItems() {

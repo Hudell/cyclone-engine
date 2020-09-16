@@ -5356,7 +5356,7 @@ class WindowCycloneMapEditorCommands extends Window_Command {
     const x = Graphics.width - CycloneMapEditor.windowWidth;
     const y = 0;
     const w = CycloneMapEditor.windowWidth;
-    const h = Graphics.width < 1280 ? 50 : 74;
+    const h = (CycloneMapEditor.tileDrawWidth >= 48 && Graphics.width >= 1280) ? 74 : 50;
     super.initialize(new Rectangle(x, y, w, h));
     this.showBackgroundDimmer();
     this.configureHandlers();
@@ -5480,7 +5480,11 @@ class WindowCycloneMapEditorCommands extends Window_Command {
 
   lineHeight() {
     if (Graphics.width >= 1280) {
-      return super.lineHeight();
+      if (CycloneMapEditor.tileDrawWidth < 48) {
+        return 14;
+      }
+
+      return 36;
     }
 
     return 14;
@@ -5525,7 +5529,8 @@ class WindowCycloneMapEditorCommands extends Window_Command {
 
     const ctx = this.contents._canvas.getContext('2d');
     ctx.imageSmoothingEnabled = false;
-    ctx.drawImage(icon, rect.x + 1, rect.y, CycloneMapEditor.tileDrawWidth, CycloneMapEditor.tileDrawWidth);
+    const iconWidth = (CycloneMapEditor.tileDrawWidth >= 48 && Graphics.width >= 1280) ? 48 : 24;
+    ctx.drawImage(icon, rect.x + 1, rect.y, iconWidth, iconWidth);
   }
 
   drawAllItems() {
@@ -6158,29 +6163,21 @@ class WindowCycloneMapEditor extends Window_Command {
     context.lineWidth = 6;
     context.strokeStyle = '#000000';
 
-    const getBack = (len, x1, y1, x2, y2) => {
-      return x2 - (len * (x2 - x1) / (Math.sqrt(Math.pow(y2 - y1, 2) + Math.pow(x2 - x1, 2))));
-    };
-
     const drawArrow = (x, y, x2, y2) => {
-      const headLen = 10;
-      const back = 0;
+      const headLen = Math.floor(rect.width / 5);
       const angle1 = Math.PI / 13;
       const angle2 = Math.atan2(y2 - y, x2 - x);
       const diff1 = angle2 - angle1;
       const diff2 = angle2 + angle1;
 
-      const xx = getBack(back, x, y, x2, y2);
-      const yy = getBack(back, y, x, y2, x2);
-
       context.beginPath();
       context.moveTo(x, y);
       context.lineTo(x2, y2);
-      context.moveTo(xx, yy);
-      context.lineTo(xx - headLen * Math.cos(diff1), yy - headLen * Math.sin(diff1));
+      context.moveTo(x2, y2);
+      context.lineTo(x2 - headLen * Math.cos(diff1), y2 - headLen * Math.sin(diff1));
 
-      context.moveTo(xx, yy);
-      context.lineTo(xx - headLen * Math.cos(diff2), yy - headLen * Math.sin(diff2));
+      context.moveTo(x2, y2);
+      context.lineTo(x2 - headLen * Math.cos(diff2), y2 - headLen * Math.sin(diff2));
       context.closePath();
       context.stroke();
     };

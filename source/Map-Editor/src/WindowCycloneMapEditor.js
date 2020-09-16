@@ -425,29 +425,21 @@ class WindowCycloneMapEditor extends Window_Command {
     context.lineWidth = 6;
     context.strokeStyle = '#000000';
 
-    const getBack = (len, x1, y1, x2, y2) => {
-      return x2 - (len * (x2 - x1) / (Math.sqrt(Math.pow(y2 - y1, 2) + Math.pow(x2 - x1, 2))));
-    };
-
     const drawArrow = (x, y, x2, y2) => {
-      const headLen = 10;
-      const back = 0;
+      const headLen = Math.floor(rect.width / 5);
       const angle1 = Math.PI / 13;
       const angle2 = Math.atan2(y2 - y, x2 - x);
       const diff1 = angle2 - angle1;
       const diff2 = angle2 + angle1;
 
-      const xx = getBack(back, x, y, x2, y2);
-      const yy = getBack(back, y, x, y2, x2);
-
       context.beginPath();
       context.moveTo(x, y);
       context.lineTo(x2, y2);
-      context.moveTo(xx, yy);
-      context.lineTo(xx - headLen * Math.cos(diff1), yy - headLen * Math.sin(diff1));
+      context.moveTo(x2, y2);
+      context.lineTo(x2 - headLen * Math.cos(diff1), y2 - headLen * Math.sin(diff1));
 
-      context.moveTo(xx, yy);
-      context.lineTo(xx - headLen * Math.cos(diff2), yy - headLen * Math.sin(diff2));
+      context.moveTo(x2, y2);
+      context.lineTo(x2 - headLen * Math.cos(diff2), y2 - headLen * Math.sin(diff2));
       context.closePath();
       context.stroke();
     };
