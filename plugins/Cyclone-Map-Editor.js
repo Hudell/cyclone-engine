@@ -5989,6 +5989,14 @@ class WindowCycloneMapEditor extends Window_Command {
     context.stroke();
   }
 
+  updateOpacityForTile(tileId) {
+    if (!CycloneMapEditor.changingTileProps || Input.isPressed('shift')) {
+      return this.changePaintOpacity(true);
+    }
+
+    return this.changePaintOpacity(false);
+  }
+
   drawItem(index) {
     this.resetTextColor();
     this.changePaintOpacity(this.isCommandEnabled(index));
@@ -6012,6 +6020,9 @@ class WindowCycloneMapEditor extends Window_Command {
 
     const rect = this.itemRect(index);
     const tileId = this._list[index].ext;
+
+    this.updateOpacityForTile(tileId);
+
     const bitmap = this.contents.drawTile(tileId, rect.x, rect.y, this.itemWidth(), this.itemHeight());
     if (!bitmap) {
       return;
@@ -6023,9 +6034,14 @@ class WindowCycloneMapEditor extends Window_Command {
       });
     }
 
+    this.changePaintOpacity(true);
     if (!this._needsRedraw && CycloneMapEditor.changingTileProps) {
       this.drawTileProp(this.commandName(index), rect);
     }
+  }
+
+  translucentOpacity() {
+    return 90;
   }
 
   drawTileProp(tileId, rect) {
@@ -6236,8 +6252,8 @@ class WindowCycloneMapEditor extends Window_Command {
       return;
     }
 
-    this.contents.drawText('~~~', rect.x, rect.y, rect.width, rect.height - 8, 'center');
-    this.contents.drawText('~~~', rect.x, rect.y + 8, rect.width, rect.height - 8, 'center');
+    this.contents.drawText('~', rect.x, rect.y, rect.width, rect.height - 8, 'center');
+    this.contents.drawText('~', rect.x, rect.y + 8, rect.width, rect.height - 8, 'center');
   }
 
   drawTileCounter(tileId, rect) {
