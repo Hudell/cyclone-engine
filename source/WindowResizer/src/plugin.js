@@ -40,22 +40,19 @@ class WindowResizer extends CyclonePatcher {
 
   static setActiveWindowIndex(index) {
     SceneManager._scene._windowResizer.setActiveWindowIndex(index);
+    SceneManager._scene._windowResizer.makeReport();
+
+    console.log(index);
   }
 
   static onKeyUp(event) {
-    const number = Number(event.key);
-    if (!isNaN(number)) {
+    const number = parseInt(event.key, 31);
+    if (!isNaN(number) && number < 31) {
       return this.setActiveWindowIndex(number);
     }
 
     if (event.key === 'v') {
-      if (SceneManager._scene._windowResizer.visible) {
-        SceneManager._scene._windowResizer.hide();
-        SceneManager._scene._windowResizer.generateJson();
-        document.body.style.cursor = 'default';
-      } else {
-        SceneManager._scene._windowResizer.show();
-      }
+      SceneManager._scene._windowResizer.toggle();
       return;
     }
   }
