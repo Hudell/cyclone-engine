@@ -4840,6 +4840,11 @@ CycloneMapEditor.patchClass(Game_Map, $super => class {
     }
   }
 
+  getTileFlag(tileId) {
+    const flags = this.tilesetFlags();
+    return flags[tileId];
+  }
+
   checkTileIdPassageType(tileId) {
     const flags = this.tilesetFlags();
     const flag = flags[tileId];
@@ -5351,7 +5356,7 @@ class WindowCycloneMapEditorCommands extends Window_Command {
     const x = Graphics.width - CycloneMapEditor.windowWidth;
     const y = 0;
     const w = CycloneMapEditor.windowWidth;
-    const h = Graphics.width < 1280 ? 50 : 74;
+    const h = (CycloneMapEditor.tileDrawWidth >= 48 && Graphics.width >= 1280) ? 74 : 50;
     super.initialize(new Rectangle(x, y, w, h));
     this.showBackgroundDimmer();
     this.configureHandlers();
@@ -5475,7 +5480,11 @@ class WindowCycloneMapEditorCommands extends Window_Command {
 
   lineHeight() {
     if (Graphics.width >= 1280) {
-      return super.lineHeight();
+      if (CycloneMapEditor.tileDrawWidth < 48) {
+        return 14;
+      }
+
+      return 36;
     }
 
     return 14;
@@ -5520,7 +5529,8 @@ class WindowCycloneMapEditorCommands extends Window_Command {
 
     const ctx = this.contents._canvas.getContext('2d');
     ctx.imageSmoothingEnabled = false;
-    ctx.drawImage(icon, rect.x + 1, rect.y, CycloneMapEditor.tileDrawWidth, CycloneMapEditor.tileDrawWidth);
+    const iconWidth = (CycloneMapEditor.tileDrawWidth >= 48 && Graphics.width >= 1280) ? 48 : 24;
+    ctx.drawImage(icon, rect.x + 1, rect.y, iconWidth, iconWidth);
   }
 
   drawAllItems() {
@@ -5984,6 +5994,14 @@ class WindowCycloneMapEditor extends Window_Command {
     context.stroke();
   }
 
+  updateOpacityForTile(tileId) {
+    if (!CycloneMapEditor.changingTileProps || Input.isPressed('shift')) {
+      return this.changePaintOpacity(true);
+    }
+
+    return this.changePaintOpacity(false);
+  }
+
   drawItem(index) {
     this.resetTextColor();
     this.changePaintOpacity(this.isCommandEnabled(index));
@@ -6007,6 +6025,9 @@ class WindowCycloneMapEditor extends Window_Command {
 
     const rect = this.itemRect(index);
     const tileId = this._list[index].ext;
+
+    this.updateOpacityForTile(tileId);
+
     const bitmap = this.contents.drawTile(tileId, rect.x, rect.y, this.itemWidth(), this.itemHeight());
     if (!bitmap) {
       return;
@@ -6018,9 +6039,14 @@ class WindowCycloneMapEditor extends Window_Command {
       });
     }
 
+    this.changePaintOpacity(true);
     if (!this._needsRedraw && CycloneMapEditor.changingTileProps) {
       this.drawTileProp(this.commandName(index), rect);
     }
+  }
+
+  translucentOpacity() {
+    return 90;
   }
 
   drawTileProp(tileId, rect) {
@@ -6123,7 +6149,61 @@ class WindowCycloneMapEditor extends Window_Command {
   }
 
   drawTilePassage4(tileId, rect) {
+    const flag = $gameMap.getTileFlag(tileId);
+    const top = $gameMap.getPassageBitType(flag, 8);
+    const bottom = $gameMap.getPassageBitType(flag, 2);
+    const left = $gameMap.getPassageBitType(flag, 4);
+    const right = $gameMap.getPassageBitType(flag, 6);
+    const margin = 3;
 
+    const middleX = rect.x + Math.floor(rect.width / 2);
+    const middleY = rect.y + Math.floor(rect.height / 2);
+
+    const context = this.contents.context;
+    context.lineWidth = 6;
+    context.strokeStyle = '#000000';
+
+    const drawArrow = (x, y, x2, y2) => {
+      const headLen = Math.floor(rect.width / 5);
+      const angle1 = Math.PI / 13;
+      const angle2 = Math.atan2(y2 - y, x2 - x);
+      const diff1 = angle2 - angle1;
+      const diff2 = angle2 + angle1;
+
+      context.beginPath();
+      context.moveTo(x, y);
+      context.lineTo(x2, y2);
+      context.moveTo(x2, y2);
+      context.lineTo(x2 - headLen * Math.cos(diff1), y2 - headLen * Math.sin(diff1));
+
+      context.moveTo(x2, y2);
+      context.lineTo(x2 - headLen * Math.cos(diff2), y2 - headLen * Math.sin(diff2));
+      context.closePath();
+      context.stroke();
+    };
+
+    const drawArrows = () => {
+      if (top) {
+        drawArrow(middleX, middleY, middleX, rect.y + margin);
+      }
+
+      if (bottom) {
+        drawArrow(middleX, middleY, middleX, rect.y + rect.height - margin);
+      }
+
+      if (left) {
+        drawArrow(middleX, middleY, rect.x + margin, middleY);
+      }
+
+      if (right) {
+        drawArrow(middleX, middleY, rect.x + rect.width - margin, middleY);
+      }
+    };
+
+    drawArrows();
+    context.lineWidth = 2;
+    context.strokeStyle = '#FFFFFF';
+    drawArrows();
   }
 
   drawTileLadder(tileId, rect) {
@@ -6131,7 +6211,37 @@ class WindowCycloneMapEditor extends Window_Command {
       return;
     }
 
-    this.contents.drawText('YES', rect.x, rect.y, rect.width, rect.height, 'center');
+    const context = this.contents.context;
+    const w = Math.floor(rect.width / 4);
+    const h = Math.floor(rect.height / 3);
+    const x = Math.floor(rect.x + (rect.width / 2) - (w / 2));
+    const y = Math.floor(rect.y + (rect.height / 2) - (w / 2));
+
+    const drawLadder = () => {
+      context.beginPath();
+      context.moveTo(x, y);
+      context.lineTo(x, y + h);
+
+      context.moveTo(x + w, y);
+      context.lineTo(x + w, y + h);
+
+      context.moveTo(x, y + Math.floor(h / 3));
+      context.lineTo(x + w, y + Math.floor(h / 3));
+
+      context.moveTo(x, y + Math.floor(h / 3) * 2);
+      context.lineTo(x + w, y + Math.floor(h / 3) * 2);
+
+      context.closePath();
+
+      context.stroke();
+    };
+
+    context.strokeStyle = '#000000';
+    context.lineWidth = 6;
+    drawLadder();
+    context.strokeStyle = '#FFFFFF';
+    context.lineWidth = 2;
+    drawLadder();
   }
 
   drawTileBush(tileId, rect) {
@@ -6139,8 +6249,8 @@ class WindowCycloneMapEditor extends Window_Command {
       return;
     }
 
-    this.contents.drawText('~~~', rect.x, rect.y, rect.width, rect.height - 8, 'center');
-    this.contents.drawText('~~~', rect.x, rect.y + 8, rect.width, rect.height - 8, 'center');
+    this.contents.drawText('~', rect.x, rect.y, rect.width, rect.height - 8, 'center');
+    this.contents.drawText('~', rect.x, rect.y + 8, rect.width, rect.height - 8, 'center');
   }
 
   drawTileCounter(tileId, rect) {
@@ -6148,7 +6258,25 @@ class WindowCycloneMapEditor extends Window_Command {
       return;
     }
 
-    this.contents.drawText('YES', rect.x, rect.y, rect.width, rect.height, 'center');
+    const context = this.contents.context;
+    const w = Math.floor(rect.width / 2);
+    const h = Math.floor(rect.height / 2);
+    const x = rect.x + w;
+    const y = rect.y + h / 2;
+
+    context.beginPath();
+    context.moveTo(x, y);
+    context.lineTo(x - w / 2, y + h / 2);
+    context.lineTo(x, y + h);
+    context.lineTo(x + w / 2, y + h / 2);
+
+    context.closePath();
+
+    context.strokeStyle = '#000000';
+    context.lineWidth = 4;
+    context.stroke();
+    context.fillStyle = '#FFFFFF';
+    context.fill();
   }
 
   drawTileDamage(tileId, rect) {
