@@ -1,5 +1,5 @@
 import { CyclonePlugin } from '../../Core/main';
-import { Layers } from './constants';
+import { Layers, Tools, tilePropTools } from './constants';
 import { MapshotTileMap } from './mapshot/MapshotTileMap';
 import { LZString } from '../../Libs/lz-string.min';
 import { throttle } from '../../Utils/throttle';
@@ -342,6 +342,10 @@ class CycloneMapEditor extends CyclonePlugin {
     // }
   }
 
+  static get changingTileProps() {
+    return tilePropTools.includes(currentTool);
+  }
+
   static register() {
     super.initialize('CycloneMapEditor');
 
@@ -448,7 +452,7 @@ class CycloneMapEditor extends CyclonePlugin {
 
     const fileMenu = new nw.Menu();
     fileMenu.append(new nw.MenuItem( {
-      label: 'Save',
+      label: 'Save Current Map',
       key: 's',
       modifiers: 'ctrl',
       click: this.makeMenuEvent(() => {
@@ -456,7 +460,7 @@ class CycloneMapEditor extends CyclonePlugin {
       })
     }));
     fileMenu.append(new nw.MenuItem( {
-      label: 'Reload',
+      label: 'Reload Current Map',
       key: 'r',
       modifiers: 'ctrl',
       click: this.makeMenuEvent(() => {
@@ -590,7 +594,7 @@ class CycloneMapEditor extends CyclonePlugin {
       submenu: mapMenu,
     }));
 
-    const drawMenu = new nw.Menu();
+    const modeMenu = new nw.Menu();
     this.pencilMenu = new nw.MenuItem( {
       label: 'Pencil',
       type: 'checkbox',
@@ -600,7 +604,7 @@ class CycloneMapEditor extends CyclonePlugin {
         CycloneMapEditor.pencilButton();
       })
     });
-    drawMenu.append(this.pencilMenu);
+    modeMenu.append(this.pencilMenu);
     this.rectangleMenu = new nw.MenuItem( {
       label: 'Rectangle',
       type: 'checkbox',
@@ -610,7 +614,7 @@ class CycloneMapEditor extends CyclonePlugin {
         CycloneMapEditor.rectangleButton();
       })
     });
-    drawMenu.append(this.rectangleMenu);
+    modeMenu.append(this.rectangleMenu);
     this.fillMenu = new nw.MenuItem( {
       label: 'Flood Fill',
       type: 'checkbox',
@@ -620,8 +624,8 @@ class CycloneMapEditor extends CyclonePlugin {
         CycloneMapEditor.fillButton();
       })
     });
-    drawMenu.append(this.fillMenu);
-    drawMenu.append(new nw.MenuItem( {type: 'separator'}));
+    modeMenu.append(this.fillMenu);
+    modeMenu.append(new nw.MenuItem( {type: 'separator'}));
     this.eraserMenu = new nw.MenuItem( {
       label: 'Eraser',
       type: 'checkbox',
@@ -631,11 +635,102 @@ class CycloneMapEditor extends CyclonePlugin {
         CycloneMapEditor.eraserButton();
       })
     });
-    drawMenu.append(this.eraserMenu);
+    modeMenu.append(this.eraserMenu);
+    modeMenu.append(new nw.MenuItem( {type: 'separator'}));
+
+    const tilesetPropsMenu = new nw.Menu();
+    this.tilePassageMenu = new nw.MenuItem({
+      label: 'Passage',
+      type: 'checkbox',
+      checked: currentTool === Tools.passage,
+      key: 'p',
+      modifiers: 'shift',
+      click: this.makeMenuEvent(() => {
+        CycloneMapEditor.toolButton(Tools.passage);
+      }),
+    });
+    tilesetPropsMenu.append(this.tilePassageMenu);
+
+    this.tilePassage4Menu = new nw.MenuItem({
+      label: 'Passage (4 dir)',
+      type: 'checkbox',
+      checked: currentTool === Tools.passage4,
+      key: 'o',
+      modifiers: 'shift',
+      click: this.makeMenuEvent(() => {
+        CycloneMapEditor.toolButton(Tools.passage4);
+      }),
+    });
+    tilesetPropsMenu.append(this.tilePassage4Menu);
+
+    this.tileLadderMenu = new nw.MenuItem({
+      label: 'Ladder',
+      type: 'checkbox',
+      checked: currentTool === Tools.ladder,
+      key: 'l',
+      modifiers: 'shift',
+      click: this.makeMenuEvent(() => {
+        CycloneMapEditor.toolButton(Tools.ladder);
+      }),
+    });
+    tilesetPropsMenu.append(this.tileLadderMenu);
+
+    this.tileBushMenu = new nw.MenuItem({
+      label: 'Bush',
+      type: 'checkbox',
+      checked: currentTool === Tools.bush,
+      key: 'b',
+      modifiers: 'shift',
+      click: this.makeMenuEvent(() => {
+        CycloneMapEditor.toolButton(Tools.bush);
+      }),
+    });
+    tilesetPropsMenu.append(this.tileBushMenu);
+
+    this.tileCounterMenu = new nw.MenuItem({
+      label: 'Counter',
+      type: 'checkbox',
+      checked: currentTool === Tools.counter,
+      key: 'c',
+      modifiers: 'shift',
+      click: this.makeMenuEvent(() => {
+        CycloneMapEditor.toolButton(Tools.counter);
+      }),
+    });
+    tilesetPropsMenu.append(this.tileCounterMenu);
+
+    this.tileDamageMenu = new nw.MenuItem({
+      label: 'Damage',
+      type: 'checkbox',
+      checked: currentTool === Tools.damage,
+      key: 'd',
+      modifiers: 'shift',
+      click: this.makeMenuEvent(() => {
+        CycloneMapEditor.toolButton(Tools.damage);
+      }),
+    });
+    tilesetPropsMenu.append(this.tileDamageMenu);
+
+    this.tileTerrainMenu = new nw.MenuItem({
+      label: 'Terrain Tag',
+      type: 'checkbox',
+      checked: currentTool === Tools.terrain,
+      key: 't',
+      modifiers: 'shift',
+      click: this.makeMenuEvent(() => {
+        CycloneMapEditor.toolButton(Tools.terrain);
+      }),
+    });
+    tilesetPropsMenu.append(this.tileTerrainMenu);
+
+    modeMenu.append(new nw.MenuItem({
+      label: 'Tile Properties',
+      submenu: tilesetPropsMenu,
+    }));
 
     menu.append(new nw.MenuItem({
-      label: 'Draw',
-      submenu: drawMenu,
+      label: 'Mode',
+      submenu: modeMenu,
     }));
 
     const layerMenu = new nw.Menu();
@@ -1532,53 +1627,48 @@ class CycloneMapEditor extends CyclonePlugin {
     rectangleStartMouseY = 0;
 
     if (Utils.isNwjs()) {
-      this.pencilMenu.checked = currentTool === 'pencil';
-      this.rectangleMenu.checked = currentTool === 'rectangle';
-      this.fillMenu.checked = currentTool === 'fill';
-      this.eraserMenu.checked = currentTool === 'eraser';
+      this.pencilMenu.checked = currentTool === Tools.pencil;
+      this.rectangleMenu.checked = currentTool === Tools.rectangle;
+      this.fillMenu.checked = currentTool === Tools.fill;
+      this.eraserMenu.checked = currentTool === Tools.eraser;
+
+      this.tilePassageMenu.checked = currentTool === Tools.passage;
+      this.tilePassage4Menu.checked = currentTool === Tools.passage4;
+      this.tileLadderMenu.checked = currentTool === Tools.ladder;
+      this.tileBushMenu.checked = currentTool === Tools.bush;
+      this.tileCounterMenu.checked = currentTool === Tools.counter;
+      this.tileDamageMenu.checked = currentTool === Tools.damage;
+      this.tileTerrainMenu.checked = currentTool === Tools.terrain;
     }
 
     this.refreshMapEditor();
   }
 
   static pencilButton() {
-    if (!(SceneManager._scene instanceof Scene_Map)) {
-      return;
-    }
-
-    currentTool = 'pencil';
-    lastDrawingTool = 'pencil';
-
-    this.updateCurrentTool();
+    this.toolButton(Tools.pencil);
   }
 
   static rectangleButton() {
-    if (!(SceneManager._scene instanceof Scene_Map)) {
-      return;
-    }
-
-    currentTool = 'rectangle';
-    lastDrawingTool = 'rectangle';
-
-    this.updateCurrentTool();
+    this.toolButton(Tools.rectangle);
   }
 
   static fillButton() {
-    if (!(SceneManager._scene instanceof Scene_Map)) {
-      return;
-    }
-
-    currentTool = 'fill';
-    this.updateCurrentTool();
+    this.toolButton(Tools.fill);
   }
 
   static eraserButton() {
+    this.toolButton(Tools.eraser);
+  }
+
+  static toolButton(toolType) {
     if (!(SceneManager._scene instanceof Scene_Map)) {
       return;
     }
 
-    currentTool = 'eraser';
-
+    currentTool = toolType;
+    if ([Tools.pencil, Tools.rectangle].includes(toolType)) {
+      lastDrawingTool = toolType;
+    }
     this.updateCurrentTool();
   }
 
@@ -2091,6 +2181,10 @@ class CycloneMapEditor extends CyclonePlugin {
   }
 
   static undoLastChange() {
+    if (this.changingTileProps) {
+      return;
+    }
+
     if (changeHistory.length === 0) {
       SoundManager.playBuzzer();
       return;
@@ -2123,6 +2217,10 @@ class CycloneMapEditor extends CyclonePlugin {
   }
 
   static redoLastUndoneChange() {
+    if (this.changingTileProps) {
+      return;
+    }
+
     if (undoHistory.length === 0) {
       SoundManager.playBuzzer();
       return;

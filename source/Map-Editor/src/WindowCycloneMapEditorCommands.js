@@ -165,6 +165,10 @@ class WindowCycloneMapEditorCommands extends Window_Command {
     const symbol = this.commandSymbol(index);
     const rect = this.itemRect(index);
 
+    if (CycloneMapEditor.changingTileProps && ['undo', 'redo'].includes(symbol)) {
+      return;
+    }
+
     if (symbol === CycloneMapEditor.currentTool) {
       this.contents.fillRect(rect.x, rect.y + 2, rect.width, rect.height, '#00FF0066');
 

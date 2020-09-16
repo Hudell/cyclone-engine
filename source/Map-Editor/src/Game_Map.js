@@ -1,3 +1,5 @@
+import { TilePassageType } from './constants';
+
 CycloneMapEditor.patchClass(Game_Map, $super => class {
   screenTileX() {
     if (!CycloneMapEditor.active) {
@@ -103,5 +105,87 @@ CycloneMapEditor.patchClass(Game_Map, $super => class {
     const lastY = this._displayY;
     this._displayY = Math.max(this._displayY - distance, -extraTiles);
     this._parallaxY += this._displayY - lastY;
+  }
+
+  checkTileIdPassage(tileId, d) {
+    const flags = this.tilesetFlags();
+    const flag = flags[tileId];
+
+    return this.getPassageBitType(flag, d);
+  }
+
+  getPassageBitType(flag, d) {
+    const bit = (1 << (d / 2 - 1)) & 0x0f;
+    if ((flag & bit) === 0) {
+      // [o] Passable
+      return true;
+    }
+    if ((flag & bit) === bit) {
+      // [x] Impassable
+      return false;
+    }
+  }
+
+  checkTileIdPassageType(tileId) {
+    const flags = this.tilesetFlags();
+    const flag = flags[tileId];
+
+    if ((flag & 0x10) !== 0) {
+      if (tileId < Tilemap.TILE_ID_A1) {
+        return TilePassageType.star;
+      }
+      return TilePassageType.free;
+    }
+
+    const top = this.getPassageBitType(flag, 8);
+    const bottom = this.getPassageBitType(flag, 2);
+    const left = this.getPassageBitType(flag, 4);
+    const right = this.getPassageBitType(flag, 6);
+
+    if (top === false && bottom === false && left === false && right === false) {
+      return TilePassageType.blocked;
+    }
+
+    return TilePassageType.free;
+  }
+
+  tileIdIsBush(tileId) {
+    const flags = this.tilesetFlags();
+    const flag = flags[tileId];
+
+    return (flag & 0x40) !== 0;
+  }
+
+  tileIdIsLadder(tileId) {
+    const flags = this.tilesetFlags();
+    const flag = flags[tileId];
+
+    return (flag & 0x20) !== 0;
+  }
+
+  tileIdIsCounter(tileId) {
+    const flags = this.tilesetFlags();
+    const flag = flags[tileId];
+
+    return (flag & 0x80) !== 0;
+  }
+
+  tileIdIsDamage(tileId) {
+    const flags = this.tilesetFlags();
+    const flag = flags[tileId];
+
+    return (flag & 0x100) !== 0;
+  }
+
+  tileIdTerrainTag(tileId) {
+    const flags = this.tilesetFlags();
+    const flag = flags[tileId];
+
+    const tag = flag >> 12;
+    if (tag > 0) {
+      return tag;
+    }
+
+    return 0;
   }
 });
