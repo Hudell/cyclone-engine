@@ -249,7 +249,6 @@ class SpritePriorityTile extends Sprite {
     super.update();
     this.updateBitmap();
     this.updatePosition();
-    this.updateVisibility();
   }
 
   updateBitmap() {
