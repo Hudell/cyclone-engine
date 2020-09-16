@@ -162,7 +162,7 @@ class WindowCycloneMapEditor extends Window_Command {
   redraw() {
     Window_Selectable.prototype.refresh.call(this);
 
-    if (!CycloneMovement.changingTileProps) {
+    if (!CycloneMapEditor.changingTileProps) {
       // Force the tilemap cursor to redraw too
       SceneManager._scene._spriteset._mapEditorCursor.updateDrawing();
     }

@@ -39,7 +39,7 @@ function _defineProperties(target, props) { for (var i = 0; i < props.length; i+
 function _createClass(Constructor, protoProps, staticProps) { if (protoProps) _defineProperties(Constructor.prototype, protoProps); if (staticProps) _defineProperties(Constructor, staticProps); return Constructor; }
 
 /*:
- * @plugindesc Live Map Editor
+ * @plugindesc Live Map Editor - 1.06.00
  *
  * <pluginName:CycloneMapEditor>
  * @author Hudell
@@ -101,6 +101,10 @@ function _createClass(Constructor, protoProps, staticProps) { if (protoProps) _d
  * ===========================================================================
  * Change Log
  * ===========================================================================
+ * 2020-09-15 - Version 1.06.00
+ *   * New option to view tile properties such as tags, passability, bush,
+ *   ladder and so on.
+ *
  * 2020-09-14 - Version 1.05.01
  *   * Fixed small delay on integration between movement and map editor.
  *
@@ -6305,6 +6309,12 @@ function _createClass(Constructor, protoProps, staticProps) { if (protoProps) _d
           }
         }
       }, {
+        key: "getTileFlag",
+        value: function getTileFlag(tileId) {
+          var flags = this.tilesetFlags();
+          return flags[tileId];
+        }
+      }, {
         key: "checkTileIdPassageType",
         value: function checkTileIdPassageType(tileId) {
           var flags = this.tilesetFlags();
@@ -6884,7 +6894,7 @@ function _createClass(Constructor, protoProps, staticProps) { if (protoProps) _d
         var x = Graphics.width - CycloneMapEditor.windowWidth;
         var y = 0;
         var w = CycloneMapEditor.windowWidth;
-        var h = Graphics.width < 1280 ? 50 : 74;
+        var h = CycloneMapEditor.tileDrawWidth >= 48 && Graphics.width >= 1280 ? 74 : 50;
 
         _get(_getPrototypeOf(WindowCycloneMapEditorCommands.prototype), "initialize", this).call(this, new Rectangle(x, y, w, h));
 
@@ -7038,7 +7048,11 @@ function _createClass(Constructor, protoProps, staticProps) { if (protoProps) _d
       key: "lineHeight",
       value: function lineHeight() {
         if (Graphics.width >= 1280) {
-          return _get(_getPrototypeOf(WindowCycloneMapEditorCommands.prototype), "lineHeight", this).call(this);
+          if (CycloneMapEditor.tileDrawWidth < 48) {
+            return 14;
+          }
+
+          return 36;
         }
 
         return 14;
@@ -7084,7 +7098,8 @@ function _createClass(Constructor, protoProps, staticProps) { if (protoProps) _d
         var ctx = this.contents._canvas.getContext('2d');
 
         ctx.imageSmoothingEnabled = false;
-        ctx.drawImage(icon, rect.x + 1, rect.y, CycloneMapEditor.tileDrawWidth, CycloneMapEditor.tileDrawWidth);
+        var iconWidth = CycloneMapEditor.tileDrawWidth >= 48 && Graphics.width >= 1280 ? 48 : 24;
+        ctx.drawImage(icon, rect.x + 1, rect.y, iconWidth, iconWidth);
       }
     }, {
       key: "drawAllItems",
@@ -7527,7 +7542,7 @@ function _createClass(Constructor, protoProps, staticProps) { if (protoProps) _d
       value: function redraw() {
         Window_Selectable.prototype.refresh.call(this);
 
-        if (!CycloneMovement.changingTileProps) {
+        if (!CycloneMapEditor.changingTileProps) {
           // Force the tilemap cursor to redraw too
           SceneManager._scene._spriteset._mapEditorCursor.updateDrawing();
         }
@@ -7633,6 +7648,15 @@ function _createClass(Constructor, protoProps, staticProps) { if (protoProps) _d
         context.stroke();
       }
     }, {
+      key: "updateOpacityForTile",
+      value: function updateOpacityForTile(tileId) {
+        if (!CycloneMapEditor.changingTileProps || Input.isPressed('shift')) {
+          return this.changePaintOpacity(true);
+        }
+
+        return this.changePaintOpacity(false);
+      }
+    }, {
       key: "drawItem",
       value: function drawItem(index) {
         var _this19 = this;
@@ -7658,6 +7682,7 @@ function _createClass(Constructor, protoProps, staticProps) { if (protoProps) _d
 
         var rect = this.itemRect(index);
         var tileId = this._list[index].ext;
+        this.updateOpacityForTile(tileId);
         var bitmap = this.contents.drawTile(tileId, rect.x, rect.y, this.itemWidth(), this.itemHeight());
 
         if (!bitmap) {
@@ -7670,9 +7695,16 @@ function _createClass(Constructor, protoProps, staticProps) { if (protoProps) _d
           });
         }
 
+        this.changePaintOpacity(true);
+
         if (!this._needsRedraw && CycloneMapEditor.changingTileProps) {
           this.drawTileProp(this.commandName(index), rect);
         }
+      }
+    }, {
+      key: "translucentOpacity",
+      value: function translucentOpacity() {
+        return 90;
       }
     }, {
       key: "drawTileProp",
@@ -7779,7 +7811,59 @@ function _createClass(Constructor, protoProps, staticProps) { if (protoProps) _d
       }
     }, {
       key: "drawTilePassage4",
-      value: function drawTilePassage4(tileId, rect) {}
+      value: function drawTilePassage4(tileId, rect) {
+        var flag = $gameMap.getTileFlag(tileId);
+        var top = $gameMap.getPassageBitType(flag, 8);
+        var bottom = $gameMap.getPassageBitType(flag, 2);
+        var left = $gameMap.getPassageBitType(flag, 4);
+        var right = $gameMap.getPassageBitType(flag, 6);
+        var margin = 3;
+        var middleX = rect.x + Math.floor(rect.width / 2);
+        var middleY = rect.y + Math.floor(rect.height / 2);
+        var context = this.contents.context;
+        context.lineWidth = 6;
+        context.strokeStyle = '#000000';
+
+        var drawArrow = function drawArrow(x, y, x2, y2) {
+          var headLen = Math.floor(rect.width / 5);
+          var angle1 = Math.PI / 13;
+          var angle2 = Math.atan2(y2 - y, x2 - x);
+          var diff1 = angle2 - angle1;
+          var diff2 = angle2 + angle1;
+          context.beginPath();
+          context.moveTo(x, y);
+          context.lineTo(x2, y2);
+          context.moveTo(x2, y2);
+          context.lineTo(x2 - headLen * Math.cos(diff1), y2 - headLen * Math.sin(diff1));
+          context.moveTo(x2, y2);
+          context.lineTo(x2 - headLen * Math.cos(diff2), y2 - headLen * Math.sin(diff2));
+          context.closePath();
+          context.stroke();
+        };
+
+        var drawArrows = function drawArrows() {
+          if (top) {
+            drawArrow(middleX, middleY, middleX, rect.y + margin);
+          }
+
+          if (bottom) {
+            drawArrow(middleX, middleY, middleX, rect.y + rect.height - margin);
+          }
+
+          if (left) {
+            drawArrow(middleX, middleY, rect.x + margin, middleY);
+          }
+
+          if (right) {
+            drawArrow(middleX, middleY, rect.x + rect.width - margin, middleY);
+          }
+        };
+
+        drawArrows();
+        context.lineWidth = 2;
+        context.strokeStyle = '#FFFFFF';
+        drawArrows();
+      }
     }, {
       key: "drawTileLadder",
       value: function drawTileLadder(tileId, rect) {
@@ -7787,7 +7871,32 @@ function _createClass(Constructor, protoProps, staticProps) { if (protoProps) _d
           return;
         }
 
-        this.contents.drawText('YES', rect.x, rect.y, rect.width, rect.height, 'center');
+        var context = this.contents.context;
+        var w = Math.floor(rect.width / 4);
+        var h = Math.floor(rect.height / 3);
+        var x = Math.floor(rect.x + rect.width / 2 - w / 2);
+        var y = Math.floor(rect.y + rect.height / 2 - w / 2);
+
+        var drawLadder = function drawLadder() {
+          context.beginPath();
+          context.moveTo(x, y);
+          context.lineTo(x, y + h);
+          context.moveTo(x + w, y);
+          context.lineTo(x + w, y + h);
+          context.moveTo(x, y + Math.floor(h / 3));
+          context.lineTo(x + w, y + Math.floor(h / 3));
+          context.moveTo(x, y + Math.floor(h / 3) * 2);
+          context.lineTo(x + w, y + Math.floor(h / 3) * 2);
+          context.closePath();
+          context.stroke();
+        };
+
+        context.strokeStyle = '#000000';
+        context.lineWidth = 6;
+        drawLadder();
+        context.strokeStyle = '#FFFFFF';
+        context.lineWidth = 2;
+        drawLadder();
       }
     }, {
       key: "drawTileBush",
@@ -7796,8 +7905,8 @@ function _createClass(Constructor, protoProps, staticProps) { if (protoProps) _d
           return;
         }
 
-        this.contents.drawText('~~~', rect.x, rect.y, rect.width, rect.height - 8, 'center');
-        this.contents.drawText('~~~', rect.x, rect.y + 8, rect.width, rect.height - 8, 'center');
+        this.contents.drawText('~', rect.x, rect.y, rect.width, rect.height - 8, 'center');
+        this.contents.drawText('~', rect.x, rect.y + 8, rect.width, rect.height - 8, 'center');
       }
     }, {
       key: "drawTileCounter",
@@ -7806,7 +7915,22 @@ function _createClass(Constructor, protoProps, staticProps) { if (protoProps) _d
           return;
         }
 
-        this.contents.drawText('YES', rect.x, rect.y, rect.width, rect.height, 'center');
+        var context = this.contents.context;
+        var w = Math.floor(rect.width / 2);
+        var h = Math.floor(rect.height / 2);
+        var x = rect.x + w;
+        var y = rect.y + h / 2;
+        context.beginPath();
+        context.moveTo(x, y);
+        context.lineTo(x - w / 2, y + h / 2);
+        context.lineTo(x, y + h);
+        context.lineTo(x + w / 2, y + h / 2);
+        context.closePath();
+        context.strokeStyle = '#000000';
+        context.lineWidth = 4;
+        context.stroke();
+        context.fillStyle = '#FFFFFF';
+        context.fill();
       }
     }, {
       key: "drawTileDamage",

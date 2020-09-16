@@ -1,6 +1,6 @@
 /*:
  * @target MZ
- * @plugindesc Live Map Editor
+ * @plugindesc Live Map Editor - v1.06.00
  *
  * <pluginName:CycloneMapEditor>
  * @author Hudell
@@ -62,6 +62,10 @@
  * ===========================================================================
  * Change Log
  * ===========================================================================
+ * 2020-09-15 - Version 1.06.00
+ *   * New option to view tile properties such as tags, passability, bush,
+ *   ladder and so on.
+ *
  * 2020-09-14 - Version 1.05.01
  *   * Fixed small delay on integration between movement and map editor.
  *
@@ -5900,7 +5904,7 @@ class WindowCycloneMapEditor extends Window_Command {
   redraw() {
     Window_Selectable.prototype.refresh.call(this);
 
-    if (!CycloneMovement.changingTileProps) {
+    if (!CycloneMapEditor.changingTileProps) {
       // Force the tilemap cursor to redraw too
       SceneManager._scene._spriteset._mapEditorCursor.updateDrawing();
     }
