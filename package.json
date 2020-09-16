@@ -9,7 +9,8 @@
     "time": "cd source/Time & rollup -cw",
     "movement": "cd source/Movement & rollup -cw",
     "movement-mv": "cd source/Movement-MV & rollup -cw",
-    "window": "cd source/WindowResizer & rollup -cw"
+    "window": "cd source/WindowResizer & rollup -cw",
+    "window-mv": "cd source/WindowResizer-MV & rollup -cw"
   },
   "author": "Hudell",
   "license": "Apache2",

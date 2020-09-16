@@ -22,10 +22,14 @@ export class WindowEffects extends Window_Base {
   _refreshFrame() {
   }
 
+  clearBackContents() {
+    this.contentsBack.clear();
+  }
+
   refresh() {
     if (this.contents) {
       this.contents.clear();
-      this.contentsBack.clear();
+      this.clearBackContents();
       this.drawContent();
     }
   }

@@ -14,12 +14,6 @@ WindowResizer.patchClass(Scene_Base, $super => class {
     this._windowResizer.hide();
   }
 
-  // update() {
-  //   $super.update.call(this);
-
-
-  // }
-
   findAllWindows() {
     return WindowResizer.findChildWindows(this);
   }
