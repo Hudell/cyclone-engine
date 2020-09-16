@@ -79,6 +79,7 @@ globals:
   CycloneMaps: true
   CycloneTime: true
   CycloneMovement: true
+  CycloneTilePriority: true
 
   WindowResizer: true
 rules:

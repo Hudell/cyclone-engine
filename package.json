@@ -9,6 +9,7 @@
     "time": "cd source/Time & rollup -cw",
     "movement": "cd source/Movement & rollup -cw",
     "movement-mv": "cd source/Movement-MV & rollup -cw",
+    "priority": "cd source/TilePriority & rollup -cw",
     "window": "cd source/WindowResizer & rollup -cw",
     "window-mv": "cd source/WindowResizer-MV & rollup -cw"
   },
