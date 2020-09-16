@@ -4840,6 +4840,11 @@ CycloneMapEditor.patchClass(Game_Map, $super => class {
     }
   }
 
+  getTileFlag(tileId) {
+    const flags = this.tilesetFlags();
+    return flags[tileId];
+  }
+
   checkTileIdPassageType(tileId) {
     const flags = this.tilesetFlags();
     const flag = flags[tileId];
@@ -6123,7 +6128,69 @@ class WindowCycloneMapEditor extends Window_Command {
   }
 
   drawTilePassage4(tileId, rect) {
+    const flag = $gameMap.getTileFlag(tileId);
+    const top = $gameMap.getPassageBitType(flag, 8);
+    const bottom = $gameMap.getPassageBitType(flag, 2);
+    const left = $gameMap.getPassageBitType(flag, 4);
+    const right = $gameMap.getPassageBitType(flag, 6);
+    const margin = 3;
 
+    const middleX = rect.x + Math.floor(rect.width / 2);
+    const middleY = rect.y + Math.floor(rect.height / 2);
+
+    const context = this.contents.context;
+    context.lineWidth = 6;
+    context.strokeStyle = '#000000';
+
+    const getBack = (len, x1, y1, x2, y2) => {
+      return x2 - (len * (x2 - x1) / (Math.sqrt(Math.pow(y2 - y1, 2) + Math.pow(x2 - x1, 2))));
+    };
+
+    const drawArrow = (x, y, x2, y2) => {
+      const headLen = 10;
+      const back = 0;
+      const angle1 = Math.PI / 13;
+      const angle2 = Math.atan2(y2 - y, x2 - x);
+      const diff1 = angle2 - angle1;
+      const diff2 = angle2 + angle1;
+
+      const xx = getBack(back, x, y, x2, y2);
+      const yy = getBack(back, y, x, y2, x2);
+
+      context.beginPath();
+      context.moveTo(x, y);
+      context.lineTo(x2, y2);
+      context.moveTo(xx, yy);
+      context.lineTo(xx - headLen * Math.cos(diff1), yy - headLen * Math.sin(diff1));
+
+      context.moveTo(xx, yy);
+      context.lineTo(xx - headLen * Math.cos(diff2), yy - headLen * Math.sin(diff2));
+      context.closePath();
+      context.stroke();
+    };
+
+    const drawArrows = () => {
+      if (top) {
+        drawArrow(middleX, middleY, middleX, rect.y + margin);
+      }
+
+      if (bottom) {
+        drawArrow(middleX, middleY, middleX, rect.y + rect.height - margin);
+      }
+
+      if (left) {
+        drawArrow(middleX, middleY, rect.x + margin, middleY);
+      }
+
+      if (right) {
+        drawArrow(middleX, middleY, rect.x + rect.width - margin, middleY);
+      }
+    };
+
+    drawArrows();
+    context.lineWidth = 2;
+    context.strokeStyle = '#FFFFFF';
+    drawArrows();
   }
 
   drawTileLadder(tileId, rect) {
@@ -6131,7 +6198,37 @@ class WindowCycloneMapEditor extends Window_Command {
       return;
     }
 
-    this.contents.drawText('YES', rect.x, rect.y, rect.width, rect.height, 'center');
+    const context = this.contents.context;
+    const w = Math.floor(rect.width / 4);
+    const h = Math.floor(rect.height / 3);
+    const x = Math.floor(rect.x + (rect.width / 2) - (w / 2));
+    const y = Math.floor(rect.y + (rect.height / 2) - (w / 2));
+
+    const drawLadder = () => {
+      context.beginPath();
+      context.moveTo(x, y);
+      context.lineTo(x, y + h);
+
+      context.moveTo(x + w, y);
+      context.lineTo(x + w, y + h);
+
+      context.moveTo(x, y + Math.floor(h / 3));
+      context.lineTo(x + w, y + Math.floor(h / 3));
+
+      context.moveTo(x, y + Math.floor(h / 3) * 2);
+      context.lineTo(x + w, y + Math.floor(h / 3) * 2);
+
+      context.closePath();
+
+      context.stroke();
+    };
+
+    context.strokeStyle = '#000000';
+    context.lineWidth = 6;
+    drawLadder();
+    context.strokeStyle = '#FFFFFF';
+    context.lineWidth = 2;
+    drawLadder();
   }
 
   drawTileBush(tileId, rect) {
@@ -6148,7 +6245,25 @@ class WindowCycloneMapEditor extends Window_Command {
       return;
     }
 
-    this.contents.drawText('YES', rect.x, rect.y, rect.width, rect.height, 'center');
+    const context = this.contents.context;
+    const w = Math.floor(rect.width / 2);
+    const h = Math.floor(rect.height / 2);
+    const x = rect.x + w;
+    const y = rect.y + h / 2;
+
+    context.beginPath();
+    context.moveTo(x, y);
+    context.lineTo(x - w / 2, y + h / 2);
+    context.lineTo(x, y + h);
+    context.lineTo(x + w / 2, y + h / 2);
+
+    context.closePath();
+
+    context.strokeStyle = '#000000';
+    context.lineWidth = 4;
+    context.stroke();
+    context.fillStyle = '#FFFFFF';
+    context.fill();
   }
 
   drawTileDamage(tileId, rect) {

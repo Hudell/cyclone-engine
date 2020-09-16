@@ -126,6 +126,11 @@ CycloneMapEditor.patchClass(Game_Map, $super => class {
     }
   }
 
+  getTileFlag(tileId) {
+    const flags = this.tilesetFlags();
+    return flags[tileId];
+  }
+
   checkTileIdPassageType(tileId) {
     const flags = this.tilesetFlags();
     const flag = flags[tileId];
