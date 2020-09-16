@@ -160,3 +160,9 @@ rules:
     - error
   rest-spread-spacing:
     - error
+overrides:
+  -
+    files:
+      - source/*-MV/**/*.js
+    globals:
+      ShaderTilemap: false

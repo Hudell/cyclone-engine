@@ -1,4 +1,4 @@
-
+import '../../MV/Core';
 import '../../WindowResizer/src/plugin';
 
 import '../../WindowResizer/src/Input';
