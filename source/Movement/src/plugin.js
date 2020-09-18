@@ -32,10 +32,15 @@ class CycloneMovement extends CyclonePlugin {
         defaultValue: true,
       },
       disableMouseMovement: 'boolean',
+      maxOffset: {
+        type: 'float',
+        defaultValue: 0.75,
+      },
+      sidestepEvents: 'boolean',
     });
 
     this.stepCount = [1, 2, 4].includes(this.params.stepCount) ? this.params.stepCount : 1;
-    this.collisionStepCount = Math.min(this.stepCount, [1, 2, 4].includes(this.params.collisionStepCount) ? this.params.stepCount : 1);
+    this.collisionStepCount = Math.min(this.stepCount, [1, 2, 4].includes(this.params.collisionStepCount) ? this.params.collisionStepCount : 1);
     this.stepSize = 1 / this.stepCount;
     this.collisionSize = 1 / this.collisionStepCount;
     this.followerStepsBehind = Number(this.params.followerStepsBehind || 1).clamp(1, this.stepCount);

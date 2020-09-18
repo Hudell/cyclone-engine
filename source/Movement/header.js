@@ -126,4 +126,17 @@
  * @desc
  * @default false
  *
+ * @param maxOffset
+ * @text Max Slide Distance
+ * @type number
+ * @desc How many tiles should the player be able to sidestep when trying to avoid map obstacles?
+ * @default 0.75
+ * @decimals 2
+ *
+ * @param sidestepEvents
+ * @text Sidestep Events?
+ * @type boolean
+ * @desc Should the player also sidestep to avoid events?
+ * @default false
+ *
  **/

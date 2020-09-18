@@ -129,7 +129,9 @@ const addPixelMovementToClass = (classRef) => {
       const x2 = CycloneMovement.roundXWithDirection(x, d);
       const y2 = CycloneMovement.roundYWithDirection(y, d);
 
+      this._blockingReason = 'free';
       if (!$gameMap.isValid(x2, y2)) {
+        this._blockingReason = 'invalid';
         return false;
       }
 
@@ -138,6 +140,7 @@ const addPixelMovementToClass = (classRef) => {
       }
 
       if (!this.isMapPassable(x, y, d)) {
+        this._blockingReason = 'tile';
         return false;
       }
 
@@ -146,10 +149,12 @@ const addPixelMovementToClass = (classRef) => {
       }
 
       if (!this.isMapPassable(x2, y2, this.reverseDir(d))) {
+        this._blockingReason = 'tileReverse';
         return false;
       }
 
       if (this.isCollidedWithCharacters(x2, y2)) {
+        this._blockingReason = 'characters';
         return false;
       }
 
@@ -160,7 +165,9 @@ const addPixelMovementToClass = (classRef) => {
       const y2 = CycloneMovement.roundYWithDirection(y, vert);
       const x2 = CycloneMovement.roundXWithDirection(x, horz);
 
+      this._blockingReason = 'free';
       if (!$gameMap.isValid(x2, y2)) {
+        this._blockingReason = 'invalid';
         return false;
       }
 
@@ -170,21 +177,25 @@ const addPixelMovementToClass = (classRef) => {
 
       // Can move vertically at the current position?
       if (!this.isMapPassable(x, y, vert)) {
+        this._blockingReason = 'tile';
         return false;
       }
 
       // Can move horizontally at the current position?
       if (!this.isMapPassable(x, y, horz)) {
+        this._blockingReason = 'tile';
         return false;
       }
 
       // Can move horizontally at the new Y position?
       if (!this.isMapPassable(x, y2, horz)) {
+        this._blockingReason = 'tile';
         return false;
       }
 
       // Can move vertically at the new X position?
       if (!this.isMapPassable(x2, y, vert)) {
+        this._blockingReason = 'tile';
         return false;
       }
 
@@ -197,28 +208,33 @@ const addPixelMovementToClass = (classRef) => {
 
       // Can move vertically at the current position? (reverse)
       if (!this.isMapPassable(x2, y2, reverseVert)) {
+        this._blockingReason = 'tileReverse';
         return false;
       }
 
       // Can move horizontally at the current position? (reverse)
       if (!this.isMapPassable(x2, y2, reverseHorz)) {
+        this._blockingReason = 'tileReverse';
         return false;
       }
 
       // Can move horizontally at the new Y position? (reverse)
       const y3 = CycloneMovement.roundYWithDirection(y2, vert);
       if (!this.isMapPassable(x2, y3, reverseHorz)) {
+        this._blockingReason = 'tileReverse';
         return false;
       }
 
       // Can move vertically at the new X position? (reverse)
       const x3 = CycloneMovement.roundXWithDirection(x2, horz);
       if (!this.isMapPassable(x3, y2, reverseVert)) {
+        this._blockingReason = 'tileReverse';
         return false;
       }
 
       // Finally, check if the destination position doesn't have an event on it
       if (this.isCollidedWithCharacters(x2, y2)) {
+        this._blockingReason = 'characters';
         return false;
       }
 

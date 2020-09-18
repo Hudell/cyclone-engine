@@ -128,11 +128,7 @@ CycloneMovement.patchClass(Game_Player, $super => class {
       return false;
     }
 
-    if (this.tryToAvoidDiagonally(direction)) {
-      return true;
-    }
-
-    if (this.tryToAvoid(direction, 0.75)) {
+    if (this.tryToAvoid(direction, CycloneMovement.params.maxOffset)) {
       return true;
     }
 
@@ -157,6 +153,12 @@ CycloneMovement.patchClass(Game_Player, $super => class {
   }
 
   tryToAvoid(direction, maxOffset) {
+    if (!CycloneMovement.params.sidestepEvents) {
+      if (this._blockingReason === 'characters') {
+        return false;
+      }
+    }
+
     if (direction === 4 || direction === 6) {
       if (this.tryToAvoidVertically(direction, maxOffset)) {
         return true;
@@ -170,7 +172,6 @@ CycloneMovement.patchClass(Game_Player, $super => class {
     }
 
     return false;
-
   }
 
   tryToAvoidDirection(xOffset, yOffset, movementDirection, faceDirection) {
@@ -178,38 +179,6 @@ CycloneMovement.patchClass(Game_Player, $super => class {
       this.executeMove(movementDirection);
       this.setDirection(faceDirection);
       return true;
-    }
-
-    return false;
-  }
-
-  tryToAvoidDiagonally(direction) {
-    if (direction === 4 || direction === 6) {
-      if (this.canPassDiagonally(this._x, this._y, direction, 2)) {
-        this.executeMove(direction - 3);
-        return true;
-      }
-
-      if (this.canPassDiagonally(this._x, this._y, direction, 8)) {
-        this.executeMove(direction + 3);
-        return true;
-      }
-
-      return false;
-    }
-
-    if (direction === 2 || direction === 8) {
-      if (this.canPassDiagonally(this._x, this._y, 4, direction)) {
-        this.executeMove(direction - 1);
-        return true;
-      }
-
-      if (this.canPassDiagonally(this._x, this._y, 6, direction)) {
-        this.executeMove(direction + 1);
-        return true;
-      }
-
-      return false;
     }
 
     return false;

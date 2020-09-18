@@ -126,6 +126,19 @@
  * @desc
  * @default false
  *
+ * @param maxOffset
+ * @text Max Slide Distance
+ * @type number
+ * @desc How many tiles should the player be able to sidestep when trying to avoid map obstacles?
+ * @default 0.75
+ * @decimals 2
+ *
+ * @param sidestepEvents
+ * @text Sidestep Events?
+ * @type boolean
+ * @desc Should the player also sidestep to avoid events?
+ * @default false
+ *
  **/
 (function () {
 'use strict';
@@ -805,10 +818,15 @@ class CycloneMovement$1 extends CyclonePlugin {
         defaultValue: true,
       },
       disableMouseMovement: 'boolean',
+      maxOffset: {
+        type: 'float',
+        defaultValue: 0.75,
+      },
+      sidestepEvents: 'boolean',
     });
 
     this.stepCount = [1, 2, 4].includes(this.params.stepCount) ? this.params.stepCount : 1;
-    this.collisionStepCount = Math.min(this.stepCount, [1, 2, 4].includes(this.params.collisionStepCount) ? this.params.stepCount : 1);
+    this.collisionStepCount = Math.min(this.stepCount, [1, 2, 4].includes(this.params.collisionStepCount) ? this.params.collisionStepCount : 1);
     this.stepSize = 1 / this.stepCount;
     this.collisionSize = 1 / this.collisionStepCount;
     this.followerStepsBehind = Number(this.params.followerStepsBehind || 1).clamp(1, this.stepCount);
@@ -1436,7 +1454,9 @@ const addPixelMovementToClass = (classRef) => {
       const x2 = CycloneMovement.roundXWithDirection(x, d);
       const y2 = CycloneMovement.roundYWithDirection(y, d);
 
+      this._blockingReason = 'free';
       if (!$gameMap.isValid(x2, y2)) {
+        this._blockingReason = 'invalid';
         return false;
       }
 
@@ -1445,6 +1465,7 @@ const addPixelMovementToClass = (classRef) => {
       }
 
       if (!this.isMapPassable(x, y, d)) {
+        this._blockingReason = 'tile';
         return false;
       }
 
@@ -1453,10 +1474,12 @@ const addPixelMovementToClass = (classRef) => {
       }
 
       if (!this.isMapPassable(x2, y2, this.reverseDir(d))) {
+        this._blockingReason = 'tileReverse';
         return false;
       }
 
       if (this.isCollidedWithCharacters(x2, y2)) {
+        this._blockingReason = 'characters';
         return false;
       }
 
@@ -1467,7 +1490,9 @@ const addPixelMovementToClass = (classRef) => {
       const y2 = CycloneMovement.roundYWithDirection(y, vert);
       const x2 = CycloneMovement.roundXWithDirection(x, horz);
 
+      this._blockingReason = 'free';
       if (!$gameMap.isValid(x2, y2)) {
+        this._blockingReason = 'invalid';
         return false;
       }
 
@@ -1477,21 +1502,25 @@ const addPixelMovementToClass = (classRef) => {
 
       // Can move vertically at the current position?
       if (!this.isMapPassable(x, y, vert)) {
+        this._blockingReason = 'tile';
         return false;
       }
 
       // Can move horizontally at the current position?
       if (!this.isMapPassable(x, y, horz)) {
+        this._blockingReason = 'tile';
         return false;
       }
 
       // Can move horizontally at the new Y position?
       if (!this.isMapPassable(x, y2, horz)) {
+        this._blockingReason = 'tile';
         return false;
       }
 
       // Can move vertically at the new X position?
       if (!this.isMapPassable(x2, y, vert)) {
+        this._blockingReason = 'tile';
         return false;
       }
 
@@ -1504,28 +1533,33 @@ const addPixelMovementToClass = (classRef) => {
 
       // Can move vertically at the current position? (reverse)
       if (!this.isMapPassable(x2, y2, reverseVert)) {
+        this._blockingReason = 'tileReverse';
         return false;
       }
 
       // Can move horizontally at the current position? (reverse)
       if (!this.isMapPassable(x2, y2, reverseHorz)) {
+        this._blockingReason = 'tileReverse';
         return false;
       }
 
       // Can move horizontally at the new Y position? (reverse)
       const y3 = CycloneMovement.roundYWithDirection(y2, vert);
       if (!this.isMapPassable(x2, y3, reverseHorz)) {
+        this._blockingReason = 'tileReverse';
         return false;
       }
 
       // Can move vertically at the new X position? (reverse)
       const x3 = CycloneMovement.roundXWithDirection(x2, horz);
       if (!this.isMapPassable(x3, y2, reverseVert)) {
+        this._blockingReason = 'tileReverse';
         return false;
       }
 
       // Finally, check if the destination position doesn't have an event on it
       if (this.isCollidedWithCharacters(x2, y2)) {
+        this._blockingReason = 'characters';
         return false;
       }
 
@@ -2517,11 +2551,7 @@ CycloneMovement.patchClass(Game_Player, $super => class {
       return false;
     }
 
-    if (this.tryToAvoidDiagonally(direction)) {
-      return true;
-    }
-
-    if (this.tryToAvoid(direction, 0.75)) {
+    if (this.tryToAvoid(direction, CycloneMovement.params.maxOffset)) {
       return true;
     }
 
@@ -2546,6 +2576,12 @@ CycloneMovement.patchClass(Game_Player, $super => class {
   }
 
   tryToAvoid(direction, maxOffset) {
+    if (!CycloneMovement.params.sidestepEvents) {
+      if (this._blockingReason === 'characters') {
+        return false;
+      }
+    }
+
     if (direction === 4 || direction === 6) {
       if (this.tryToAvoidVertically(direction, maxOffset)) {
         return true;
@@ -2559,7 +2595,6 @@ CycloneMovement.patchClass(Game_Player, $super => class {
     }
 
     return false;
-
   }
 
   tryToAvoidDirection(xOffset, yOffset, movementDirection, faceDirection) {
@@ -2567,38 +2602,6 @@ CycloneMovement.patchClass(Game_Player, $super => class {
       this.executeMove(movementDirection);
       this.setDirection(faceDirection);
       return true;
-    }
-
-    return false;
-  }
-
-  tryToAvoidDiagonally(direction) {
-    if (direction === 4 || direction === 6) {
-      if (this.canPassDiagonally(this._x, this._y, direction, 2)) {
-        this.executeMove(direction - 3);
-        return true;
-      }
-
-      if (this.canPassDiagonally(this._x, this._y, direction, 8)) {
-        this.executeMove(direction + 3);
-        return true;
-      }
-
-      return false;
-    }
-
-    if (direction === 2 || direction === 8) {
-      if (this.canPassDiagonally(this._x, this._y, 4, direction)) {
-        this.executeMove(direction - 1);
-        return true;
-      }
-
-      if (this.canPassDiagonally(this._x, this._y, 6, direction)) {
-        this.executeMove(direction + 1);
-        return true;
-      }
-
-      return false;
     }
 
     return false;
@@ -3538,8 +3541,4 @@ CycloneMovement.patchClass(DataManager, $super => class {
     $super.onLoad.call(this, object);
 
     if (this.isMapObject(object)) {
-      CycloneMovement.setupCollision();
-    }
-  }
-});
-})();
+      CycloneMovement.setupColl
