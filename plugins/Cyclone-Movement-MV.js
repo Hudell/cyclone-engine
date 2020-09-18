@@ -31,7 +31,7 @@ function _defineProperties(target, props) { for (var i = 0; i < props.length; i+
 function _createClass(Constructor, protoProps, staticProps) { if (protoProps) _defineProperties(Constructor.prototype, protoProps); if (staticProps) _defineProperties(Constructor, staticProps); return Constructor; }
 
 /*:
- * @plugindesc Adds new movement features to the game
+ * @plugindesc Adds new movement features to the game v1.01.00
  *
  * <pluginName:CycloneMovement>
  * @author Hudell
@@ -87,6 +87,13 @@ function _createClass(Constructor, protoProps, staticProps) { if (protoProps) _d
  * updates to my plugins, I am in no obligation to do so.
  *
  * 8. I'm not responsible for anything created with this plugin.
+ * ===========================================================================
+ * Change Log
+ * ===========================================================================
+ * 2020-09-18 - Version 1.01.00
+ *   * Fixed directional passability tests when Pixel Movement is disabled.
+ *   * New settings to control the sidestep feature.
+ * 2020-09-14 - Version 1.00.00
  * ===========================================================================
  * @param stepCount
  * @text Steps per Tile
@@ -1404,11 +1411,16 @@ function _createClass(Constructor, protoProps, staticProps) { if (protoProps) _d
             type: 'boolean',
             defaultValue: true
           },
-          disableMouseMovement: 'boolean'
+          disableMouseMovement: 'boolean',
+          maxOffset: {
+            type: 'float',
+            defaultValue: 0.75
+          },
+          sidestepEvents: 'boolean'
         });
 
         this.stepCount = [1, 2, 4].includes(this.params.stepCount) ? this.params.stepCount : 1;
-        this.collisionStepCount = Math.min(this.stepCount, [1, 2, 4].includes(this.params.collisionStepCount) ? this.params.stepCount : 1);
+        this.collisionStepCount = Math.min(this.stepCount, [1, 2, 4].includes(this.params.collisionStepCount) ? this.params.collisionStepCount : 1);
         this.stepSize = 1 / this.stepCount;
         this.collisionSize = 1 / this.collisionStepCount;
         this.followerStepsBehind = Number(this.params.followerStepsBehind || 1).clamp(1, this.stepCount);
@@ -1561,7 +1573,9 @@ function _createClass(Constructor, protoProps, staticProps) { if (protoProps) _d
     }, {
       key: "setupCollision",
       value: function setupCollision() {
-        if (!$gameMap._loaded) {
+        var _$gameMap;
+
+        if (!((_$gameMap = $gameMap) === null || _$gameMap === void 0 ? void 0 : _$gameMap._loaded)) {
           return;
         }
 
@@ -1592,6 +1606,12 @@ function _createClass(Constructor, protoProps, staticProps) { if (protoProps) _d
       value: function setBlockCollision(x, y, collision) {
         var index = this.collisionIndex(x, y);
         currentMapCollisionTable[index] = collision;
+      }
+    }, {
+      key: "applySingleTileCollision",
+      value: function applySingleTileCollision(x, y, blockUp, blockDown, blockLeft, blockRight) {
+        var collision = this._mergeCustomCollisionValues(blockUp, blockDown, blockLeft, blockRight) || 1;
+        this.setBlockCollision(x, y, collision);
       }
     }, {
       key: "applyFullTileCollision",
@@ -1643,6 +1663,66 @@ function _createClass(Constructor, protoProps, staticProps) { if (protoProps) _d
         var height = $gameMap.height() * stepCount;
         var width = $gameMap.width() * stepCount;
         return intY % height * width + intX % width;
+      } // eslint-disable-next-line complexity
+
+    }, {
+      key: "_mergeCustomCollisionValues",
+      value: function _mergeCustomCollisionValues(blockUp, blockDown, blockLeft, blockRight) {
+        if (blockLeft && blockRight && blockDown && blockUp) {
+          return 20;
+        }
+
+        if (blockUp) {
+          if (blockLeft) {
+            if (blockRight) {
+              return 22;
+            }
+
+            return 17;
+          }
+
+          if (blockRight) {
+            if (blockDown) {
+              return 24;
+            }
+
+            return 19;
+          }
+
+          if (blockDown) {
+            return 4;
+          }
+
+          return 18;
+        }
+
+        if (blockDown) {
+          if (blockLeft) {
+            if (blockRight) {
+              return 28;
+            }
+
+            return 11;
+          }
+
+          if (blockRight) {
+            return 13;
+          }
+
+          return 12;
+        }
+
+        if (blockLeft) {
+          if (blockRight) {
+            return 5;
+          }
+
+          return 14;
+        }
+
+        if (blockRight) {
+          return 16;
+        }
       } // If the collision is using less than 4 blocks per tile, then merge the sub-blocks into bigger blocks.
       // This is needed for the directional passabilities to work properly
       // eslint-disable-next-line complexity
@@ -1728,63 +1808,7 @@ function _createClass(Constructor, protoProps, staticProps) { if (protoProps) _d
           }
         }
 
-        if (blockLeft && blockRight && blockDown && blockUp) {
-          return 20;
-        }
-
-        if (blockUp) {
-          if (blockLeft) {
-            if (blockRight) {
-              return 22;
-            }
-
-            return 17;
-          }
-
-          if (blockRight) {
-            if (blockDown) {
-              return 24;
-            }
-
-            return 19;
-          }
-
-          if (blockDown) {
-            return 4;
-          }
-
-          return 18;
-        }
-
-        if (blockDown) {
-          if (blockLeft) {
-            if (blockRight) {
-              return 28;
-            }
-
-            return 11;
-          }
-
-          if (blockRight) {
-            return 13;
-          }
-
-          return 12;
-        }
-
-        if (blockLeft) {
-          if (blockRight) {
-            return 5;
-          }
-
-          return 14;
-        }
-
-        if (blockRight) {
-          return 16;
-        }
-
-        return result || 0;
+        return this._mergeCustomCollisionValues(blockUp, blockDown, blockLeft, blockRight) || result || 0;
       }
     }, {
       key: "setupCustomCollision",
@@ -1877,6 +1901,11 @@ function _createClass(Constructor, protoProps, staticProps) { if (protoProps) _d
       value: function applyTileCollision(x, y, down, left, right, up) {
         if (down === left && down === right && down === up) {
           this.applyFullTileCollision(x, y, down ? 1 : 2);
+          return;
+        }
+
+        if (CycloneMovement$1.collisionStepCount === 1) {
+          this.applySingleTileCollision(x, y, !up, !down, !left, !right);
           return;
         }
 
@@ -1984,6 +2013,11 @@ function _createClass(Constructor, protoProps, staticProps) { if (protoProps) _d
           var a2 = Math.pow(b, 2) + Math.pow(c, 2);
           var a = Math.sqrt(a2);
           return a;
+        }
+      }, {
+        key: "regionId",
+        value: function regionId(x, y) {
+          return $super.regionId.call(this, Math.floor(x), Math.floor(y));
         }
       }]);
 
@@ -2133,8 +2167,10 @@ function _createClass(Constructor, protoProps, staticProps) { if (protoProps) _d
 
             var x2 = CycloneMovement.roundXWithDirection(x, d);
             var y2 = CycloneMovement.roundYWithDirection(y, d);
+            this._blockingReason = 'free';
 
             if (!$gameMap.isValid(x2, y2)) {
+              this._blockingReason = 'invalid';
               return false;
             }
 
@@ -2143,6 +2179,7 @@ function _createClass(Constructor, protoProps, staticProps) { if (protoProps) _d
             }
 
             if (!this.isMapPassable(x, y, d)) {
+              this._blockingReason = 'tile';
               return false;
             }
 
@@ -2151,10 +2188,12 @@ function _createClass(Constructor, protoProps, staticProps) { if (protoProps) _d
             }
 
             if (!this.isMapPassable(x2, y2, this.reverseDir(d))) {
+              this._blockingReason = 'tileReverse';
               return false;
             }
 
             if (this.isCollidedWithCharacters(x2, y2)) {
+              this._blockingReason = 'characters';
               return false;
             }
 
@@ -2165,8 +2204,10 @@ function _createClass(Constructor, protoProps, staticProps) { if (protoProps) _d
           value: function canPassDiagonally(x, y, horz, vert) {
             var y2 = CycloneMovement.roundYWithDirection(y, vert);
             var x2 = CycloneMovement.roundXWithDirection(x, horz);
+            this._blockingReason = 'free';
 
             if (!$gameMap.isValid(x2, y2)) {
+              this._blockingReason = 'invalid';
               return false;
             }
 
@@ -2176,21 +2217,25 @@ function _createClass(Constructor, protoProps, staticProps) { if (protoProps) _d
 
 
             if (!this.isMapPassable(x, y, vert)) {
+              this._blockingReason = 'tile';
               return false;
             } // Can move horizontally at the current position?
 
 
             if (!this.isMapPassable(x, y, horz)) {
+              this._blockingReason = 'tile';
               return false;
             } // Can move horizontally at the new Y position?
 
 
             if (!this.isMapPassable(x, y2, horz)) {
+              this._blockingReason = 'tile';
               return false;
             } // Can move vertically at the new X position?
 
 
             if (!this.isMapPassable(x2, y, vert)) {
+              this._blockingReason = 'tile';
               return false;
             }
 
@@ -2202,11 +2247,13 @@ function _createClass(Constructor, protoProps, staticProps) { if (protoProps) _d
             var reverseVert = this.reverseDir(vert); // Can move vertically at the current position? (reverse)
 
             if (!this.isMapPassable(x2, y2, reverseVert)) {
+              this._blockingReason = 'tileReverse';
               return false;
             } // Can move horizontally at the current position? (reverse)
 
 
             if (!this.isMapPassable(x2, y2, reverseHorz)) {
+              this._blockingReason = 'tileReverse';
               return false;
             } // Can move horizontally at the new Y position? (reverse)
 
@@ -2214,6 +2261,7 @@ function _createClass(Constructor, protoProps, staticProps) { if (protoProps) _d
             var y3 = CycloneMovement.roundYWithDirection(y2, vert);
 
             if (!this.isMapPassable(x2, y3, reverseHorz)) {
+              this._blockingReason = 'tileReverse';
               return false;
             } // Can move vertically at the new X position? (reverse)
 
@@ -2221,11 +2269,13 @@ function _createClass(Constructor, protoProps, staticProps) { if (protoProps) _d
             var x3 = CycloneMovement.roundXWithDirection(x2, horz);
 
             if (!this.isMapPassable(x3, y2, reverseVert)) {
+              this._blockingReason = 'tileReverse';
               return false;
             } // Finally, check if the destination position doesn't have an event on it
 
 
             if (this.isCollidedWithCharacters(x2, y2)) {
+              this._blockingReason = 'characters';
               return false;
             }
 
@@ -2374,11 +2424,6 @@ function _createClass(Constructor, protoProps, staticProps) { if (protoProps) _d
         }, {
           key: "checkVerticalPassage",
           value: function checkVerticalPassage(x, y, checkUp, checkDown) {
-            // If the collision block height is smaller than our hitbox height, then we need to check if horizontal movement is free among all new blocks we'll be touching
-            if (this.height <= CycloneMovement.collisionSize) {
-              return;
-            }
-
             if (checkUp && !this.isPositionPassable(x, y, 8)) {
               return false;
             }
@@ -2390,11 +2435,6 @@ function _createClass(Constructor, protoProps, staticProps) { if (protoProps) _d
         }, {
           key: "checkHorizontalPassage",
           value: function checkHorizontalPassage(x, y, checkLeft, checkRight) {
-            // If the collision block width is smaller than our hitbox width, then we need to check if horizontal movement is free among all new blocks we'll be touching
-            if (this.width <= CycloneMovement.collisionSize) {
-              return;
-            }
-
             if (checkLeft && !this.isPositionPassable(x, y, 4)) {
               return false;
             }
@@ -3350,11 +3390,7 @@ function _createClass(Constructor, protoProps, staticProps) { if (protoProps) _d
             return false;
           }
 
-          if (this.tryToAvoidDiagonally(direction)) {
-            return true;
-          }
-
-          if (this.tryToAvoid(direction, 0.75)) {
+          if (this.tryToAvoid(direction, CycloneMovement.params.maxOffset)) {
             return true;
           }
 
@@ -3381,6 +3417,12 @@ function _createClass(Constructor, protoProps, staticProps) { if (protoProps) _d
       }, {
         key: "tryToAvoid",
         value: function tryToAvoid(direction, maxOffset) {
+          if (!CycloneMovement.params.sidestepEvents) {
+            if (this._blockingReason === 'characters') {
+              return false;
+            }
+          }
+
           if (direction === 4 || direction === 6) {
             if (this.tryToAvoidVertically(direction, maxOffset)) {
               return true;
@@ -3402,39 +3444,6 @@ function _createClass(Constructor, protoProps, staticProps) { if (protoProps) _d
             this.executeMove(movementDirection);
             this.setDirection(faceDirection);
             return true;
-          }
-
-          return false;
-        }
-      }, {
-        key: "tryToAvoidDiagonally",
-        value: function tryToAvoidDiagonally(direction) {
-          if (direction === 4 || direction === 6) {
-            if (this.canPassDiagonally(this._x, this._y, direction, 2)) {
-              this.executeMove(direction - 3);
-              return true;
-            }
-
-            if (this.canPassDiagonally(this._x, this._y, direction, 8)) {
-              this.executeMove(direction + 3);
-              return true;
-            }
-
-            return false;
-          }
-
-          if (direction === 2 || direction === 8) {
-            if (this.canPassDiagonally(this._x, this._y, 4, direction)) {
-              this.executeMove(direction - 1);
-              return true;
-            }
-
-            if (this.canPassDiagonally(this._x, this._y, 6, direction)) {
-              this.executeMove(direction + 1);
-              return true;
-            }
-
-            return false;
           }
 
           return false;

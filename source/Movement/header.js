@@ -4,7 +4,7 @@
 
 /*:
  * @target MZ
- * @plugindesc Adds new movement features to the game
+ * @plugindesc Adds new movement features to the game v1.01.00
  *
  * <pluginName:CycloneMovement>
  * @author Hudell
@@ -59,6 +59,14 @@
  * updates to my plugins, I am in no obligation to do so.
  *
  * 8. I'm not responsible for anything created with this plugin.
+ * ===========================================================================
+ * Change Log
+ * ===========================================================================
+ * 2020-09-18 - Version 1.01.00
+ *   * Fixed some incompatibilities with VisuMZ's EventMove Core.
+ *   * Fixed directional passability tests when Pixel Movement is disabled.
+ *   * New settings to control the sidestep feature.
+ * 2020-09-14 - Version 1.00.00
  * ===========================================================================
  * @param stepCount
  * @text Steps per Tile
@@ -124,6 +132,19 @@
  * @on Disable
  * @off Don't Disable
  * @desc
+ * @default false
+ *
+ * @param maxOffset
+ * @text Max Slide Distance
+ * @type number
+ * @desc How many tiles should the player be able to sidestep when trying to avoid map obstacles?
+ * @default 0.75
+ * @decimals 2
+ *
+ * @param sidestepEvents
+ * @text Sidestep Events?
+ * @type boolean
+ * @desc Should the player also sidestep to avoid events?
  * @default false
  *
  **/

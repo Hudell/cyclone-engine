@@ -4,7 +4,7 @@
 
 /*:
  * @target MZ
- * @plugindesc Adds new movement features to the game
+ * @plugindesc Adds new movement features to the game v1.01.00
  *
  * <pluginName:CycloneMovement>
  * @author Hudell
@@ -59,6 +59,14 @@
  * updates to my plugins, I am in no obligation to do so.
  *
  * 8. I'm not responsible for anything created with this plugin.
+ * ===========================================================================
+ * Change Log
+ * ===========================================================================
+ * 2020-09-18 - Version 1.01.00
+ *   * Fixed some incompatibilities with VisuMZ's EventMove Core.
+ *   * Fixed directional passability tests when Pixel Movement is disabled.
+ *   * New settings to control the sidestep feature.
+ * 2020-09-14 - Version 1.00.00
  * ===========================================================================
  * @param stepCount
  * @text Steps per Tile
@@ -124,6 +132,19 @@
  * @on Disable
  * @off Don't Disable
  * @desc
+ * @default false
+ *
+ * @param maxOffset
+ * @text Max Slide Distance
+ * @type number
+ * @desc How many tiles should the player be able to sidestep when trying to avoid map obstacles?
+ * @default 0.75
+ * @decimals 2
+ *
+ * @param sidestepEvents
+ * @text Sidestep Events?
+ * @type boolean
+ * @desc Should the player also sidestep to avoid events?
  * @default false
  *
  **/
@@ -805,10 +826,15 @@ class CycloneMovement$1 extends CyclonePlugin {
         defaultValue: true,
       },
       disableMouseMovement: 'boolean',
+      maxOffset: {
+        type: 'float',
+        defaultValue: 0.75,
+      },
+      sidestepEvents: 'boolean',
     });
 
     this.stepCount = [1, 2, 4].includes(this.params.stepCount) ? this.params.stepCount : 1;
-    this.collisionStepCount = Math.min(this.stepCount, [1, 2, 4].includes(this.params.collisionStepCount) ? this.params.stepCount : 1);
+    this.collisionStepCount = Math.min(this.stepCount, [1, 2, 4].includes(this.params.collisionStepCount) ? this.params.collisionStepCount : 1);
     this.stepSize = 1 / this.stepCount;
     this.collisionSize = 1 / this.collisionStepCount;
     this.followerStepsBehind = Number(this.params.followerStepsBehind || 1).clamp(1, this.stepCount);
@@ -938,7 +964,7 @@ class CycloneMovement$1 extends CyclonePlugin {
   }
 
   static setupCollision() {
-    if (!$gameMap._loaded) {
+    if (!$gameMap?._loaded) {
       return;
     }
 
@@ -965,6 +991,11 @@ class CycloneMovement$1 extends CyclonePlugin {
   static setBlockCollision(x, y, collision) {
     const index = this.collisionIndex(x, y);
     currentMapCollisionTable[index] = collision;
+  }
+
+  static applySingleTileCollision(x, y, blockUp, blockDown, blockLeft, blockRight) {
+    const collision = this._mergeCustomCollisionValues(blockUp, blockDown, blockLeft, blockRight) || 1;
+    this.setBlockCollision(x, y, collision);
   }
 
   static applyFullTileCollision(x, y, collision) {
@@ -1010,6 +1041,59 @@ class CycloneMovement$1 extends CyclonePlugin {
     const height = $gameMap.height() * stepCount;
     const width = $gameMap.width() * stepCount;
     return (intY % height) * width + (intX % width);
+  }
+
+  // eslint-disable-next-line complexity
+  static _mergeCustomCollisionValues(blockUp, blockDown, blockLeft, blockRight) {
+    if (blockLeft && blockRight && blockDown && blockUp) {
+      return 20;
+    }
+
+    if (blockUp) {
+      if (blockLeft) {
+        if (blockRight) {
+          return 22;
+        }
+        return 17;
+      }
+      if (blockRight) {
+        if (blockDown) {
+          return 24;
+        }
+        return 19;
+      }
+
+      if (blockDown) {
+        return 4;
+      }
+
+      return 18;
+    }
+
+    if (blockDown) {
+      if (blockLeft) {
+        if (blockRight) {
+          return 28;
+        }
+
+        return 11;
+      }
+      if (blockRight) {
+        return 13;
+      }
+      return 12;
+    }
+
+    if (blockLeft) {
+      if (blockRight) {
+        return 5;
+      }
+      return 14;
+    }
+
+    if (blockRight) {
+      return 16;
+    }
   }
 
   // If the collision is using less than 4 blocks per tile, then merge the sub-blocks into bigger blocks.
@@ -1085,61 +1169,10 @@ class CycloneMovement$1 extends CyclonePlugin {
         if (goesRight && blockX === diffCount - 1) {
           blockRight = true;
         }
-
       }
     }
 
-    if (blockLeft && blockRight && blockDown && blockUp) {
-      return 20;
-    }
-
-    if (blockUp) {
-      if (blockLeft) {
-        if (blockRight) {
-          return 22;
-        }
-        return 17;
-      }
-      if (blockRight) {
-        if (blockDown) {
-          return 24;
-        }
-        return 19;
-      }
-
-      if (blockDown) {
-        return 4;
-      }
-
-      return 18;
-    }
-
-    if (blockDown) {
-      if (blockLeft) {
-        if (blockRight) {
-          return 28;
-        }
-
-        return 11;
-      }
-      if (blockRight) {
-        return 13;
-      }
-      return 12;
-    }
-
-    if (blockLeft) {
-      if (blockRight) {
-        return 5;
-      }
-      return 14;
-    }
-
-    if (blockRight) {
-      return 16;
-    }
-
-    return result || 0;
+    return this._mergeCustomCollisionValues(blockUp, blockDown, blockLeft, blockRight) || result || 0;
   }
 
   static setupCustomCollision(compressedData) {
@@ -1214,6 +1247,11 @@ class CycloneMovement$1 extends CyclonePlugin {
   static applyTileCollision(x, y, down, left, right, up) {
     if (down === left && down === right && down === up) {
       this.applyFullTileCollision(x, y, down ? 1 : 2);
+      return;
+    }
+
+    if (CycloneMovement$1.collisionStepCount === 1) {
+      this.applySingleTileCollision(x, y, !up, !down, !left, !right);
       return;
     }
 
@@ -1302,6 +1340,10 @@ CycloneMovement.patchClass(Game_Map, $super => class {
     const a = Math.sqrt(a2);
 
     return a;
+  }
+
+  regionId(x, y) {
+    return $super.regionId.call(this, Math.floor(x), Math.floor(y));
   }
 });
 
@@ -1436,7 +1478,9 @@ const addPixelMovementToClass = (classRef) => {
       const x2 = CycloneMovement.roundXWithDirection(x, d);
       const y2 = CycloneMovement.roundYWithDirection(y, d);
 
+      this._blockingReason = 'free';
       if (!$gameMap.isValid(x2, y2)) {
+        this._blockingReason = 'invalid';
         return false;
       }
 
@@ -1445,6 +1489,7 @@ const addPixelMovementToClass = (classRef) => {
       }
 
       if (!this.isMapPassable(x, y, d)) {
+        this._blockingReason = 'tile';
         return false;
       }
 
@@ -1453,10 +1498,12 @@ const addPixelMovementToClass = (classRef) => {
       }
 
       if (!this.isMapPassable(x2, y2, this.reverseDir(d))) {
+        this._blockingReason = 'tileReverse';
         return false;
       }
 
       if (this.isCollidedWithCharacters(x2, y2)) {
+        this._blockingReason = 'characters';
         return false;
       }
 
@@ -1467,7 +1514,9 @@ const addPixelMovementToClass = (classRef) => {
       const y2 = CycloneMovement.roundYWithDirection(y, vert);
       const x2 = CycloneMovement.roundXWithDirection(x, horz);
 
+      this._blockingReason = 'free';
       if (!$gameMap.isValid(x2, y2)) {
+        this._blockingReason = 'invalid';
         return false;
       }
 
@@ -1477,21 +1526,25 @@ const addPixelMovementToClass = (classRef) => {
 
       // Can move vertically at the current position?
       if (!this.isMapPassable(x, y, vert)) {
+        this._blockingReason = 'tile';
         return false;
       }
 
       // Can move horizontally at the current position?
       if (!this.isMapPassable(x, y, horz)) {
+        this._blockingReason = 'tile';
         return false;
       }
 
       // Can move horizontally at the new Y position?
       if (!this.isMapPassable(x, y2, horz)) {
+        this._blockingReason = 'tile';
         return false;
       }
 
       // Can move vertically at the new X position?
       if (!this.isMapPassable(x2, y, vert)) {
+        this._blockingReason = 'tile';
         return false;
       }
 
@@ -1504,28 +1557,33 @@ const addPixelMovementToClass = (classRef) => {
 
       // Can move vertically at the current position? (reverse)
       if (!this.isMapPassable(x2, y2, reverseVert)) {
+        this._blockingReason = 'tileReverse';
         return false;
       }
 
       // Can move horizontally at the current position? (reverse)
       if (!this.isMapPassable(x2, y2, reverseHorz)) {
+        this._blockingReason = 'tileReverse';
         return false;
       }
 
       // Can move horizontally at the new Y position? (reverse)
       const y3 = CycloneMovement.roundYWithDirection(y2, vert);
       if (!this.isMapPassable(x2, y3, reverseHorz)) {
+        this._blockingReason = 'tileReverse';
         return false;
       }
 
       // Can move vertically at the new X position? (reverse)
       const x3 = CycloneMovement.roundXWithDirection(x2, horz);
       if (!this.isMapPassable(x3, y2, reverseVert)) {
+        this._blockingReason = 'tileReverse';
         return false;
       }
 
       // Finally, check if the destination position doesn't have an event on it
       if (this.isCollidedWithCharacters(x2, y2)) {
+        this._blockingReason = 'characters';
         return false;
       }
 
@@ -1665,11 +1723,6 @@ const addPixelMovementToClass = (classRef) => {
     }
 
     checkVerticalPassage(x, y, checkUp, checkDown) {
-      // If the collision block height is smaller than our hitbox height, then we need to check if horizontal movement is free among all new blocks we'll be touching
-      if (this.height <= CycloneMovement.collisionSize) {
-        return;
-      }
-
       if (checkUp && !this.isPositionPassable(x, y, 8)) {
         return false;
       }
@@ -1679,11 +1732,6 @@ const addPixelMovementToClass = (classRef) => {
     }
 
     checkHorizontalPassage(x, y, checkLeft, checkRight) {
-      // If the collision block width is smaller than our hitbox width, then we need to check if horizontal movement is free among all new blocks we'll be touching
-      if (this.width <= CycloneMovement.collisionSize) {
-        return;
-      }
-
       if (checkLeft && !this.isPositionPassable(x, y, 4)) {
         return false;
       }
@@ -2517,11 +2565,7 @@ CycloneMovement.patchClass(Game_Player, $super => class {
       return false;
     }
 
-    if (this.tryToAvoidDiagonally(direction)) {
-      return true;
-    }
-
-    if (this.tryToAvoid(direction, 0.75)) {
+    if (this.tryToAvoid(direction, CycloneMovement.params.maxOffset)) {
       return true;
     }
 
@@ -2546,6 +2590,12 @@ CycloneMovement.patchClass(Game_Player, $super => class {
   }
 
   tryToAvoid(direction, maxOffset) {
+    if (!CycloneMovement.params.sidestepEvents) {
+      if (this._blockingReason === 'characters') {
+        return false;
+      }
+    }
+
     if (direction === 4 || direction === 6) {
       if (this.tryToAvoidVertically(direction, maxOffset)) {
         return true;
@@ -2559,7 +2609,6 @@ CycloneMovement.patchClass(Game_Player, $super => class {
     }
 
     return false;
-
   }
 
   tryToAvoidDirection(xOffset, yOffset, movementDirection, faceDirection) {
@@ -2567,38 +2616,6 @@ CycloneMovement.patchClass(Game_Player, $super => class {
       this.executeMove(movementDirection);
       this.setDirection(faceDirection);
       return true;
-    }
-
-    return false;
-  }
-
-  tryToAvoidDiagonally(direction) {
-    if (direction === 4 || direction === 6) {
-      if (this.canPassDiagonally(this._x, this._y, direction, 2)) {
-        this.executeMove(direction - 3);
-        return true;
-      }
-
-      if (this.canPassDiagonally(this._x, this._y, direction, 8)) {
-        this.executeMove(direction + 3);
-        return true;
-      }
-
-      return false;
-    }
-
-    if (direction === 2 || direction === 8) {
-      if (this.canPassDiagonally(this._x, this._y, 4, direction)) {
-        this.executeMove(direction - 1);
-        return true;
-      }
-
-      if (this.canPassDiagonally(this._x, this._y, 6, direction)) {
-        this.executeMove(direction + 1);
-        return true;
-      }
-
-      return false;
     }
 
     return false;
