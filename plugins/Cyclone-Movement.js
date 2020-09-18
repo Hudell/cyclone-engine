@@ -4,7 +4,7 @@
 
 /*:
  * @target MZ
- * @plugindesc Adds new movement features to the game v1.00.01
+ * @plugindesc Adds new movement features to the game v1.01.00
  *
  * <pluginName:CycloneMovement>
  * @author Hudell
@@ -62,9 +62,10 @@
  * ===========================================================================
  * Change Log
  * ===========================================================================
- * 2020-09-18 - Version 1.00.01
+ * 2020-09-18 - Version 1.01.00
  *   * Fixed some incompatibilities with VisuMZ's EventMove Core.
  *   * Fixed directional passability tests when Pixel Movement is disabled.
+ *   * New settings to control the sidestep feature.
  * 2020-09-14 - Version 1.00.00
  * ===========================================================================
  * @param stepCount

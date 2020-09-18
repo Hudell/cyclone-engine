@@ -31,7 +31,7 @@ function _defineProperties(target, props) { for (var i = 0; i < props.length; i+
 function _createClass(Constructor, protoProps, staticProps) { if (protoProps) _defineProperties(Constructor.prototype, protoProps); if (staticProps) _defineProperties(Constructor, staticProps); return Constructor; }
 
 /*:
- * @plugindesc Adds new movement features to the game
+ * @plugindesc Adds new movement features to the game v1.01.00
  *
  * <pluginName:CycloneMovement>
  * @author Hudell
@@ -90,8 +90,9 @@ function _createClass(Constructor, protoProps, staticProps) { if (protoProps) _d
  * ===========================================================================
  * Change Log
  * ===========================================================================
- * 2020-09-18 - Version 1.00.01
+ * 2020-09-18 - Version 1.01.00
  *   * Fixed directional passability tests when Pixel Movement is disabled.
+ *   * New settings to control the sidestep feature.
  * 2020-09-14 - Version 1.00.00
  * ===========================================================================
  * @param stepCount
