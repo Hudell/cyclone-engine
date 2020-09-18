@@ -1,5 +1,5 @@
 /*:
- * @plugindesc Live Map Editor - 1.06.00
+ * @plugindesc Live Map Editor - 1.06.01
  *
  * <pluginName:CycloneMapEditor>
  * @author Hudell
@@ -61,6 +61,9 @@
  * ===========================================================================
  * Change Log
  * ===========================================================================
+ * 2020-09-18 - Version 1.06.01
+ *   * Fixed "Default Collision Blocks" param options.
+ *
  * 2020-09-15 - Version 1.06.00
  *   * New option to view tile properties such as tags, passability, bush,
  *   ladder and so on.
@@ -175,7 +178,7 @@
  * @type select
  * @default 1
  * @desc How many collision blocks per tile should the editor show?
- * @option 1
+ * @option 4
  * @option 2
  * @option 1
  *
