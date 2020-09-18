@@ -374,11 +374,6 @@ const addPixelMovementToClass = (classRef) => {
     }
 
     checkVerticalPassage(x, y, checkUp, checkDown) {
-      // If the collision block height is smaller than our hitbox height, then we need to check if horizontal movement is free among all new blocks we'll be touching
-      if (this.height <= CycloneMovement.collisionSize) {
-        return;
-      }
-
       if (checkUp && !this.isPositionPassable(x, y, 8)) {
         return false;
       }
@@ -388,11 +383,6 @@ const addPixelMovementToClass = (classRef) => {
     }
 
     checkHorizontalPassage(x, y, checkLeft, checkRight) {
-      // If the collision block width is smaller than our hitbox width, then we need to check if horizontal movement is free among all new blocks we'll be touching
-      if (this.width <= CycloneMovement.collisionSize) {
-        return;
-      }
-
       if (checkLeft && !this.isPositionPassable(x, y, 4)) {
         return false;
       }

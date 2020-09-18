@@ -199,6 +199,11 @@ class CycloneMovement extends CyclonePlugin {
     currentMapCollisionTable[index] = collision;
   }
 
+  static applySingleTileCollision(x, y, blockUp, blockDown, blockLeft, blockRight) {
+    const collision = this._mergeCustomCollisionValues(blockUp, blockDown, blockLeft, blockRight) || 1;
+    this.setBlockCollision(x, y, collision);
+  }
+
   static applyFullTileCollision(x, y, collision) {
     const size = this.collisionSize;
     for (let subX = x; subX < x + 1; subX += size) {
@@ -242,6 +247,59 @@ class CycloneMovement extends CyclonePlugin {
     const height = $gameMap.height() * stepCount;
     const width = $gameMap.width() * stepCount;
     return (intY % height) * width + (intX % width);
+  }
+
+  // eslint-disable-next-line complexity
+  static _mergeCustomCollisionValues(blockUp, blockDown, blockLeft, blockRight) {
+    if (blockLeft && blockRight && blockDown && blockUp) {
+      return 20;
+    }
+
+    if (blockUp) {
+      if (blockLeft) {
+        if (blockRight) {
+          return 22;
+        }
+        return 17;
+      }
+      if (blockRight) {
+        if (blockDown) {
+          return 24;
+        }
+        return 19;
+      }
+
+      if (blockDown) {
+        return 4;
+      }
+
+      return 18;
+    }
+
+    if (blockDown) {
+      if (blockLeft) {
+        if (blockRight) {
+          return 28;
+        }
+
+        return 11;
+      }
+      if (blockRight) {
+        return 13;
+      }
+      return 12;
+    }
+
+    if (blockLeft) {
+      if (blockRight) {
+        return 5;
+      }
+      return 14;
+    }
+
+    if (blockRight) {
+      return 16;
+    }
   }
 
   // If the collision is using less than 4 blocks per tile, then merge the sub-blocks into bigger blocks.
@@ -317,61 +375,10 @@ class CycloneMovement extends CyclonePlugin {
         if (goesRight && blockX === diffCount - 1) {
           blockRight = true;
         }
-
       }
     }
 
-    if (blockLeft && blockRight && blockDown && blockUp) {
-      return 20;
-    }
-
-    if (blockUp) {
-      if (blockLeft) {
-        if (blockRight) {
-          return 22;
-        }
-        return 17;
-      }
-      if (blockRight) {
-        if (blockDown) {
-          return 24;
-        }
-        return 19;
-      }
-
-      if (blockDown) {
-        return 4;
-      }
-
-      return 18;
-    }
-
-    if (blockDown) {
-      if (blockLeft) {
-        if (blockRight) {
-          return 28;
-        }
-
-        return 11;
-      }
-      if (blockRight) {
-        return 13;
-      }
-      return 12;
-    }
-
-    if (blockLeft) {
-      if (blockRight) {
-        return 5;
-      }
-      return 14;
-    }
-
-    if (blockRight) {
-      return 16;
-    }
-
-    return result || 0;
+    return this._mergeCustomCollisionValues(blockUp, blockDown, blockLeft, blockRight) || result || 0;
   }
 
   static setupCustomCollision(compressedData) {
@@ -446,6 +453,11 @@ class CycloneMovement extends CyclonePlugin {
   static applyTileCollision(x, y, down, left, right, up) {
     if (down === left && down === right && down === up) {
       this.applyFullTileCollision(x, y, down ? 1 : 2);
+      return;
+    }
+
+    if (CycloneMovement.collisionStepCount === 1) {
+      this.applySingleTileCollision(x, y, !up, !down, !left, !right);
       return;
     }
 
