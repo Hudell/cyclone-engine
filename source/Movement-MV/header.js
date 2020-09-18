@@ -1,5 +1,5 @@
 /*:
- * @plugindesc Adds new movement features to the game
+ * @plugindesc Adds new movement features to the game v1.00.01
  *
  * <pluginName:CycloneMovement>
  * @author Hudell
@@ -55,6 +55,12 @@
  * updates to my plugins, I am in no obligation to do so.
  *
  * 8. I'm not responsible for anything created with this plugin.
+ * ===========================================================================
+ * Change Log
+ * ===========================================================================
+ * 2020-09-18 - Version 1.00.01
+ *   * Fixed directional passability tests when Pixel Movement is disabled.
+ * 2020-09-14 - Version 1.00.00
  * ===========================================================================
  * @param stepCount
  * @text Steps per Tile

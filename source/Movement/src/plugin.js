@@ -170,7 +170,7 @@ class CycloneMovement extends CyclonePlugin {
   }
 
   static setupCollision() {
-    if (!$gameMap._loaded) {
+    if (!$gameMap?._loaded) {
       return;
     }
 

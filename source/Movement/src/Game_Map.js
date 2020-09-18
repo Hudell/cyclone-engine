@@ -42,4 +42,8 @@ CycloneMovement.patchClass(Game_Map, $super => class {
 
     return a;
   }
+
+  regionId(x, y) {
+    return $super.regionId.call(this, Math.floor(x), Math.floor(y));
+  }
 });
