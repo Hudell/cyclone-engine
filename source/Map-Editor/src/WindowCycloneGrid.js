@@ -28,13 +28,13 @@ class WindowCycloneGrid extends Window_Base {
       return;
     }
 
-    const gridRatio = CycloneMapEditor.getGridRatio();
+    const gridRatio = CycloneMapEditor.getGridRatio(true);
 
     const drawWidth = Math.floor(CycloneMapEditor.tileWidth * CycloneMapEditor.currentZoom) / gridRatio;
     const drawHeight = Math.floor(CycloneMapEditor.tileHeight * CycloneMapEditor.currentZoom) / gridRatio;
 
     const context = this.contents.context;
-    context.strokeStyle = '#000000';
+    context.strokeStyle = '#666666';
 
     for (let cellX = 0; cellX < gridRatio; cellX++) {
       for (let cellY = 0; cellY < gridRatio; cellY++) {

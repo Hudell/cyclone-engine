@@ -5,6 +5,7 @@ export const Layers = {
   auto: 7,
   collisions: 8,
   tags: 9,
+  blend: 10,
 };
 
 export const Tools = {
