@@ -28,7 +28,7 @@ class WindowCycloneGrid extends Window_Base {
       return;
     }
 
-    const gridRatio = CycloneMapEditor.getGridRatio();
+    const gridRatio = CycloneMapEditor.getGridRatio(true);
 
     const drawWidth = Math.floor(CycloneMapEditor.tileWidth * CycloneMapEditor.currentZoom) / gridRatio;
     const drawHeight = Math.floor(CycloneMapEditor.tileHeight * CycloneMapEditor.currentZoom) / gridRatio;

@@ -773,6 +773,7 @@ const Layers = {
   auto: 7,
   collisions: 8,
   tags: 9,
+  blend: 10,
 };
 
 const Tools = {
@@ -1095,11 +1096,12 @@ class DirectionHelper {
   }
 }
 
-const layerVisibility = [true, true, true, true, true, false, true, false, false, false];
+const layerVisibility = [true, true, true, true, true, false, true, false, false, false, false];
 let editorActive = true;
 let windowWidth = 216;
 const mapCaches = {};
 let customCollisionTable = {};
+let tileBlendingTable = {};
 
 let currentLayer = 7;
 let currentTab = 'A';
@@ -1237,11 +1239,26 @@ const refreshCollision = throttle(() => {
     setTimeout(() => {
       refreshCollision();
     }, 1);
+    return;
   }
   if (window.CycloneMovement) {
     window.CycloneMovement.setupCollision();
   }
 }, 200);
+
+const refreshMagic = throttle(() => {
+  if (TouchInput.isPressed()) {
+    setTimeout(() => {
+      refreshMagic();
+    }, 1);
+    return;
+  }
+
+  if (window.CycloneTileBlender) {
+    window.CycloneTileBlender.loadMagic();
+    SceneManager._scene._spriteset && SceneManager._scene._spriteset.forceBlenderRefresh();
+  }
+});
 
 const saveExtraData = throttle((refreshCollisionToo = false) => {
   if (TouchInput.isPressed()) {
@@ -1254,6 +1271,7 @@ const saveExtraData = throttle((refreshCollisionToo = false) => {
   CycloneMapEditor$1.saveExtraData();
   if (refreshCollisionToo) {
     refreshCollision();
+    refreshMagic();
   }
 }, 200);
 
@@ -1410,6 +1428,7 @@ class CycloneMapEditor$1 extends CyclonePlugin {
   static get statusDamage() { return statusDamage; }
   static get statusLadder() { return statusLadder; }
   static get customCollisionTable() { return customCollisionTable; }
+  static get tileBlendingTable() { return tileBlendingTable; }
 
   static get mapCaches() { return mapCaches; }
 
@@ -1927,6 +1946,16 @@ class CycloneMapEditor$1 extends CyclonePlugin {
       })
     });
     layerMenu.append(this.tagsButton);
+    this.blendButton = new nw.MenuItem( {
+      label: 'Blend',
+      type: 'checkbox',
+      checked: currentLayer === 10,
+      key: 'B',
+      click: this.makeMenuEvent(() => {
+        CycloneMapEditor$1.changeCurrentLayer(10);
+      })
+    });
+    layerMenu.append(this.blendButton);
 
     menu.append(new nw.MenuItem({
       label: 'Layer',
@@ -2083,6 +2112,7 @@ class CycloneMapEditor$1 extends CyclonePlugin {
 
   static applyExtraData(data) {
     customCollisionTable = {};
+    tileBlendingTable = {};
     const radix = data?.radix || 10;
 
     if (data?.collision) {
@@ -2093,10 +2123,28 @@ class CycloneMapEditor$1 extends CyclonePlugin {
         }
       }
     }
+
+    if (data?.magic) {
+      for (let tileId in data.magic) {
+        if (!data.magic[tileId]) {
+          continue;
+        }
+
+        const line = data.magic[tileId];
+        const buffer = new ArrayBuffer(line.length);
+        const list = new Uint8Array(buffer);
+        for (let i = line.indexOf('1'); i < line.length; i++) {
+          if (line[i] !== '0') {
+            list[i] = Number(line[i]);
+          }
+        }
+        tileBlendingTable[tileId] = list;
+      }
+    }
   }
 
   static dataVersion() {
-    return '01';
+    return '02';
   }
 
   static compress(data) {
@@ -2167,10 +2215,22 @@ class CycloneMapEditor$1 extends CyclonePlugin {
         collision[i] = '0';
       }
     }
+    const magic = {};
+    for (const tileId in tileBlendingTable) {
+      if (!tileBlendingTable[tileId]) {
+        continue;
+      }
+      const line = tileBlendingTable[tileId].join('');
+      if (!line.includes('1')) {
+        continue;
+      }
+      magic[tileId] = line;
+    }
 
     return {
       radix,
       collision: collision.join(''),
+      magic,
     };
   }
 
@@ -2301,7 +2361,7 @@ class CycloneMapEditor$1 extends CyclonePlugin {
   }
 
   static isLayerVisible(index) {
-    if (index === 8 || index === 9) {
+    if (index >= 8 && index <= 10) {
       return currentLayer === index;
     }
 
@@ -2657,7 +2717,6 @@ class CycloneMapEditor$1 extends CyclonePlugin {
     statusTile3 = tile3 ?? statusTile3;
     statusTile4 = tile4 ?? statusTile4;
 
-
     const changedPos = oldX !== statusMapX || oldY !== statusMapY;
     if (changedPos) {
       statusRegion = $gameMap.regionId(statusMapX, statusMapY);
@@ -2995,6 +3054,7 @@ class CycloneMapEditor$1 extends CyclonePlugin {
       this.autoLayerButton.checked = newIndex === 7;
       this.collisionsButton.checked = newIndex === 8;
       this.tagsButton.checked = newIndex === 9;
+      this.blendButton.checked = newIndex === 10;
     }
 
     if (SceneManager._scene instanceof Scene_Map) {
@@ -3293,6 +3353,11 @@ class CycloneMapEditor$1 extends CyclonePlugin {
         continue;
       }
 
+      if (lastChange.type === 'blending') {
+        //#ToDo
+        continue;
+      }
+
       currentChange.data[tileIndex] = $dataMap.data[tileIndex];
       $dataMap.data[tileIndex] = lastChange.data[tileIndex];
     }
@@ -3322,6 +3387,11 @@ class CycloneMapEditor$1 extends CyclonePlugin {
       if (lastChange.type === 'collision') {
         currentChange[tileIndex] = customCollisionTable[tileIndex];
         customCollisionTable[tileIndex] = lastChange.data[tileIndex];
+        continue;
+      }
+
+      if (lastChange.type === 'blending') {
+        // #ToDo
         continue;
       }
 
@@ -3643,6 +3713,54 @@ class CycloneMapEditor$1 extends CyclonePlugin {
     }
   }
 
+  static _changePositionBlend(x, y, newBlend) {
+    const fx = Math.floor(x);
+    const fy = Math.floor(y);
+    const tileIndex = this.tileIndex(fx, fy, 0);
+    const gridRatio = this.getGridRatio();
+    const tileWidth = $gameMap.tileWidth();
+    const tileHeight = $gameMap.tileHeight();
+    const size = tileWidth * tileHeight;
+
+    if (!tileBlendingTable[tileIndex]) {
+      const buffer = new ArrayBuffer(size);
+      tileBlendingTable[tileIndex] = new Int8Array(buffer);
+    }
+    const table = tileBlendingTable[tileIndex];
+    const subX = x - fx;
+    const subY = y - fy;
+
+    const leftPx = Math.round(subX * tileWidth);
+    const topPx = Math.round(subY * tileHeight);
+    const blockWidth = Math.floor(tileWidth / gridRatio);
+    const blockHeight = Math.floor(tileHeight / gridRatio);
+
+    const rightPx = leftPx + blockWidth;
+    const bottomPx = topPx + blockHeight;
+
+    for (let px = leftPx; px < rightPx; px++) {
+      for (let py = topPx; py < bottomPx; py++) {
+        const pixelIndex = py * tileWidth + px;
+        table[pixelIndex] = newBlend;
+      }
+    }
+
+  }
+
+  static _applyBlendBrush(x, y) {
+    this._changePositionBlend(x, y, 1);
+    saveExtraData(true);
+  }
+
+  static _applySingleBlend(x, y) {
+    if (currentTool === Tools.eraser) {
+      this._changePositionBlend(x, y, 0);
+      return;
+    }
+
+    this._changePositionBlend(x, y, 1);
+  }
+
   static _applySingleMapTile(x, y, z, tileId, updateNeighbors = true, previewOnly = false) {
     if (z === Layers.collisions) {
       return this._applySingleCollision(x, y, tileId, previewOnly);
@@ -3683,6 +3801,14 @@ class CycloneMapEditor$1 extends CyclonePlugin {
     if (!$gameMap.isValid(x, y)) {
       return;
     }
+
+    if (currentLayer === Layers.blend) {
+      if (!previewOnly) {
+        CycloneMapEditor$1._applySingleBlend(x, y);
+      }
+      return;
+    }
+
     if (currentTool !== 'eraser') {
       if (tileId === undefined ) {
         return;
@@ -3741,7 +3867,7 @@ class CycloneMapEditor$1 extends CyclonePlugin {
   }
 
   static canApplyRectangle() {
-    return currentTileId !== undefined || currentTool === 'eraser';
+    return currentTileId !== undefined || currentTool === 'eraser' || currentLayer === Layers.blend;
   }
 
   static isAutoEraser() {
@@ -3778,7 +3904,6 @@ class CycloneMapEditor$1 extends CyclonePlugin {
       return;
     }
 
-    console.log('apply rectangle');
     this.ensureLayerVisibility();
     const gridRatio = this.getGridRatio();
     let initialRow = 0;
@@ -3840,7 +3965,7 @@ class CycloneMapEditor$1 extends CyclonePlugin {
 
   static refreshTilemap() {
     previewChanges = {};
-    if (currentLayer === Layers.collisions) {
+    if (currentLayer === Layers.collisions || currentLayer === Layers.blend) {
       saveExtraData(true);
     }
 
@@ -4116,18 +4241,21 @@ class CycloneMapEditor$1 extends CyclonePlugin {
   }
 
   static applySelectedTiles(mapX, mapY) {
-    if (currentTileId === undefined) {
-      return;
-    }
+    if (currentLayer !== Layers.blend) {
+      if (currentTileId === undefined) {
+        return;
+      }
 
-    if (selectedTileList.length < tileCols * tileRows) {
-      return;
+      if (selectedTileList.length < tileCols * tileRows) {
+        return;
+      }
     }
 
     this.ensureLayerVisibility();
     let index = 0;
     const gridRatio = this.getGridRatio();
     const increment = 1 / gridRatio;
+
     for (let y = mapY; y < mapY + tileRows; y += increment) {
       for (let x = mapX; x < mapX + tileCols; x += increment) {
         if (!$gameMap.isValid(x, y)) {
@@ -4352,6 +4480,11 @@ class CycloneMapEditor$1 extends CyclonePlugin {
         currentChange = {};
       }
 
+      if (currentLayer === Layers.blend) {
+        CycloneMapEditor$1._applyBlendBrush(x, y);
+        return;
+      }
+
       CycloneMapEditor$1.applySelectedTiles(x, y);
       return;
     }
@@ -4361,7 +4494,13 @@ class CycloneMapEditor$1 extends CyclonePlugin {
     }
   }
 
-  static getGridRatio() {
+  static getGridRatio(drawRatio = false) {
+    if (!drawRatio) {
+      if (currentLayer === Layers.blend) {
+        return 16;
+      }
+    }
+
     if (currentLayer === Layers.collisions) {
       if (window.CycloneMovement) {
         return window.CycloneMovement.collisionStepCount;
@@ -4987,13 +5126,13 @@ class WindowCycloneGrid extends Window_Base {
       return;
     }
 
-    const gridRatio = CycloneMapEditor.getGridRatio();
+    const gridRatio = CycloneMapEditor.getGridRatio(true);
 
     const drawWidth = Math.floor(CycloneMapEditor.tileWidth * CycloneMapEditor.currentZoom) / gridRatio;
     const drawHeight = Math.floor(CycloneMapEditor.tileHeight * CycloneMapEditor.currentZoom) / gridRatio;
 
     const context = this.contents.context;
-    context.strokeStyle = '#000000';
+    context.strokeStyle = '#666666';
 
     for (let cellX = 0; cellX < gridRatio; cellX++) {
       for (let cellY = 0; cellY < gridRatio; cellY++) {
