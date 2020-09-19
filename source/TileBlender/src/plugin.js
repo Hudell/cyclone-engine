@@ -1,13 +1,20 @@
 import { CyclonePatcher } from '../../Core/patcher';
 import { drawTile, getTilesetIndex } from '../../Utils/drawTile';
+import { loadMapEditorData } from '../../Utils/loadMapEditorData';
+
+let tileBlendingTable = {};
 
 class CycloneTileBlender extends CyclonePatcher {
+  static get tileBlendingTable() {
+    return tileBlendingTable;
+  }
+
   static register() {
     this.initialize('CycloneTileBlender');
     this._cachedTiles = new Map();
   }
 
-  static buildBitmap(spriteId, tiles) {
+  static buildBitmap(spriteId, tiles, x, y) {
     const bitmap = this._cachedTiles.get(spriteId);
     if (!bitmap) {
       return;
@@ -37,34 +44,43 @@ class CycloneTileBlender extends CyclonePatcher {
       bitmaps[tileId] = tilesetBitmap;
     }
 
-    let drewAny = false;
-    for (let idx = 0; idx < tiles.length; idx++) {
+    const tileIndex = (y % $gameMap.height()) * $gameMap.width() + (x % $gameMap.width());
+    const magic = tileBlendingTable[tileIndex];
+
+    for (let idx = 1; idx < tiles.length; idx++) {
       const tileId = tiles[idx];
       if (!tileId || !bitmaps[tileId]) {
         continue;
       }
 
       const tilesetBitmap = bitmaps[tileId];
-      if (idx === 1 && drewAny) {
+      if (idx === 1) {
         const width = $gameMap.tileWidth();
         const height = $gameMap.tileHeight();
+        const size = width * height;
 
         const tempBitmap = new Bitmap(width, height);
         drawTile(tempBitmap, tilesetBitmap, tileId, 0, 0);
 
-        for (let y = 0; y < height; y++) {
-          tempBitmap.clearRect(0, y, 10 + Math.randomInt(5), 1);
+        const context = tempBitmap.context;
+        const imageData = context.getImageData(0, 0, tempBitmap.width, tempBitmap.height);
+        const pixels = imageData.data;
+
+        for (let i = 0; i < size; i++) {
+          if (magic?.[i] === 1) {
+            pixels[i * 4 + 3] = 0;
+          }
         }
 
-        bitmap.blt(tempBitmap, 0, 0, tempBitmap.width, tempBitmap.height, 0, 0);
+        bitmap.context.putImageData(imageData, 0, 0);
         continue;
       }
+
       drawTile(bitmap, tilesetBitmap, tileId, 0, 0);
-      drewAny = true;
     }
   }
 
-  static getTileBitmap(spriteId, tiles) {
+  static getTileBitmap(spriteId, tiles, x, y) {
     if (this._cachedTiles.has(spriteId)) {
       return this._cachedTiles.get(spriteId);
     }
@@ -90,7 +106,7 @@ class CycloneTileBlender extends CyclonePatcher {
 
       if (!tilesetBitmap.isReady()) {
         tilesetBitmap.addLoadListener(() => {
-          this.buildBitmap(spriteId, tiles);
+          this.buildBitmap(spriteId, tiles, x, y);
         });
 
         buildNow = false;
@@ -99,7 +115,7 @@ class CycloneTileBlender extends CyclonePatcher {
     }
 
     if (buildNow) {
-      this.buildBitmap(spriteId, tiles);
+      this.buildBitmap(spriteId, tiles, x, y);
     }
 
     return bitmap;
@@ -107,6 +123,37 @@ class CycloneTileBlender extends CyclonePatcher {
 
   static clearBitmapCache() {
     this._cachedTiles.clear();
+  }
+
+  static loadMagic() {
+    tileBlendingTable = {};
+    this.clearBitmapCache();
+
+    const data = loadMapEditorData();
+    if (!data?.magic) {
+      return;
+    }
+
+    this.setupMagic(data.magic);
+  }
+
+  static setupMagic(magic) {
+    for (let tileId in magic) {
+      if (!magic[tileId]) {
+        continue;
+      }
+
+      const line = magic[tileId];
+      const buffer = new ArrayBuffer(line.length);
+      const list = new Uint8Array(buffer);
+      for (let i = line.indexOf('1'); i < line.length; i++) {
+        if (line[i] !== '0') {
+          list[i] = Number(line[i]);
+        }
+      }
+
+      tileBlendingTable[tileId] = list;
+    }
   }
 }
 

@@ -16,7 +16,7 @@ export class SpriteBlenderTile extends Sprite {
 
   updateBitmap() {
     if (!this.bitmap) {
-      this.bitmap = CycloneTileBlender.getTileBitmap(this.spriteId, this._tiles);
+      this.bitmap = CycloneTileBlender.getTileBitmap(this.spriteId, this._tiles, this._mapX, this._mapY);
     }
   }
 

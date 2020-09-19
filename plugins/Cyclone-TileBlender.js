@@ -335,13 +335,69 @@ function drawTile(target, tilesetBitmap, tileId, x, y, drawWidth, drawHeight) {
   return drawNormalTile(target, tilesetBitmap, tileId, x, y, drawWidth, drawHeight);
 }
 
+var LZString=function(){function o(o,r){if(!t[o]){t[o]={};for(var n=0;n<o.length;n++)t[o][o.charAt(n)]=n;}return t[o][r]}var r=String.fromCharCode,n="ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/=",e="ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+-$",t={},i={compressToBase64:function(o){if(null==o)return "";var r=i._compress(o,6,function(o){return n.charAt(o)});switch(r.length%4){default:case 0:return r;case 1:return r+"===";case 2:return r+"==";case 3:return r+"="}},decompressFromBase64:function(r){return null==r?"":""==r?null:i._decompress(r.length,32,function(e){return o(n,r.charAt(e))})},compressToUTF16:function(o){return null==o?"":i._compress(o,15,function(o){return r(o+32)})+" "},decompressFromUTF16:function(o){return null==o?"":""==o?null:i._decompress(o.length,16384,function(r){return o.charCodeAt(r)-32})},compressToUint8Array:function(o){for(var r=i.compress(o),n=new Uint8Array(2*r.length),e=0,t=r.length;t>e;e++){var s=r.charCodeAt(e);n[2*e]=s>>>8,n[2*e+1]=s%256;}return n},decompressFromUint8Array:function(o){if(null===o||void 0===o)return i.decompress(o);for(var n=new Array(o.length/2),e=0,t=n.length;t>e;e++)n[e]=256*o[2*e]+o[2*e+1];var s=[];return n.forEach(function(o){s.push(r(o));}),i.decompress(s.join(""))},compressToEncodedURIComponent:function(o){return null==o?"":i._compress(o,6,function(o){return e.charAt(o)})},decompressFromEncodedURIComponent:function(r){return null==r?"":""==r?null:(r=r.replace(/ /g,"+"),i._decompress(r.length,32,function(n){return o(e,r.charAt(n))}))},compress:function(o){return i._compress(o,16,function(o){return r(o)})},_compress:function(o,r,n){if(null==o)return "";var e,t,i,s={},p={},u="",c="",a="",l=2,f=3,h=2,d=[],m=0,v=0;for(i=0;i<o.length;i+=1)if(u=o.charAt(i),Object.prototype.hasOwnProperty.call(s,u)||(s[u]=f++,p[u]=!0),c=a+u,Object.prototype.hasOwnProperty.call(s,c))a=c;else {if(Object.prototype.hasOwnProperty.call(p,a)){if(a.charCodeAt(0)<256){for(e=0;h>e;e++)m<<=1,v==r-1?(v=0,d.push(n(m)),m=0):v++;for(t=a.charCodeAt(0),e=0;8>e;e++)m=m<<1|1&t,v==r-1?(v=0,d.push(n(m)),m=0):v++,t>>=1;}else {for(t=1,e=0;h>e;e++)m=m<<1|t,v==r-1?(v=0,d.push(n(m)),m=0):v++,t=0;for(t=a.charCodeAt(0),e=0;16>e;e++)m=m<<1|1&t,v==r-1?(v=0,d.push(n(m)),m=0):v++,t>>=1;}l--,0==l&&(l=Math.pow(2,h),h++),delete p[a];}else for(t=s[a],e=0;h>e;e++)m=m<<1|1&t,v==r-1?(v=0,d.push(n(m)),m=0):v++,t>>=1;l--,0==l&&(l=Math.pow(2,h),h++),s[c]=f++,a=String(u);}if(""!==a){if(Object.prototype.hasOwnProperty.call(p,a)){if(a.charCodeAt(0)<256){for(e=0;h>e;e++)m<<=1,v==r-1?(v=0,d.push(n(m)),m=0):v++;for(t=a.charCodeAt(0),e=0;8>e;e++)m=m<<1|1&t,v==r-1?(v=0,d.push(n(m)),m=0):v++,t>>=1;}else {for(t=1,e=0;h>e;e++)m=m<<1|t,v==r-1?(v=0,d.push(n(m)),m=0):v++,t=0;for(t=a.charCodeAt(0),e=0;16>e;e++)m=m<<1|1&t,v==r-1?(v=0,d.push(n(m)),m=0):v++,t>>=1;}l--,0==l&&(l=Math.pow(2,h),h++),delete p[a];}else for(t=s[a],e=0;h>e;e++)m=m<<1|1&t,v==r-1?(v=0,d.push(n(m)),m=0):v++,t>>=1;l--,0==l&&(l=Math.pow(2,h),h++);}for(t=2,e=0;h>e;e++)m=m<<1|1&t,v==r-1?(v=0,d.push(n(m)),m=0):v++,t>>=1;for(;;){if(m<<=1,v==r-1){d.push(n(m));break}v++;}return d.join("")},decompress:function(o){return null==o?"":""==o?null:i._decompress(o.length,32768,function(r){return o.charCodeAt(r)})},_decompress:function(o,n,e){var t,i,s,p,u,c,a,l,f=[],h=4,d=4,m=3,v="",w=[],A={val:e(0),position:n,index:1};for(i=0;3>i;i+=1)f[i]=i;for(p=0,c=Math.pow(2,2),a=1;a!=c;)u=A.val&A.position,A.position>>=1,0==A.position&&(A.position=n,A.val=e(A.index++)),p|=(u>0?1:0)*a,a<<=1;switch(t=p){case 0:for(p=0,c=Math.pow(2,8),a=1;a!=c;)u=A.val&A.position,A.position>>=1,0==A.position&&(A.position=n,A.val=e(A.index++)),p|=(u>0?1:0)*a,a<<=1;l=r(p);break;case 1:for(p=0,c=Math.pow(2,16),a=1;a!=c;)u=A.val&A.position,A.position>>=1,0==A.position&&(A.position=n,A.val=e(A.index++)),p|=(u>0?1:0)*a,a<<=1;l=r(p);break;case 2:return ""}for(f[3]=l,s=l,w.push(l);;){if(A.index>o)return "";for(p=0,c=Math.pow(2,m),a=1;a!=c;)u=A.val&A.position,A.position>>=1,0==A.position&&(A.position=n,A.val=e(A.index++)),p|=(u>0?1:0)*a,a<<=1;switch(l=p){case 0:for(p=0,c=Math.pow(2,8),a=1;a!=c;)u=A.val&A.position,A.position>>=1,0==A.position&&(A.position=n,A.val=e(A.index++)),p|=(u>0?1:0)*a,a<<=1;f[d++]=r(p),l=d-1,h--;break;case 1:for(p=0,c=Math.pow(2,16),a=1;a!=c;)u=A.val&A.position,A.position>>=1,0==A.position&&(A.position=n,A.val=e(A.index++)),p|=(u>0?1:0)*a,a<<=1;f[d++]=r(p),l=d-1,h--;break;case 2:return w.join("")}if(0==h&&(h=Math.pow(2,m),m++),f[l])v=f[l];else {if(l!==d)return null;v=s+s.charAt(0);}w.push(v),f[d++]=s+v.charAt(0),h--,s=v,0==h&&(h=Math.pow(2,m),m++);}}};return i}();"function"==typeof define&&define.amd?define(function(){return LZString}):"undefined"!=typeof module&&null!=module&&(module.exports=LZString);
+
+function decompress(data) {
+  if (!data.startsWith('v=')) {
+    return LZString.decompress(data);
+  }
+
+  const idx = data.indexOf(';') + 1;
+  return LZString.decompressFromBase64(data.substring(idx));
+}
+
+function parseMapEditorData(note) {
+  let json;
+  try {
+    json = decompress(note);
+  } catch(e) {
+    console.error('Failed to decompress data from CycloneMapEditor event.');
+    console.log(note);
+    console.log(e);
+    return;
+  }
+
+  let data;
+  try {
+    data = JSON.parse(json);
+
+  } catch(e) {
+    console.error('Failed to parse data from CycloneMapEditor event.');
+    console.log(json);
+    console.log(e);
+    return;
+  }
+
+  return data;
+}
+
+function loadMapEditorData() {
+  for (const event of $dataMap.events) {
+    if (!event) {
+      continue;
+    }
+
+    if (event.name !== 'CycloneMapEditor') {
+      continue;
+    }
+
+    return parseMapEditorData(event.note);
+  }
+}
+
+let tileBlendingTable = {};
+
 class CycloneTileBlender$1 extends CyclonePatcher {
+  static get tileBlendingTable() {
+    return tileBlendingTable;
+  }
+
   static register() {
     this.initialize('CycloneTileBlender');
     this._cachedTiles = new Map();
   }
 
-  static buildBitmap(spriteId, tiles) {
+  static buildBitmap(spriteId, tiles, x, y) {
     const bitmap = this._cachedTiles.get(spriteId);
     if (!bitmap) {
       return;
@@ -371,34 +427,43 @@ class CycloneTileBlender$1 extends CyclonePatcher {
       bitmaps[tileId] = tilesetBitmap;
     }
 
-    let drewAny = false;
-    for (let idx = 0; idx < tiles.length; idx++) {
+    const tileIndex = (y % $gameMap.height()) * $gameMap.width() + (x % $gameMap.width());
+    const magic = tileBlendingTable[tileIndex];
+
+    for (let idx = 1; idx < tiles.length; idx++) {
       const tileId = tiles[idx];
       if (!tileId || !bitmaps[tileId]) {
         continue;
       }
 
       const tilesetBitmap = bitmaps[tileId];
-      if (idx === 1 && drewAny) {
+      if (idx === 1) {
         const width = $gameMap.tileWidth();
         const height = $gameMap.tileHeight();
+        const size = width * height;
 
         const tempBitmap = new Bitmap(width, height);
         drawTile(tempBitmap, tilesetBitmap, tileId, 0, 0);
 
-        for (let y = 0; y < height; y++) {
-          tempBitmap.clearRect(0, y, 10 + Math.randomInt(5), 1);
+        const context = tempBitmap.context;
+        const imageData = context.getImageData(0, 0, tempBitmap.width, tempBitmap.height);
+        const pixels = imageData.data;
+
+        for (let i = 0; i < size; i++) {
+          if (magic?.[i] === 1) {
+            pixels[i * 4 + 3] = 0;
+          }
         }
 
-        bitmap.blt(tempBitmap, 0, 0, tempBitmap.width, tempBitmap.height, 0, 0);
+        bitmap.context.putImageData(imageData, 0, 0);
         continue;
       }
+
       drawTile(bitmap, tilesetBitmap, tileId, 0, 0);
-      drewAny = true;
     }
   }
 
-  static getTileBitmap(spriteId, tiles) {
+  static getTileBitmap(spriteId, tiles, x, y) {
     if (this._cachedTiles.has(spriteId)) {
       return this._cachedTiles.get(spriteId);
     }
@@ -424,7 +489,7 @@ class CycloneTileBlender$1 extends CyclonePatcher {
 
       if (!tilesetBitmap.isReady()) {
         tilesetBitmap.addLoadListener(() => {
-          this.buildBitmap(spriteId, tiles);
+          this.buildBitmap(spriteId, tiles, x, y);
         });
 
         buildNow = false;
@@ -433,7 +498,7 @@ class CycloneTileBlender$1 extends CyclonePatcher {
     }
 
     if (buildNow) {
-      this.buildBitmap(spriteId, tiles);
+      this.buildBitmap(spriteId, tiles, x, y);
     }
 
     return bitmap;
@@ -441,6 +506,37 @@ class CycloneTileBlender$1 extends CyclonePatcher {
 
   static clearBitmapCache() {
     this._cachedTiles.clear();
+  }
+
+  static loadMagic() {
+    tileBlendingTable = {};
+    this.clearBitmapCache();
+
+    const data = loadMapEditorData();
+    if (!data?.magic) {
+      return;
+    }
+
+    this.setupMagic(data.magic);
+  }
+
+  static setupMagic(magic) {
+    for (let tileId in magic) {
+      if (!magic[tileId]) {
+        continue;
+      }
+
+      const line = magic[tileId];
+      const buffer = new ArrayBuffer(line.length);
+      const list = new Uint8Array(buffer);
+      for (let i = line.indexOf('1'); i < line.length; i++) {
+        if (line[i] !== '0') {
+          list[i] = Number(line[i]);
+        }
+      }
+
+      tileBlendingTable[tileId] = list;
+    }
   }
 }
 
@@ -453,7 +549,7 @@ CycloneTileBlender.patchClass(Tilemap, $super => class {
       const mapX = Math.round(dx / this._tileWidth) + this._lastStartX;
       const mapY = Math.round(dy / this._tileHeight) + this._lastStartY;
 
-      if ((mapX === 2 || mapX === 3) && mapY === 3) {
+      if ($gameMap.isMagicTile(mapX, mapY, tileId)) {
         return;
       }
     }
@@ -480,7 +576,7 @@ class SpriteBlenderTile extends Sprite {
 
   updateBitmap() {
     if (!this.bitmap) {
-      this.bitmap = CycloneTileBlender.getTileBitmap(this.spriteId, this._tiles);
+      this.bitmap = CycloneTileBlender.getTileBitmap(this.spriteId, this._tiles, this._mapX, this._mapY);
     }
   }
 
@@ -505,18 +601,120 @@ CycloneTileBlender.patchClass(Spriteset_Map, $super => class {
     CycloneTileBlender.clearBitmapCache();
     this._blenderTileSprites = [];
 
-    this._blenderTileSprites.push(new SpriteBlenderTile([2864, 2832, 184], 2, 3));
-    this._blenderTileSprites.push(new SpriteBlenderTile([2864, 2816, 185], 3, 3));
-
-    this._blenderTileSprites.push(new SpriteBlenderTile([2864, 2849], 5, 3));
-    this._blenderTileSprites.push(new SpriteBlenderTile([2864, 2861], 6, 3));
-
-    // for (const {tileId, x, y, tag } of $gameMap.priorityTiles()) {
-    //   this._blenderTileSprites.push(new SpriteBlenderTile(tileId, x, y, tag));
-    // }
+    for (const {tiles, x, y } of $gameMap.magicTiles()) {
+      this._blenderTileSprites.push(new SpriteBlenderTile(tiles, x, y));
+    }
 
     for (const sprite of this._blenderTileSprites) {
       this._tilemap.addChild(sprite);
+    }
+  }
+
+  forceBlenderRefresh() {
+    for (const sprite of this._blenderTileSprites) {
+      this._tilemap.removeChild(sprite);
+      sprite.destroy();
+    }
+
+    this.createBlenderTiles();
+  }
+});
+
+CycloneTileBlender.patchClass(Game_Map, $super => class {
+  setup(mapId) {
+    $super.setup.call(this, mapId);
+    this._loadedMagic = true;
+    CycloneTileBlender.loadMagic();
+  }
+
+  magicTiles() {
+    const list = [];
+    const fullTable = CycloneTileBlender.tileBlendingTable;
+    if (!fullTable) {
+      return list;
+    }
+
+    const width = $gameMap.width();
+    const height = $gameMap.height();
+
+    for (const tileIndex in fullTable) {
+      if (!fullTable[tileIndex]) {
+        continue;
+      }
+
+      const x = tileIndex % width;
+      const y = Math.floor(tileIndex / width);
+
+      // const tileId0 = this._readMapDataIfLowerTile(x, y, 0);
+      const tileId1 = this._readMapDataIfLowerTile(x, y, 1);
+      const tileId2 = this._readMapDataIfLowerTile(x, y, 2);
+      const tileId3 = this._readMapDataIfLowerTile(x, y, 3);
+      const tiles = [0, tileId1, tileId2, tileId3];
+
+      list.push({
+        tiles,
+        x,
+        y,
+      });
+    }
+
+    return list;
+  }
+
+  _readMapData(x, y, z) {
+    if (!$dataMap?.data) {
+      return 0;
+    }
+
+    const width = this.width();
+    const height = this.height();
+    if (this.isLoopHorizontal()) {
+      x = x.mod(width);
+    }
+
+    if (this.isLoopVertical()) {
+      y = y.mod(height);
+    }
+
+    if (x >= 0 && x < width && y >= 0 && y < height) {
+      return $dataMap.data[(z * height + y) * width + x] || 0;
+    } else {
+      return 0;
+    }
+  }
+
+  _readMapDataIfLowerTile(x, y, z) {
+    const tileId = this._readMapData(x, y, z);
+    const flags = this.tilesetFlags();
+
+    if (flags[tileId] & 0x10) {
+      return 0;
+    }
+
+    return tileId;
+  }
+
+  isMagicTile(x, y, tileId) {
+    const tileIndex = (y % $gameMap.height()) * $gameMap.width() + (x % $gameMap.width());
+    if (!(tileIndex in CycloneTileBlender.tileBlendingTable)) {
+      return false;
+    }
+
+    if (tileId === undefined) {
+      return true;
+    }
+
+    const tileId0 = this._readMapDataIfLowerTile(x, y, 0);
+    return tileId !== tileId0;
+  }
+});
+
+CycloneTileBlender.patchClass(DataManager, $super => class {
+  static onLoad(object) {
+    $super.onLoad.call(this, object);
+
+    if (this.isMapObject(object)) {
+      CycloneTileBlender.loadMagic();
     }
   }
 });

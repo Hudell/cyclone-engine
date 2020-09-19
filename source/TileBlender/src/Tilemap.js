@@ -4,7 +4,7 @@ CycloneTileBlender.patchClass(Tilemap, $super => class {
       const mapX = Math.round(dx / this._tileWidth) + this._lastStartX;
       const mapY = Math.round(dy / this._tileHeight) + this._lastStartY;
 
-      if ((mapX === 2 || mapX === 3) && mapY === 3) {
+      if ($gameMap.isMagicTile(mapX, mapY, tileId)) {
         return;
       }
     }
