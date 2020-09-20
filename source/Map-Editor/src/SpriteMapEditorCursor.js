@@ -88,8 +88,10 @@ class SpriteMapEditorCursor extends Sprite {
   }
 
   updateBrush() {
-    const width = $gameMap.tileWidth() / 2;
-    const height = $gameMap.tileHeight() / 2;
+    const size = Input.isPressed('shift') ? 4 : 2;
+
+    const width = $gameMap.tileWidth() / size;
+    const height = $gameMap.tileHeight() / size;
 
     if (width !== this.bitmap.width || height !== this.bitmap.height) {
       this.bitmap = new Bitmap(width, height);

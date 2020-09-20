@@ -12,8 +12,18 @@ CycloneMapEditor.patchClass(Spriteset_Map, $super => class {
     this.addChild(this._mapEditorCursor);
   }
 
-  forceBlenderRefresh() {
+  forceBlenderRefresh(hardRefresh = false) {
     if (!window.CycloneTileBlender) {
+      return;
+    }
+
+    if (hardRefresh) {
+      for (const sprite of this._blenderTileSprites) {
+        sprite.parent.removeChild(sprite);
+        sprite.destroy();
+      }
+      this._blenderTileSprites = [];
+      this.createBlenderTiles();
       return;
     }
 
