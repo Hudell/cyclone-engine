@@ -57,6 +57,9 @@ let statusDamage = false;
 let statusLadder = false;
 let currentZoom = 1;
 
+let circleData = false;
+
+
 const _ = '';
 const o = true;
 const x = false;
@@ -165,9 +168,13 @@ const refreshMagic = throttle(() => {
 
   if (window.CycloneTileBlender) {
     window.CycloneTileBlender.loadMagic();
-    SceneManager._scene._spriteset && SceneManager._scene._spriteset.forceBlenderRefresh();
+    forceBlenderRefresh();
   }
 });
+
+const forceBlenderRefresh = throttle(() => {
+  CycloneMapEditor.forceBlenderRefresh();
+}, 50);
 
 const saveExtraData = throttle((refreshCollisionToo = false) => {
   if (TouchInput.isPressed()) {
@@ -1015,6 +1022,8 @@ class CycloneMapEditor extends CyclonePlugin {
     rectangleHeight = 0;
     rectangleBackWidth = 0;
     rectangleBackHeight = 0;
+    customCollisionTable = {};
+    tileBlendingTable = {};
 
     this.clearSelection();
   }
@@ -2622,7 +2631,7 @@ class CycloneMapEditor extends CyclonePlugin {
     }
   }
 
-  static _changePixelPositionBlend(x, y, px, py, newBlend) {
+  static _changePixelPositionBlend(x, y, px, py, newBlend, previewOnly = false) {
     const tileWidth = $gameMap.tileWidth();
     const tileHeight = $gameMap.tileHeight();
 
@@ -2641,11 +2650,12 @@ class CycloneMapEditor extends CyclonePlugin {
     const tileIndex = this.tileIndex(fx, fy, 0);
     const size = tileWidth * tileHeight;
 
-    if (!tileBlendingTable[tileIndex]) {
+    const fullTable = previewOnly ? window.CycloneTileBlender.tileBlendingTable : tileBlendingTable;
+    if (!fullTable[tileIndex]) {
       const buffer = new ArrayBuffer(size);
-      tileBlendingTable[tileIndex] = new Int8Array(buffer);
+      fullTable[tileIndex] = new Int8Array(buffer);
     }
-    const table = tileBlendingTable[tileIndex];
+    const table = fullTable[tileIndex];
 
     const pixelIndex = pixelY * tileWidth + pixelX;
     table[pixelIndex] = newBlend;
@@ -2684,9 +2694,32 @@ class CycloneMapEditor extends CyclonePlugin {
     }
   }
 
-  static _applyBlendBrush(x, y) {
-    const tileWidth = $gameMap.tileWidth();
-    const tileHeight = $gameMap.tileHeight();
+  static isPositionBlendSpriteReady(x, y) {
+    if (!SceneManager._scene._spriteset?._blenderTileSprites) {
+      return false;
+    }
+
+    for (const sprite of SceneManager._scene._spriteset._blenderTileSprites) {
+      if (sprite._mapX === x && sprite._mapY === y) {
+        return true;
+      }
+    }
+
+    return false;
+  }
+
+  static forceBlenderRefresh() {
+    if (!window.CycloneTileBlender) {
+      return;
+    }
+
+    SceneManager._scene._spriteset?.forceBlenderRefresh && SceneManager._scene._spriteset.forceBlenderRefresh();
+  }
+
+  static getCircleData() {
+    if (circleData) {
+      return circleData;
+    }
 
     const width = tileWidth / 2;
     const height = tileHeight / 2;
@@ -2694,7 +2727,22 @@ class CycloneMapEditor extends CyclonePlugin {
     bitmap.drawCircle(width / 2, height / 2, Math.min(width, height) / 2, '#0000FF');
 
     const imageData = bitmap.context.getImageData(0, 0, width, height);
-    const pixels = imageData.data;
+    circleData = imageData.data;
+
+    return circleData;
+  }
+
+  static _applyBlendBrush(x, y, previewOnly = false) {
+    if (previewOnly && !window.CycloneTileBlender) {
+      return;
+    }
+
+    const tileWidth = $gameMap.tileWidth();
+    const tileHeight = $gameMap.tileHeight();
+
+    const width = tileWidth / 2;
+    const height = tileHeight / 2;
+    const pixels = this.getCircleData();
 
     let index = -1;
 
@@ -2702,18 +2750,38 @@ class CycloneMapEditor extends CyclonePlugin {
     const tileY = Math.floor(y);
     const pixelX = Math.floor((x - tileX) * tileWidth);
     const pixelY = Math.floor((y - tileY) * tileHeight);
+    const newBlend = currentTool === Tools.eraser ? 0 : 1;
 
     for (let py = 0; py < height; py++) {
       for (let px = 0; px < width; px++) {
         index++;
 
         if (pixels[index * 4 + 2] > 0) {
-          this._changePixelPositionBlend(x, y, pixelX + px, pixelY + py, 1);
+          this._changePixelPositionBlend(x, y, pixelX + px, pixelY + py, newBlend, previewOnly);
         }
       }
     }
 
-    saveExtraData(true);
+    if (previewOnly) {
+      forceBlenderRefresh();
+    } else {
+      // Let's do a quick refresh first and then save the data a little later
+      if (window.CycloneTileBlender) {
+        window.CycloneTileBlender.tileBlendingTable = tileBlendingTable;
+        const maxTileX = tileX + Math.floor((pixelX + width) / tileWidth);
+        const maxTileY = tileY + Math.floor((pixelY + height) / tileHeight);
+
+        if (window.CycloneTileBlender) {
+          for (let cacheX = tileX; cacheX <= maxTileX; cacheX++) {
+            for (let cacheY = tileY; cacheY <= maxTileY; cacheY++) {
+              window.CycloneTileBlender.clearPositionCache(cacheX, cacheY);
+            }
+          }
+        }
+
+        forceBlenderRefresh();
+      }
+    }
   }
 
   static _applySingleBlend(x, y) {
@@ -3435,6 +3503,11 @@ class CycloneMapEditor extends CyclonePlugin {
   }
 
   static updateEraser(x, y) {
+    if (this.isLayerVisible(Layers.blend)) {
+      this.updatePencil(x, y);
+      return;
+    }
+
     this.updateRectangle(x, y);
   }
 
@@ -3445,7 +3518,7 @@ class CycloneMapEditor extends CyclonePlugin {
       }
 
       if (currentLayer === Layers.blend) {
-        CycloneMapEditor._applyBlendBrush(x, y);
+        CycloneMapEditor._applyBlendBrush(x, y, false);
         return;
       }
 

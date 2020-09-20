@@ -10,3 +10,4 @@ import './Tilemap';
 import './TouchInput';
 import './Sprite_Character';
 import './Scene_Boot';
+import './SpriteBlenderTile';
