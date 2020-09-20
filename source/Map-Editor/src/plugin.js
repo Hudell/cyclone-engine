@@ -2622,6 +2622,35 @@ class CycloneMapEditor extends CyclonePlugin {
     }
   }
 
+  static _changePixelPositionBlend(x, y, px, py, newBlend) {
+    const tileWidth = $gameMap.tileWidth();
+    const tileHeight = $gameMap.tileHeight();
+
+    const fx = Math.floor(x) + Math.floor(px / tileWidth);
+    const fy = Math.floor(y) + Math.floor(py / tileHeight);
+    const pixelX = px % tileWidth;
+    const pixelY = py % tileHeight;
+
+    if (fx >= $gameMap.width()) {
+      return;
+    }
+    if (fy >= $gameMap.height()) {
+      return;
+    }
+
+    const tileIndex = this.tileIndex(fx, fy, 0);
+    const size = tileWidth * tileHeight;
+
+    if (!tileBlendingTable[tileIndex]) {
+      const buffer = new ArrayBuffer(size);
+      tileBlendingTable[tileIndex] = new Int8Array(buffer);
+    }
+    const table = tileBlendingTable[tileIndex];
+
+    const pixelIndex = pixelY * tileWidth + pixelX;
+    table[pixelIndex] = newBlend;
+  }
+
   static _changePositionBlend(x, y, newBlend) {
     const fx = Math.floor(x);
     const fy = Math.floor(y);
@@ -2653,11 +2682,37 @@ class CycloneMapEditor extends CyclonePlugin {
         table[pixelIndex] = newBlend;
       }
     }
-
   }
 
   static _applyBlendBrush(x, y) {
-    this._changePositionBlend(x, y, 1);
+    const tileWidth = $gameMap.tileWidth();
+    const tileHeight = $gameMap.tileHeight();
+
+    const width = tileWidth / 2;
+    const height = tileHeight / 2;
+    const bitmap = new Bitmap(width, height);
+    bitmap.drawCircle(width / 2, height / 2, Math.min(width, height) / 2, '#0000FF');
+
+    const imageData = bitmap.context.getImageData(0, 0, width, height);
+    const pixels = imageData.data;
+
+    let index = -1;
+
+    const tileX = Math.floor(x);
+    const tileY = Math.floor(y);
+    const pixelX = Math.floor((x - tileX) * tileWidth);
+    const pixelY = Math.floor((y - tileY) * tileHeight);
+
+    for (let py = 0; py < height; py++) {
+      for (let px = 0; px < width; px++) {
+        index++;
+
+        if (pixels[index * 4 + 2] > 0) {
+          this._changePixelPositionBlend(x, y, pixelX + px, pixelY + py, 1);
+        }
+      }
+    }
+
     saveExtraData(true);
   }
 

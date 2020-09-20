@@ -25,6 +25,9 @@ class SpriteMapEditorCursor extends Sprite {
       case 'fill':
         return this.updateTiles();
       case 'pencil':
+        if (CycloneMapEditor.isLayerVisible(Layers.blend)) {
+          return this.updateBrush();
+        }
         return this.updateTiles();
       case 'eraser':
         return this.updateEraser();
@@ -79,6 +82,20 @@ class SpriteMapEditorCursor extends Sprite {
     } else if (width > 0 && height > 0) {
       this.bitmap.fillRect(0, 0, width, height, fillColor);
     }
+  }
+
+  updateBrush() {
+    const width = $gameMap.tileWidth() / 2;
+    const height = $gameMap.tileHeight() / 2;
+
+    if (width !== this.bitmap.width || height !== this.bitmap.height) {
+      this.bitmap = new Bitmap(width, height);
+    } else {
+      this.bitmap.clear();
+    }
+
+    const fillColor = '#00999999';
+    this.bitmap.drawCircle(width / 2, height / 2, Math.min(width, height) / 2, fillColor);
   }
 
   updateEraser() {
