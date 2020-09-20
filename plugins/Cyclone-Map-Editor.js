@@ -1096,6 +1096,30 @@ class DirectionHelper {
   }
 }
 
+function logImage(canvas, text) {
+  const url = canvas.toDataURL();
+
+  const scale = 1;
+  const img = new Image();
+
+  function getBox(width, height) {
+    return {
+      string: '+',
+      style: `font-size: 1px; padding: ${ Math.floor(height / 2) }px ${ Math.floor(width / 2) }px; line-height: ${ height }px;`,
+    };
+  }
+
+  img.onload = function() {
+    const dim = getBox(this.width * scale, this.height * scale);
+    if (text) {
+      console.log(text);
+    }
+    console.log(`%c${ dim.string }`, `${ dim.style }background: url('${ url }'); background-size: ${ this.width * scale }px ${ this.height * scale }px; color: transparent;`);
+  };
+
+  img.src = url;
+}
+
 const layerVisibility = [true, true, true, true, true, false, true, false, false, false, false];
 let editorActive = true;
 let windowWidth = 216;
@@ -1149,7 +1173,6 @@ let statusLadder = false;
 let currentZoom = 1;
 
 let circleData = false;
-
 
 const _ = '';
 const o = true;
@@ -2345,6 +2368,10 @@ class CycloneMapEditor$1 extends CyclonePlugin {
     this.refreshScreenSize();
   }
 
+  static logImage(canvas, text) {
+    logImage(canvas, text);
+  }
+
   static isTabValid(tab) {
     const tileset = $gameMap.tileset();
     if (!tileset) {
@@ -3355,6 +3382,8 @@ class CycloneMapEditor$1 extends CyclonePlugin {
       data: {},
     };
 
+    const size = $gameMap.tileWidth() * $gameMap.tileHeight();
+
     for (const tileIndex in lastChange.data) {
       if (lastChange.type === 'collision') {
         currentChange.data[tileIndex] = customCollisionTable[tileIndex];
@@ -3362,8 +3391,18 @@ class CycloneMapEditor$1 extends CyclonePlugin {
         continue;
       }
 
-      if (lastChange.type === 'blending') {
-        //#ToDo
+      if (lastChange.type === 'blend') {
+        if (!tileBlendingTable[tileIndex]) {
+          const buffer = new ArrayBuffer(size);
+          tileBlendingTable[tileIndex] = new Int8Array(buffer);
+        }
+
+        const tilePixels = tileBlendingTable[tileIndex];
+        currentChange.data[tileIndex] = {};
+        for (const pixelIndex in lastChange.data[tileIndex]) {
+          currentChange.data[tileIndex][pixelIndex] = tilePixels[pixelIndex];
+          tilePixels[pixelIndex] = lastChange.data[tileIndex][pixelIndex];
+        }
         continue;
       }
 
@@ -3391,6 +3430,7 @@ class CycloneMapEditor$1 extends CyclonePlugin {
     }
 
     const lastChange = undoHistory.pop();
+    const size = $gameMap.tileWidth() * $gameMap.tileHeight();
     currentChange = {};
     for (const tileIndex in lastChange.data) {
       if (lastChange.type === 'collision') {
@@ -3399,8 +3439,18 @@ class CycloneMapEditor$1 extends CyclonePlugin {
         continue;
       }
 
-      if (lastChange.type === 'blending') {
-        // #ToDo
+      if (lastChange.type === 'blend') {
+        if (!tileBlendingTable[tileIndex]) {
+          const buffer = new ArrayBuffer(size);
+          tileBlendingTable[tileIndex] = new Int8Array(buffer);
+        }
+
+        const tilePixels = tileBlendingTable[tileIndex];
+        currentChange[tileIndex] = {};
+        for (const pixelIndex in lastChange.data[tileIndex]) {
+          currentChange[tileIndex][pixelIndex] = tilePixels[pixelIndex];
+          tilePixels[pixelIndex] = lastChange.data[tileIndex][pixelIndex];
+        }
         continue;
       }
 
@@ -3412,10 +3462,21 @@ class CycloneMapEditor$1 extends CyclonePlugin {
     this.refreshTilemap();
   }
 
+  static getCurrentLayerChangeType() {
+    switch (currentLayer) {
+      case Layers.collisions:
+        return 'collision';
+      case Layers.blend:
+        return 'blend';
+      default:
+        return 'tile';
+    }
+  }
+
   static logChange(clearUndo = true, type = undefined) {
     const hasChanges = Object.keys(currentChange).length > 0;
 
-    type = type || currentLayer === Layers.collisions ? 'collision' : 'tile';
+    type = type || this.getCurrentLayerChangeType();
 
     if (hasChanges) {
       changeHistory.push({
@@ -3749,6 +3810,15 @@ class CycloneMapEditor$1 extends CyclonePlugin {
     const table = fullTable[tileIndex];
 
     const pixelIndex = pixelY * tileWidth + pixelX;
+
+    if (currentChange[tileIndex]?.[pixelIndex] === undefined && (table[pixelIndex] ?? 0) !== newBlend) {
+      if (currentChange[tileIndex] === undefined) {
+        currentChange[tileIndex] = {};
+      }
+
+      currentChange[tileIndex][pixelIndex] = (table[pixelIndex] ?? 0);
+    }
+
     table[pixelIndex] = newBlend;
   }
 
@@ -3780,6 +3850,15 @@ class CycloneMapEditor$1 extends CyclonePlugin {
     for (let px = leftPx; px < rightPx; px++) {
       for (let py = topPx; py < bottomPx; py++) {
         const pixelIndex = py * tileWidth + px;
+
+        if (currentChange[tileIndex]?.[pixelIndex] === undefined && (table[pixelIndex] ?? 0) !== newBlend) {
+          if (currentChange[tileIndex] === undefined) {
+            currentChange[tileIndex] = {};
+          }
+
+          currentChange[tileIndex][pixelIndex] = (table[pixelIndex] ?? 0);
+        }
+
         table[pixelIndex] = newBlend;
       }
     }
