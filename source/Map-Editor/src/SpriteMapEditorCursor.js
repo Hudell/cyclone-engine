@@ -1,4 +1,4 @@
-import { Layers } from './constants';
+import { Layers, Tools } from './constants';
 
 class SpriteMapEditorCursor extends Sprite {
   initialize() {
@@ -22,16 +22,19 @@ class SpriteMapEditorCursor extends Sprite {
     }
 
     switch (CycloneMapEditor.currentTool) {
-      case 'fill':
+      case Tools.fill:
         return this.updateTiles();
-      case 'pencil':
+      case Tools.pencil:
         if (CycloneMapEditor.isLayerVisible(Layers.blend)) {
           return this.updateBrush();
         }
         return this.updateTiles();
-      case 'eraser':
+      case Tools.eraser:
+        if (CycloneMapEditor.isLayerVisible(Layers.blend)) {
+          return this.updateBrush();
+        }
         return this.updateEraser();
-      case 'rectangle':
+      case Tools.rectangle:
         if ((!CycloneMapEditor.rectangleWidth && !CycloneMapEditor.rectangleBackWidth) || (!CycloneMapEditor.rectangleHeight && !CycloneMapEditor.rectangleBackHeight)) {
           this.updateTiles();
           return;
@@ -94,7 +97,7 @@ class SpriteMapEditorCursor extends Sprite {
       this.bitmap.clear();
     }
 
-    const fillColor = '#00999999';
+    const fillColor = CycloneMapEditor.currentTool === Tools.eraser ? '#99000099' : '#00999999';
     this.bitmap.drawCircle(width / 2, height / 2, Math.min(width, height) / 2, fillColor);
   }
 

@@ -12,6 +12,37 @@ CycloneMapEditor.patchClass(Spriteset_Map, $super => class {
     this.addChild(this._mapEditorCursor);
   }
 
+  forceBlenderRefresh() {
+    if (!window.CycloneTileBlender) {
+      return;
+    }
+
+    const magicTiles = $gameMap.magicTiles();
+    for (const tile of magicTiles) {
+      let found = false;
+
+      for (const sprite of this._blenderTileSprites) {
+        if (sprite._mapX !== tile.x || sprite._mapY !== tile.y) {
+          continue;
+        }
+
+        found = true;
+        if (!window.CycloneTileBlender.isSpriteCached(sprite.spriteId)) {
+          sprite._bitmap = null;
+        }
+        break;
+      }
+
+      if (!found) {
+        const newSprite = new window.CycloneTileBlender.SpriteBlenderTile(tile.tiles, tile.x, tile.y, 1, 1);
+        this._blenderTileSprites.push(newSprite);
+        this._tilemap.addChild(newSprite);
+      }
+    }
+
+    this._tilemap.refresh();
+  }
+
   // updatePosition() {
   //   if (!CycloneMapEditor.active) {
   //     return $super.updatePosition.call(this);
