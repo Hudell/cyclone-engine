@@ -2781,6 +2781,7 @@ class CycloneMapEditor extends CyclonePlugin {
     const height = tileHeight / 2;
     const bitmap = new Bitmap(width, height);
     bitmap.drawCircle(width / 2, height / 2, Math.min(width, height) / 2, '#0000FF');
+    bitmap.drawCircle(width / 2, height / 2, Math.min(width, height) / 2 - 4, '#00FF00');
 
     const imageData = bitmap.context.getImageData(0, 0, width, height);
     circleData = imageData.data;
@@ -2812,8 +2813,12 @@ class CycloneMapEditor extends CyclonePlugin {
       for (let px = 0; px < width; px++) {
         index++;
 
-        if (pixels[index * 4 + 2] > 0) {
+        if (pixels[index * 4 + 1] > 0) {
           this._changePixelPositionBlend(x, y, pixelX + px, pixelY + py, newBlend, previewOnly);
+        } else if (pixels[index * 4 + 2] > 0) {
+          if (Math.randomInt(10) > 5) {
+            this._changePixelPositionBlend(x, y, pixelX + px, pixelY + py, newBlend, previewOnly);
+          }
         }
       }
     }
