@@ -3,8 +3,6 @@ import { drawTile, getTilesetIndex } from '../../Utils/drawTile';
 import { loadMapEditorData } from '../../Utils/loadMapEditorData';
 import { SpriteBlenderTile } from './SpriteBlenderTile';
 
-// import { logImage } from '../../Utils/logImage';
-
 let tileBlendingTable = {};
 
 class CycloneTileBlender extends CyclonePatcher {

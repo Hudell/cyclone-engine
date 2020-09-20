@@ -420,8 +420,6 @@ class SpriteBlenderTile extends Sprite {
   }
 }
 
-// import { logImage } from '../../Utils/logImage';
-
 let tileBlendingTable = {};
 
 class CycloneTileBlender$1 extends CyclonePatcher {
