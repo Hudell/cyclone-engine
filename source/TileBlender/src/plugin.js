@@ -64,11 +64,13 @@ class CycloneTileBlender extends CyclonePatcher {
 
         const context = tempBitmap.context;
         const imageData = context.getImageData(0, 0, tempBitmap.width, tempBitmap.height);
-        const pixels = imageData.data;
 
-        for (let i = 0; i < size; i++) {
-          if (magic?.[i] === 1) {
-            pixels[i * 4 + 3] = 0;
+        if (magic) {
+          const pixels = imageData.data;
+          for (let i = 0; i < size; i++) {
+            if (magic[i] === 1) {
+              pixels[i * 4 + 3] = 0;
+            }
           }
         }
 
