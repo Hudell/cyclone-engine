@@ -5,7 +5,10 @@ CycloneTileBlender.patchClass(Tilemap, $super => class {
       const mapY = Math.round(dy / this._tileHeight) + this._lastStartY;
 
       if ($gameMap.isMagicTile(mapX, mapY, tileId)) {
-        return;
+        // when editing, delay hiding the position until the sprite is added to the spriteset
+        if (window.CycloneMapEditor && window.CycloneMapEditor.isPositionBlendSpriteReady(mapX, mapY)) {
+          return;
+        }
       }
     }
 

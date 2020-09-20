@@ -22,7 +22,6 @@ CycloneTileBlender.patchClass(Game_Map, $super => class {
       const x = tileIndex % width;
       const y = Math.floor(tileIndex / width);
 
-      // const tileId0 = this._readMapDataIfLowerTile(x, y, 0);
       const tileId1 = this._readMapDataIfLowerTile(x, y, 1);
       const tileId2 = this._readMapDataIfLowerTile(x, y, 2);
       const tileId3 = this._readMapDataIfLowerTile(x, y, 3);
@@ -40,6 +39,18 @@ CycloneTileBlender.patchClass(Game_Map, $super => class {
 
   magicTiles() {
     const list = this.getMagicTilesLongList();
+
+    // When editing, keep each tile as a separate sprite
+    if (window.CycloneMapEditor) {
+      return list.map(item => ({
+        x: item.x,
+        y: item.y,
+        width: 1,
+        height: 1,
+        tiles: [item.tiles],
+      }));
+    }
+
     const width = $gameMap.width();
     const height = $gameMap.height();
 

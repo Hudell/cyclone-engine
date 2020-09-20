@@ -385,6 +385,41 @@ function loadMapEditorData() {
   }
 }
 
+class SpriteBlenderTile extends Sprite {
+  initialize(tiles, x, y, width, height) {
+    this._tiles = tiles;
+    this._mapX = x;
+    this._mapY = y;
+    this._mapWidth = width;
+    this._mapHeight = height;
+    super.initialize();
+    this.anchor.x = 0;
+    this.anchor.y = 0;
+  }
+
+  update() {
+    super.update();
+    this.updateBitmap();
+    this.updatePosition();
+  }
+
+  updateBitmap() {
+    if (!this.bitmap) {
+      this.bitmap = CycloneTileBlender.getTileBitmap(this.spriteId, this._tiles, this._mapX, this._mapY, this._mapWidth, this._mapHeight);
+    }
+  }
+
+  updatePosition() {
+    const scrolledX = $gameMap.adjustX(this._mapX);
+    this.x = Math.floor(scrolledX * $gameMap.tileWidth());
+
+    const scrolledY = $gameMap.adjustY(this._mapY);
+    this.y = Math.floor(scrolledY * $gameMap.tileHeight());
+
+    this.z = 1;
+  }
+}
+
 // import { logImage } from '../../Utils/logImage';
 
 let tileBlendingTable = {};
@@ -393,10 +428,53 @@ class CycloneTileBlender$1 extends CyclonePatcher {
   static get tileBlendingTable() {
     return tileBlendingTable;
   }
+  static set tileBlendingTable(value) {
+    tileBlendingTable = value;
+  }
+
+  static get SpriteBlenderTile() {
+    return SpriteBlenderTile;
+  }
 
   static register() {
     this.initialize('CycloneTileBlender');
     this._cachedTiles = new Map();
+  }
+
+  static isSpriteCached(spriteId) {
+    return this._cachedTiles.has(spriteId);
+  }
+
+  static clearPositionCache(x, y) {
+    if (!SceneManager._scene?._spriteset?._blenderTileSprites) {
+      this.clearBitmapCache();
+      return true;
+    }
+
+    let clearedAny = false;
+    for (const sprite of SceneManager._scene._spriteset._blenderTileSprites) {
+      if (!sprite) {
+        continue;
+      }
+
+      if (sprite._mapX > x || sprite._mapY > y) {
+        continue;
+      }
+
+      if (sprite._mapX + sprite._mapWidth <= x) {
+        continue;
+      }
+      if (sprite._mapY + sprite._mapHeight <= y) {
+        continue;
+      }
+
+      if (this._cachedTiles.has(sprite.spriteId)) {
+        this._cachedTiles.delete(sprite.spriteId);
+      }
+      clearedAny = true;
+    }
+
+    return clearedAny;
   }
 
   static getBitmapList(spriteId, tiles, x, y, spriteMapWidth, spriteMapHeight) {
@@ -555,48 +633,16 @@ CycloneTileBlender.patchClass(Tilemap, $super => class {
       const mapY = Math.round(dy / this._tileHeight) + this._lastStartY;
 
       if ($gameMap.isMagicTile(mapX, mapY, tileId)) {
-        return;
+        // when editing, delay hiding the position until the sprite is added to the spriteset
+        if (window.CycloneMapEditor && window.CycloneMapEditor.isPositionBlendSpriteReady(mapX, mapY)) {
+          return;
+        }
       }
     }
 
     return $super._addSpotTile.call(this, tileId, dx, dy);
   }
 });
-
-class SpriteBlenderTile extends Sprite {
-  initialize(tiles, x, y, width, height) {
-    this._tiles = tiles;
-    this._mapX = x;
-    this._mapY = y;
-    this._mapWidth = width;
-    this._mapHeight = height;
-    super.initialize();
-    this.anchor.x = 0;
-    this.anchor.y = 0;
-  }
-
-  update() {
-    super.update();
-    this.updateBitmap();
-    this.updatePosition();
-  }
-
-  updateBitmap() {
-    if (!this.bitmap) {
-      this.bitmap = CycloneTileBlender.getTileBitmap(this.spriteId, this._tiles, this._mapX, this._mapY, this._mapWidth, this._mapHeight);
-    }
-  }
-
-  updatePosition() {
-    const scrolledX = $gameMap.adjustX(this._mapX);
-    this.x = Math.floor(scrolledX * $gameMap.tileWidth());
-
-    const scrolledY = $gameMap.adjustY(this._mapY);
-    this.y = Math.floor(scrolledY * $gameMap.tileHeight());
-
-    this.z = 1;
-  }
-}
 
 CycloneTileBlender.patchClass(Spriteset_Map, $super => class {
   createCharacters() {
@@ -615,15 +661,6 @@ CycloneTileBlender.patchClass(Spriteset_Map, $super => class {
     for (const sprite of this._blenderTileSprites) {
       this._tilemap.addChild(sprite);
     }
-  }
-
-  forceBlenderRefresh() {
-    for (const sprite of this._blenderTileSprites) {
-      this._tilemap.removeChild(sprite);
-      sprite.destroy();
-    }
-
-    this.createBlenderTiles();
   }
 });
 
@@ -651,7 +688,6 @@ CycloneTileBlender.patchClass(Game_Map, $super => class {
       const x = tileIndex % width;
       const y = Math.floor(tileIndex / width);
 
-      // const tileId0 = this._readMapDataIfLowerTile(x, y, 0);
       const tileId1 = this._readMapDataIfLowerTile(x, y, 1);
       const tileId2 = this._readMapDataIfLowerTile(x, y, 2);
       const tileId3 = this._readMapDataIfLowerTile(x, y, 3);
@@ -669,6 +705,18 @@ CycloneTileBlender.patchClass(Game_Map, $super => class {
 
   magicTiles() {
     const list = this.getMagicTilesLongList();
+
+    // When editing, keep each tile as a separate sprite
+    if (window.CycloneMapEditor) {
+      return list.map(item => ({
+        x: item.x,
+        y: item.y,
+        width: 1,
+        height: 1,
+        tiles: [item.tiles],
+      }));
+    }
+
     const width = $gameMap.width();
     const height = $gameMap.height();
 

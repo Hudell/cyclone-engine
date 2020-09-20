@@ -1,6 +1,8 @@
 import { CyclonePatcher } from '../../Core/patcher';
 import { drawTile, getTilesetIndex } from '../../Utils/drawTile';
 import { loadMapEditorData } from '../../Utils/loadMapEditorData';
+import { SpriteBlenderTile } from './SpriteBlenderTile';
+
 // import { logImage } from '../../Utils/logImage';
 
 let tileBlendingTable = {};
@@ -9,10 +11,53 @@ class CycloneTileBlender extends CyclonePatcher {
   static get tileBlendingTable() {
     return tileBlendingTable;
   }
+  static set tileBlendingTable(value) {
+    tileBlendingTable = value;
+  }
+
+  static get SpriteBlenderTile() {
+    return SpriteBlenderTile;
+  }
 
   static register() {
     this.initialize('CycloneTileBlender');
     this._cachedTiles = new Map();
+  }
+
+  static isSpriteCached(spriteId) {
+    return this._cachedTiles.has(spriteId);
+  }
+
+  static clearPositionCache(x, y) {
+    if (!SceneManager._scene?._spriteset?._blenderTileSprites) {
+      this.clearBitmapCache();
+      return true;
+    }
+
+    let clearedAny = false;
+    for (const sprite of SceneManager._scene._spriteset._blenderTileSprites) {
+      if (!sprite) {
+        continue;
+      }
+
+      if (sprite._mapX > x || sprite._mapY > y) {
+        continue;
+      }
+
+      if (sprite._mapX + sprite._mapWidth <= x) {
+        continue;
+      }
+      if (sprite._mapY + sprite._mapHeight <= y) {
+        continue;
+      }
+
+      if (this._cachedTiles.has(sprite.spriteId)) {
+        this._cachedTiles.delete(sprite.spriteId);
+      }
+      clearedAny = true;
+    }
+
+    return clearedAny;
   }
 
   static getBitmapList(spriteId, tiles, x, y, spriteMapWidth, spriteMapHeight) {

@@ -18,13 +18,4 @@ CycloneTileBlender.patchClass(Spriteset_Map, $super => class {
       this._tilemap.addChild(sprite);
     }
   }
-
-  forceBlenderRefresh() {
-    for (const sprite of this._blenderTileSprites) {
-      this._tilemap.removeChild(sprite);
-      sprite.destroy();
-    }
-
-    this.createBlenderTiles();
-  }
 });
