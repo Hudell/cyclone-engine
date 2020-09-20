@@ -3,6 +3,7 @@ import { WindowCycloneMapEditorCommands } from './WindowCycloneMapEditorCommands
 import { WindowCycloneMapEditorLayerList } from './WindowCycloneMapEditorLayerList';
 import { WindowCycloneMapEditorStatus } from './WindowCycloneMapEditorStatus';
 import { WindowCycloneMapEditor } from './WindowCycloneMapEditor';
+import { Layers, Tools } from './constants';
 
 let lastDisplayX = 0;
 let lastDisplayY = 0;
@@ -245,7 +246,15 @@ CycloneMapEditor.patchClass(Scene_Map, $super => class {
       return;
     }
 
-    if (mapX >= 0 && mapY >= 0) {
+    let minX = 0;
+    let minY = 0;
+
+    if (CycloneMapEditor.isLayerVisible(Layers.blend) && [Tools.pencil, Tools.eraser].includes(CycloneMapEditor.currentTool)) {
+      minX--;
+      minY--;
+    }
+
+    if (mapX >= minX && mapY >= minY) {
       if (Input.isPressed('control') && !CycloneMapEditor.wasPressing) {
         CycloneMapEditor.selectHigherLayer(mapX, mapY);
       } else {

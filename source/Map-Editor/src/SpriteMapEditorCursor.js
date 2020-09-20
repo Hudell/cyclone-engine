@@ -261,8 +261,16 @@ class SpriteMapEditorCursor extends Sprite {
     const tileX = this.getCursorTileX();
     const tileY = this.getCursorTileY();
 
-    this.x = Math.floor($gameMap.adjustX(tileX) * CycloneMapEditor.tileWidth);
-    this.y = Math.floor($gameMap.adjustY(tileY) * CycloneMapEditor.tileHeight);
+    let offsetX = 0;
+    let offsetY = 0;
+
+    if (CycloneMapEditor.isLayerVisible(Layers.blend) && [Tools.eraser, Tools.pencil].includes(CycloneMapEditor.currentTool)) {
+      offsetX -= Math.floor(this.bitmap.width / 2);
+      offsetY -= Math.floor(this.bitmap.height / 2);
+    }
+
+    this.x = Math.floor($gameMap.adjustX(tileX) * CycloneMapEditor.tileWidth) + offsetX;
+    this.y = Math.floor($gameMap.adjustY(tileY) * CycloneMapEditor.tileHeight) + offsetY;
   }
 }
 

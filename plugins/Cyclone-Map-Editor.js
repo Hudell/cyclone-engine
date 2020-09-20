@@ -3792,10 +3792,10 @@ class CycloneMapEditor$1 extends CyclonePlugin {
     const pixelX = px % tileWidth;
     const pixelY = py % tileHeight;
 
-    if (fx >= $gameMap.width()) {
+    if (fx < 0 || fx >= $gameMap.width()) {
       return;
     }
-    if (fy >= $gameMap.height()) {
+    if (fy < 0 || fy >= $gameMap.height()) {
       return;
     }
 
@@ -4688,7 +4688,7 @@ class CycloneMapEditor$1 extends CyclonePlugin {
       }
 
       if (currentLayer === Layers.blend) {
-        CycloneMapEditor$1._applyBlendBrush(x, y, false);
+        CycloneMapEditor$1._applyBlendBrush(x - 0.25, y - 0.25, false);
         return;
       }
 
@@ -7197,7 +7197,15 @@ CycloneMapEditor.patchClass(Scene_Map, $super => class {
       return;
     }
 
-    if (mapX >= 0 && mapY >= 0) {
+    let minX = 0;
+    let minY = 0;
+
+    if (CycloneMapEditor.isLayerVisible(Layers.blend) && [Tools.pencil, Tools.eraser].includes(CycloneMapEditor.currentTool)) {
+      minX--;
+      minY--;
+    }
+
+    if (mapX >= minX && mapY >= minY) {
       if (Input.isPressed('control') && !CycloneMapEditor.wasPressing) {
         CycloneMapEditor.selectHigherLayer(mapX, mapY);
       } else {
@@ -7502,8 +7510,16 @@ class SpriteMapEditorCursor extends Sprite {
     const tileX = this.getCursorTileX();
     const tileY = this.getCursorTileY();
 
-    this.x = Math.floor($gameMap.adjustX(tileX) * CycloneMapEditor.tileWidth);
-    this.y = Math.floor($gameMap.adjustY(tileY) * CycloneMapEditor.tileHeight);
+    let offsetX = 0;
+    let offsetY = 0;
+
+    if (CycloneMapEditor.isLayerVisible(Layers.blend) && [Tools.eraser, Tools.pencil].includes(CycloneMapEditor.currentTool)) {
+      offsetX -= Math.floor(this.bitmap.width / 2);
+      offsetY -= Math.floor(this.bitmap.height / 2);
+    }
+
+    this.x = Math.floor($gameMap.adjustX(tileX) * CycloneMapEditor.tileWidth) + offsetX;
+    this.y = Math.floor($gameMap.adjustY(tileY) * CycloneMapEditor.tileHeight) + offsetY;
   }
 }
 

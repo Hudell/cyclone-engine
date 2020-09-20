@@ -2678,10 +2678,10 @@ class CycloneMapEditor extends CyclonePlugin {
     const pixelX = px % tileWidth;
     const pixelY = py % tileHeight;
 
-    if (fx >= $gameMap.width()) {
+    if (fx < 0 || fx >= $gameMap.width()) {
       return;
     }
-    if (fy >= $gameMap.height()) {
+    if (fy < 0 || fy >= $gameMap.height()) {
       return;
     }
 
@@ -3574,7 +3574,7 @@ class CycloneMapEditor extends CyclonePlugin {
       }
 
       if (currentLayer === Layers.blend) {
-        CycloneMapEditor._applyBlendBrush(x, y, false);
+        CycloneMapEditor._applyBlendBrush(x - 0.25, y - 0.25, false);
         return;
       }
 
