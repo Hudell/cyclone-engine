@@ -1,11 +1,13 @@
 export class SpriteBlenderTile extends Sprite {
-  initialize(tiles, x, y) {
+  initialize(tiles, x, y, width, height) {
     this._tiles = tiles;
     this._mapX = x;
     this._mapY = y;
+    this._mapWidth = width;
+    this._mapHeight = height;
     super.initialize();
     this.anchor.x = 0;
-    this.anchor.y = 1;
+    this.anchor.y = 0;
   }
 
   update() {
@@ -16,7 +18,7 @@ export class SpriteBlenderTile extends Sprite {
 
   updateBitmap() {
     if (!this.bitmap) {
-      this.bitmap = CycloneTileBlender.getTileBitmap(this.spriteId, this._tiles, this._mapX, this._mapY);
+      this.bitmap = CycloneTileBlender.getTileBitmap(this.spriteId, this._tiles, this._mapX, this._mapY, this._mapWidth, this._mapHeight);
     }
   }
 
@@ -25,7 +27,7 @@ export class SpriteBlenderTile extends Sprite {
     this.x = Math.floor(scrolledX * $gameMap.tileWidth());
 
     const scrolledY = $gameMap.adjustY(this._mapY);
-    this.y = Math.floor((scrolledY + 1) * $gameMap.tileHeight());
+    this.y = Math.floor(scrolledY * $gameMap.tileHeight());
 
     this.z = 1;
   }

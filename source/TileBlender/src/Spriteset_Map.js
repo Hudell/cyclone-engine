@@ -10,8 +10,8 @@ CycloneTileBlender.patchClass(Spriteset_Map, $super => class {
     CycloneTileBlender.clearBitmapCache();
     this._blenderTileSprites = [];
 
-    for (const {tiles, x, y } of $gameMap.magicTiles()) {
-      this._blenderTileSprites.push(new SpriteBlenderTile(tiles, x, y));
+    for (const {tiles, x, y, width, height } of $gameMap.magicTiles()) {
+      this._blenderTileSprites.push(new SpriteBlenderTile(tiles, x, y, width, height));
     }
 
     for (const sprite of this._blenderTileSprites) {

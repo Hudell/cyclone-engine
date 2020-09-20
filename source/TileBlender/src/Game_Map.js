@@ -5,7 +5,7 @@ CycloneTileBlender.patchClass(Game_Map, $super => class {
     CycloneTileBlender.loadMagic();
   }
 
-  magicTiles() {
+  getMagicTilesLongList() {
     const list = [];
     const fullTable = CycloneTileBlender.tileBlendingTable;
     if (!fullTable) {
@@ -13,7 +13,6 @@ CycloneTileBlender.patchClass(Game_Map, $super => class {
     }
 
     const width = $gameMap.width();
-    const height = $gameMap.height();
 
     for (const tileIndex in fullTable) {
       if (!fullTable[tileIndex]) {
@@ -37,6 +36,76 @@ CycloneTileBlender.patchClass(Game_Map, $super => class {
     }
 
     return list;
+  }
+
+  magicTiles() {
+    const list = this.getMagicTilesLongList();
+    const width = $gameMap.width();
+    const height = $gameMap.height();
+
+    const isPositionOnList = (x, y) => {
+      return list.find(item => item.x === x && item.y === y);
+    };
+
+    const pluckItem = (x, y) => {
+      const index = list.findIndex(item => item.x === x && item.y === y);
+      if (index < 0) {
+        return;
+      }
+
+      const item = list[index];
+      list.splice(index, 1);
+
+      return item;
+    };
+
+    const shortList = [];
+    while (list.length > 0) {
+      const firstItem = list[0];
+      let minX = firstItem.x;
+      let maxX = firstItem.x;
+      let minY = firstItem.y;
+      let maxY = firstItem.y;
+
+      for (let newX = minX + 1; newX < width; newX++) {
+        if (!isPositionOnList(newX, minY)) {
+          break;
+        }
+        maxX = newX;
+      }
+
+      for (let newX = minX; newX <= maxX; newX++) {
+        for (let newY = minY + 1; newY < height; newY++) {
+          if (!isPositionOnList(newX, newY)) {
+            break;
+          }
+          maxY = newY;
+        }
+      }
+
+      const itemWidth = maxX - minX + 1;
+      const itemHeight = maxY - minY + 1;
+      const tiles = new Array(itemWidth * itemHeight);
+      let index = 0;
+
+      for (let blockY = minY; blockY <= maxY; blockY++) {
+        for (let blockX = minX; blockX <= maxX; blockX++) {
+          const oldItem = pluckItem(blockX, blockY);
+          tiles[index] = oldItem?.tiles || [];
+          index++;
+        }
+      }
+
+      shortList.push({
+        x: minX,
+        y: minY,
+        width: itemWidth,
+        height: itemHeight,
+        tiles,
+      });
+    }
+
+    return shortList;
   }
 
   _readMapData(x, y, z) {

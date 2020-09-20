@@ -1,6 +1,7 @@
 import { CyclonePatcher } from '../../Core/patcher';
 import { drawTile, getTilesetIndex } from '../../Utils/drawTile';
 import { loadMapEditorData } from '../../Utils/loadMapEditorData';
+// import { logImage } from '../../Utils/logImage';
 
 let tileBlendingTable = {};
 
@@ -14,110 +15,111 @@ class CycloneTileBlender extends CyclonePatcher {
     this._cachedTiles = new Map();
   }
 
-  static buildBitmap(spriteId, tiles, x, y) {
+  static getBitmapList(spriteId, tiles, x, y, spriteMapWidth, spriteMapHeight) {
+    const tileset = $gameMap.tileset();
+    const bitmaps = [];
+
+    for (const tileGroup of tiles) {
+      for (const tileId of tileGroup) {
+        if (!tileId || bitmaps[tileId]) {
+          continue;
+        }
+
+        const setNumber = getTilesetIndex(tileId);
+        const tilesetBitmap = ImageManager.loadTileset(tileset.tilesetNames[setNumber]);
+
+        if (!tilesetBitmap) {
+          continue;
+        }
+
+        if (!tilesetBitmap.isReady()) {
+          tilesetBitmap.addLoadListener(() => {
+            this.buildBitmap(spriteId, tiles, x, y, spriteMapWidth, spriteMapHeight);
+          });
+
+          return false;
+        }
+
+        bitmaps[tileId] = tilesetBitmap;
+      }
+    }
+
+    return bitmaps;
+  }
+
+  static buildBitmap(spriteId, tiles, x, y, spriteMapWidth, spriteMapHeight) {
     const bitmap = this._cachedTiles.get(spriteId);
     if (!bitmap) {
       return;
     }
 
-    const tileset = $gameMap.tileset();
-    const bitmaps = [];
-    for (const tileId of tiles) {
-      if (!tileId) {
-        continue;
-      }
-
-      const setNumber = getTilesetIndex(tileId);
-      const tilesetBitmap = ImageManager.loadTileset(tileset.tilesetNames[setNumber]);
-
-      if (!tilesetBitmap) {
-        continue;
-      }
-
-      if (!tilesetBitmap.isReady()) {
-        tilesetBitmap.addLoadListener(() => {
-          this.buildBitmap(spriteId, tiles);
-        });
-
-        return;
-      }
-      bitmaps[tileId] = tilesetBitmap;
+    const bitmaps = this.getBitmapList(spriteId, tiles, x, y, spriteMapWidth, spriteMapHeight);
+    if (!bitmaps) {
+      return;
     }
 
-    const tileIndex = (y % $gameMap.height()) * $gameMap.width() + (x % $gameMap.width());
-    const magic = tileBlendingTable[tileIndex];
+    const width = $gameMap.tileWidth();
+    const height = $gameMap.tileHeight();
+    const size = width * height;
+    let spriteTileIndex = -1;
 
-    for (let idx = 1; idx < tiles.length; idx++) {
-      const tileId = tiles[idx];
-      if (!tileId || !bitmaps[tileId]) {
-        continue;
-      }
+    for (let tileY = y; tileY < y + spriteMapHeight; tileY++) {
+      for (let tileX = x; tileX < x + spriteMapWidth; tileX++) {
+        spriteTileIndex++;
+        const drawX = (tileX - x) * width;
+        const drawY = (tileY - y) * height;
 
-      const tilesetBitmap = bitmaps[tileId];
-      if (idx === 1) {
-        const width = $gameMap.tileWidth();
-        const height = $gameMap.tileHeight();
-        const size = width * height;
+        const tileIndex = (tileY % $gameMap.height()) * $gameMap.width() + (tileX % $gameMap.width());
+        const magic = tileBlendingTable[tileIndex];
+        const cellTiles = tiles[spriteTileIndex];
 
-        const tempBitmap = new Bitmap(width, height);
-        drawTile(tempBitmap, tilesetBitmap, tileId, 0, 0);
-
-        const context = tempBitmap.context;
-        const imageData = context.getImageData(0, 0, tempBitmap.width, tempBitmap.height);
-
-        if (magic) {
-          const pixels = imageData.data;
-          for (let i = 0; i < size; i++) {
-            if (magic[i] === 1) {
-              pixels[i * 4 + 3] = 0;
-            }
+        for (let idx = 1; idx < cellTiles.length; idx++) {
+          const tileId = cellTiles[idx];
+          if (!tileId || !bitmaps[tileId]) {
+            continue;
           }
+
+          const tilesetBitmap = bitmaps[tileId];
+          if (idx === 1) {
+            const tempBitmap = new Bitmap(width, height);
+            drawTile(tempBitmap, tilesetBitmap, tileId, 0, 0);
+
+            const context = tempBitmap.context;
+            const imageData = context.getImageData(0, 0, tempBitmap.width, tempBitmap.height);
+
+            if (magic) {
+              const pixels = imageData.data;
+              for (let i = 0; i < size; i++) {
+                if (magic[i] === 1) {
+                  pixels[i * 4 + 3] = 0;
+                }
+              }
+            }
+
+            bitmap.context.putImageData(imageData, drawX, drawY);
+            continue;
+          }
+
+          drawTile(bitmap, tilesetBitmap, tileId, drawX, drawY);
         }
-
-        bitmap.context.putImageData(imageData, 0, 0);
-        continue;
       }
-
-      drawTile(bitmap, tilesetBitmap, tileId, 0, 0);
     }
   }
 
-  static getTileBitmap(spriteId, tiles, x, y) {
+  static getTileBitmap(spriteId, tiles, x, y, spriteMapWidth, spriteMapHeight) {
     if (this._cachedTiles.has(spriteId)) {
       return this._cachedTiles.get(spriteId);
     }
 
     const tileWidth = $gameMap.tileWidth();
     const tileHeight = $gameMap.tileHeight();
-    const bitmap = new Bitmap(tileWidth, tileHeight);
+    const bitmap = new Bitmap(tileWidth * spriteMapWidth, tileHeight * spriteMapHeight);
     this._cachedTiles.set(spriteId, bitmap);
 
-    const tileset = $gameMap.tileset();
-    let buildNow = true;
-    for (const tileId of tiles) {
-      if (!tileId) {
-        continue;
-      }
+    const bitmaps = this.getBitmapList(spriteId, tiles, x, y, spriteMapWidth, spriteMapHeight);
 
-      const setNumber = 5 + Math.floor(tileId / 256);
-      const tilesetBitmap = ImageManager.loadTileset(tileset.tilesetNames[setNumber]);
-
-      if (!tilesetBitmap) {
-        continue;
-      }
-
-      if (!tilesetBitmap.isReady()) {
-        tilesetBitmap.addLoadListener(() => {
-          this.buildBitmap(spriteId, tiles, x, y);
-        });
-
-        buildNow = false;
-        break;
-      }
-    }
-
-    if (buildNow) {
-      this.buildBitmap(spriteId, tiles, x, y);
+    if (bitmaps) {
+      this.buildBitmap(spriteId, tiles, x, y, spriteMapWidth, spriteMapHeight);
     }
 
     return bitmap;
