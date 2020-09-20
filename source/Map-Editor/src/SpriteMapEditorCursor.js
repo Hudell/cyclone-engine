@@ -88,8 +88,10 @@ class SpriteMapEditorCursor extends Sprite {
   }
 
   updateBrush() {
-    const width = $gameMap.tileWidth() / 2;
-    const height = $gameMap.tileHeight() / 2;
+    const size = Input.isPressed('shift') ? 4 : 2;
+
+    const width = $gameMap.tileWidth() / size;
+    const height = $gameMap.tileHeight() / size;
 
     if (width !== this.bitmap.width || height !== this.bitmap.height) {
       this.bitmap = new Bitmap(width, height);
@@ -261,8 +263,16 @@ class SpriteMapEditorCursor extends Sprite {
     const tileX = this.getCursorTileX();
     const tileY = this.getCursorTileY();
 
-    this.x = Math.floor($gameMap.adjustX(tileX) * CycloneMapEditor.tileWidth);
-    this.y = Math.floor($gameMap.adjustY(tileY) * CycloneMapEditor.tileHeight);
+    let offsetX = 0;
+    let offsetY = 0;
+
+    if (CycloneMapEditor.isLayerVisible(Layers.blend) && [Tools.eraser, Tools.pencil].includes(CycloneMapEditor.currentTool)) {
+      offsetX -= Math.floor(this.bitmap.width / 2);
+      offsetY -= Math.floor(this.bitmap.height / 2);
+    }
+
+    this.x = Math.floor($gameMap.adjustX(tileX) * CycloneMapEditor.tileWidth) + offsetX;
+    this.y = Math.floor($gameMap.adjustY(tileY) * CycloneMapEditor.tileHeight) + offsetY;
   }
 }
 

@@ -3,6 +3,7 @@ import { Layers, Tools, tilePropTools } from './constants';
 import { MapshotTileMap } from './mapshot/MapshotTileMap';
 import { LZString } from '../../Libs/lz-string.min';
 import { throttle } from '../../Utils/throttle';
+import { debounce } from '../../Utils/debounce';
 import { DirectionHelper } from '../../Utils/DirectionHelper';
 import { logImage } from '../../Utils/logImage';
 
@@ -59,6 +60,7 @@ let statusLadder = false;
 let currentZoom = 1;
 
 let circleData = false;
+let smallCircleData = false;
 
 const _ = '';
 const o = true;
@@ -168,12 +170,12 @@ const refreshMagic = throttle(() => {
 
   if (window.CycloneTileBlender) {
     window.CycloneTileBlender.loadMagic();
-    forceBlenderRefresh();
+    forceBlenderRefresh(true);
   }
 });
 
-const forceBlenderRefresh = throttle(() => {
-  CycloneMapEditor.forceBlenderRefresh();
+const forceBlenderRefresh = throttle((...args) => {
+  CycloneMapEditor.forceBlenderRefresh(...args);
 }, 50);
 
 const saveExtraData = throttle((refreshCollisionToo = false) => {
@@ -190,6 +192,10 @@ const saveExtraData = throttle((refreshCollisionToo = false) => {
     refreshMagic();
   }
 }, 200);
+
+const fullRefresh = debounce(() => {
+  saveExtraData(true);
+}, 500);
 
 class CycloneMapEditor extends CyclonePlugin {
   static get currentTab() {
@@ -2252,6 +2258,14 @@ class CycloneMapEditor extends CyclonePlugin {
     }
   }
 
+  static resetCurrentChange() {
+    currentChange = {
+      tiles: {},
+      collision: {},
+      blend: {},
+    };
+  }
+
   static undoLastChange() {
     if (this.changingTileProps) {
       return;
@@ -2263,37 +2277,32 @@ class CycloneMapEditor extends CyclonePlugin {
     }
 
     const lastChange = changeHistory.pop();
-    currentChange = {
-      type: lastChange.type,
-      data: {},
-    };
+    this.resetCurrentChange();
 
     const size = $gameMap.tileWidth() * $gameMap.tileHeight();
 
-    for (const tileIndex in lastChange.data) {
-      if (lastChange.type === 'collision') {
-        currentChange.data[tileIndex] = customCollisionTable[tileIndex];
-        customCollisionTable[tileIndex] = lastChange.data[tileIndex];
-        continue;
+    for (const tileIndex in lastChange.tiles) {
+      currentChange.tiles[tileIndex] = $dataMap.data[tileIndex];
+      $dataMap.data[tileIndex] = lastChange.tiles[tileIndex];
+    }
+
+    for (const tileIndex in lastChange.collision) {
+      currentChange.collision[tileIndex] = customCollisionTable[tileIndex];
+      customCollisionTable[tileIndex] = lastChange.collision[tileIndex];
+    }
+
+    for (const tileIndex in lastChange.blend) {
+      if (!tileBlendingTable[tileIndex]) {
+        const buffer = new ArrayBuffer(size);
+        tileBlendingTable[tileIndex] = new Int8Array(buffer);
       }
 
-      if (lastChange.type === 'blend') {
-        if (!tileBlendingTable[tileIndex]) {
-          const buffer = new ArrayBuffer(size);
-          tileBlendingTable[tileIndex] = new Int8Array(buffer);
-        }
-
-        const tilePixels = tileBlendingTable[tileIndex];
-        currentChange.data[tileIndex] = {};
-        for (const pixelIndex in lastChange.data[tileIndex]) {
-          currentChange.data[tileIndex][pixelIndex] = tilePixels[pixelIndex];
-          tilePixels[pixelIndex] = lastChange.data[tileIndex][pixelIndex];
-        }
-        continue;
+      const tilePixels = tileBlendingTable[tileIndex];
+      currentChange.blend[tileIndex] = {};
+      for (const pixelIndex in lastChange.blend[tileIndex]) {
+        currentChange.blend[tileIndex][pixelIndex] = tilePixels[pixelIndex];
+        tilePixels[pixelIndex] = lastChange.blend[tileIndex][pixelIndex];
       }
-
-      currentChange.data[tileIndex] = $dataMap.data[tileIndex];
-      $dataMap.data[tileIndex] = lastChange.data[tileIndex];
     }
 
     undoHistory.push(currentChange);
@@ -2303,6 +2312,7 @@ class CycloneMapEditor extends CyclonePlugin {
 
     mapCaches[$gameMap._mapId] = $dataMap;
     this.refreshTilemap();
+    saveExtraData(true);
   }
 
   static redoLastUndoneChange() {
@@ -2317,34 +2327,39 @@ class CycloneMapEditor extends CyclonePlugin {
 
     const lastChange = undoHistory.pop();
     const size = $gameMap.tileWidth() * $gameMap.tileHeight();
-    currentChange = {};
-    for (const tileIndex in lastChange.data) {
-      if (lastChange.type === 'collision') {
-        currentChange[tileIndex] = customCollisionTable[tileIndex];
-        customCollisionTable[tileIndex] = lastChange.data[tileIndex];
-        continue;
-      }
+    this.resetCurrentChange();
+    let needsSaving = false;
 
-      if (lastChange.type === 'blend') {
-        if (!tileBlendingTable[tileIndex]) {
-          const buffer = new ArrayBuffer(size);
-          tileBlendingTable[tileIndex] = new Int8Array(buffer);
-        }
-
-        const tilePixels = tileBlendingTable[tileIndex];
-        currentChange[tileIndex] = {};
-        for (const pixelIndex in lastChange.data[tileIndex]) {
-          currentChange[tileIndex][pixelIndex] = tilePixels[pixelIndex];
-          tilePixels[pixelIndex] = lastChange.data[tileIndex][pixelIndex];
-        }
-        continue;
-      }
-
-      currentChange[tileIndex] = $dataMap.data[tileIndex];
-      $dataMap.data[tileIndex] = lastChange.data[tileIndex];
+    for (const tileIndex in lastChange.tiles) {
+      currentChange.tiles[tileIndex] = $dataMap.data[tileIndex];
+      $dataMap.data[tileIndex] = lastChange.tiles[tileIndex];
     }
 
-    this.logChange(false, lastChange.type);
+    for (const tileIndex in lastChange.collision) {
+      currentChange.collision[tileIndex] = customCollisionTable[tileIndex];
+      customCollisionTable[tileIndex] = lastChange.collision[tileIndex];
+      needsSaving = true;
+    }
+
+    for (const tileIndex in lastChange.blend) {
+      if (!tileBlendingTable[tileIndex]) {
+        const buffer = new ArrayBuffer(size);
+        tileBlendingTable[tileIndex] = new Int8Array(buffer);
+      }
+
+      const tilePixels = tileBlendingTable[tileIndex];
+      currentChange.blend[tileIndex] = {};
+      for (const pixelIndex in lastChange.blend[tileIndex]) {
+        currentChange.blend[tileIndex][pixelIndex] = tilePixels[pixelIndex];
+        tilePixels[pixelIndex] = lastChange.blend[tileIndex][pixelIndex];
+        needsSaving = true;
+      }
+    }
+
+    this.logChange(false);
+    if (needsSaving) {
+      saveExtraData(true);
+    }
     this.refreshTilemap();
   }
 
@@ -2359,16 +2374,14 @@ class CycloneMapEditor extends CyclonePlugin {
     }
   }
 
-  static logChange(clearUndo = true, type = undefined) {
-    const hasChanges = Object.keys(currentChange).length > 0;
-
-    type = type || this.getCurrentLayerChangeType();
+  static logChange(clearUndo = true) {
+    const hasTiles = Object.keys(currentChange.tiles).length > 0;
+    const hasBlend = Object.keys(currentChange.blend).length > 0;
+    const hasCollision = Object.keys(currentChange.collision).length > 0;
+    const hasChanges = hasTiles || hasBlend || hasCollision;
 
     if (hasChanges) {
-      changeHistory.push({
-        type,
-        data: currentChange
-      });
+      changeHistory.push(currentChange);
       if (clearUndo) {
         undoHistory = [];
       }
@@ -2381,8 +2394,13 @@ class CycloneMapEditor extends CyclonePlugin {
 
     SceneManager._scene._mapEditorCommands.redraw();
     SceneManager._scene._mapEditorGrid.refresh();
+    // if (hasBlend) {
+    //   forceBlenderRefresh(true);
+    // }
 
     mapCaches[$gameMap._mapId] = $dataMap;
+
+    fullRefresh();
   }
 
   static maybeUpdateTileNeighbors(x, y, z, expectedUpdate = true, previewOnly = false) {
@@ -2516,8 +2534,8 @@ class CycloneMapEditor extends CyclonePlugin {
       previewChanges[tileIndex] = 0;
     } else {
       const oldTile = $dataMap.data[tileIndex];
-      if (currentChange[tileIndex] === undefined && oldTile !== 0) {
-        currentChange[tileIndex] = oldTile;
+      if (currentChange.tiles[tileIndex] === undefined && oldTile !== 0) {
+        currentChange.tiles[tileIndex] = oldTile;
       }
 
       $dataMap.data[tileIndex] = 0;
@@ -2655,8 +2673,8 @@ class CycloneMapEditor extends CyclonePlugin {
 
         const blockCollision = this._getBlockCollision(i, j, count, tileId);
         const oldTile = customCollisionTable[index] || 0;
-        if (currentChange[index] === undefined && oldTile !== blockCollision) {
-          currentChange[index] = oldTile;
+        if (currentChange.collision[index] === undefined && oldTile !== blockCollision) {
+          currentChange.collision[index] = oldTile;
         }
 
         if (!blockCollision) {
@@ -2678,10 +2696,10 @@ class CycloneMapEditor extends CyclonePlugin {
     const pixelX = px % tileWidth;
     const pixelY = py % tileHeight;
 
-    if (fx >= $gameMap.width()) {
+    if (fx < 0 || fx >= $gameMap.width()) {
       return;
     }
-    if (fy >= $gameMap.height()) {
+    if (fy < 0 || fy >= $gameMap.height()) {
       return;
     }
 
@@ -2697,12 +2715,12 @@ class CycloneMapEditor extends CyclonePlugin {
 
     const pixelIndex = pixelY * tileWidth + pixelX;
 
-    if (currentChange[tileIndex]?.[pixelIndex] === undefined && (table[pixelIndex] ?? 0) !== newBlend) {
-      if (currentChange[tileIndex] === undefined) {
-        currentChange[tileIndex] = {};
+    if (currentChange.blend[tileIndex]?.[pixelIndex] === undefined && (table[pixelIndex] ?? 0) !== newBlend) {
+      if (currentChange.blend[tileIndex] === undefined) {
+        currentChange.blend[tileIndex] = {};
       }
 
-      currentChange[tileIndex][pixelIndex] = (table[pixelIndex] ?? 0);
+      currentChange.blend[tileIndex][pixelIndex] = (table[pixelIndex] ?? 0);
     }
 
     table[pixelIndex] = newBlend;
@@ -2737,12 +2755,12 @@ class CycloneMapEditor extends CyclonePlugin {
       for (let py = topPx; py < bottomPx; py++) {
         const pixelIndex = py * tileWidth + px;
 
-        if (currentChange[tileIndex]?.[pixelIndex] === undefined && (table[pixelIndex] ?? 0) !== newBlend) {
-          if (currentChange[tileIndex] === undefined) {
-            currentChange[tileIndex] = {};
+        if (currentChange.blend[tileIndex]?.[pixelIndex] === undefined && (table[pixelIndex] ?? 0) !== newBlend) {
+          if (currentChange.blend[tileIndex] === undefined) {
+            currentChange.blend[tileIndex] = {};
           }
 
-          currentChange[tileIndex][pixelIndex] = (table[pixelIndex] ?? 0);
+          currentChange.blend[tileIndex][pixelIndex] = (table[pixelIndex] ?? 0);
         }
 
         table[pixelIndex] = newBlend;
@@ -2764,28 +2782,79 @@ class CycloneMapEditor extends CyclonePlugin {
     return false;
   }
 
-  static forceBlenderRefresh() {
+  static forceBlenderRefresh(hardRefresh = false) {
     if (!window.CycloneTileBlender) {
       return;
     }
 
-    SceneManager._scene._spriteset?.forceBlenderRefresh && SceneManager._scene._spriteset.forceBlenderRefresh();
+    SceneManager._scene._spriteset?.forceBlenderRefresh && SceneManager._scene._spriteset.forceBlenderRefresh(hardRefresh);
+  }
+
+  static buildSmallCircle() {
+    const width = tileWidth / 4;
+    const height = tileHeight / 4;
+    const bitmap = new Bitmap(width, height);
+    bitmap.drawCircle(width / 2, height / 2, Math.min(width, height) / 2, '#0000FF');
+    bitmap.drawCircle(width / 2, height / 2, Math.min(width, height) / 2 - 2, '#00FF00');
+
+    const imageData = bitmap.context.getImageData(0, 0, width, height);
+    smallCircleData = imageData.data;
+  }
+
+  static buildCircle() {
+    const width = tileWidth / 2;
+    const height = tileHeight / 2;
+    const bitmap = new Bitmap(width, height);
+
+    bitmap.drawCircle(width / 2, height / 2, Math.min(width, height) / 2, '#0000FF');
+    bitmap.drawCircle(width / 2, height / 2, Math.min(width, height) / 2 - 4, '#00FF00');
+
+    const imageData = bitmap.context.getImageData(0, 0, width, height);
+    circleData = imageData.data;
   }
 
   static getCircleData() {
     if (circleData) {
+      if (Input.isPressed('shift')) {
+        return smallCircleData;
+      }
+
       return circleData;
     }
 
-    const width = tileWidth / 2;
-    const height = tileHeight / 2;
-    const bitmap = new Bitmap(width, height);
-    bitmap.drawCircle(width / 2, height / 2, Math.min(width, height) / 2, '#0000FF');
+    this.buildSmallCircle();
+    this.buildCircle();
 
-    const imageData = bitmap.context.getImageData(0, 0, width, height);
-    circleData = imageData.data;
+    return this.getCircleData();
+  }
 
-    return circleData;
+  static removeTileBlend(x, y, previewOnly = false) {
+    if (previewOnly && !window.CycloneTileBlender) {
+      return;
+    }
+
+    const fx = Math.floor(x);
+    const fy = Math.floor(y);
+
+    if (fx < 0 || fx >= $gameMap.width()) {
+      return;
+    }
+    if (fy < 0 || fy >= $gameMap.height()) {
+      return;
+    }
+
+    const tileIndex = this.tileIndex(fx, fy, 0);
+    if (previewOnly) {
+      if (window.CycloneTileBlender.tileBlendingTable[tileIndex]) {
+        delete window.CycloneTileBlender.tileBlendingTable[tileIndex];
+      }
+      return;
+    }
+
+    if (tileBlendingTable[tileIndex]) {
+      currentChange.blend[tileIndex] = tileBlendingTable[tileIndex];
+      delete tileBlendingTable[tileIndex];
+    }
   }
 
   static _applyBlendBrush(x, y, previewOnly = false) {
@@ -2796,8 +2865,9 @@ class CycloneMapEditor extends CyclonePlugin {
     const tileWidth = $gameMap.tileWidth();
     const tileHeight = $gameMap.tileHeight();
 
-    const width = tileWidth / 2;
-    const height = tileHeight / 2;
+    const divider = Input.isPressed('shift') ? 4 : 2;
+    const width = tileWidth / divider;
+    const height = tileHeight / divider;
     const pixels = this.getCircleData();
 
     let index = -1;
@@ -2812,8 +2882,12 @@ class CycloneMapEditor extends CyclonePlugin {
       for (let px = 0; px < width; px++) {
         index++;
 
-        if (pixels[index * 4 + 2] > 0) {
+        if (pixels[index * 4 + 1] > 0) {
           this._changePixelPositionBlend(x, y, pixelX + px, pixelY + py, newBlend, previewOnly);
+        } else if (pixels[index * 4 + 2] > 0) {
+          if (Math.randomInt(10) > 5) {
+            this._changePixelPositionBlend(x, y, pixelX + px, pixelY + py, newBlend, previewOnly);
+          }
         }
       }
     }
@@ -2870,12 +2944,16 @@ class CycloneMapEditor extends CyclonePlugin {
         effectiveTileId = this.changeAutoTileShapeForPosition(x, y, z, tileId, false);
       }
 
+      if (z === 1) {
+        this.removeTileBlend(x, y, previewOnly);
+      }
+
       if (previewOnly) {
         previewChanges[tileIndex] = effectiveTileId;
       } else {
         const oldTile = $dataMap.data[tileIndex];
-        if (currentChange[tileIndex] === undefined && oldTile !== effectiveTileId) {
-          currentChange[tileIndex] = oldTile;
+        if (currentChange.tiles[tileIndex] === undefined && oldTile !== effectiveTileId) {
+          currentChange.tiles[tileIndex] = oldTile;
         }
 
         $dataMap.data[tileIndex] = effectiveTileId;
@@ -3015,7 +3093,7 @@ class CycloneMapEditor extends CyclonePlugin {
     if (previewOnly) {
       previewChanges = {};
     } else {
-      currentChange = {};
+      this.resetCurrentChange();
     }
 
     let effectiveLayer = currentLayer;
@@ -3303,7 +3381,7 @@ class CycloneMapEditor extends CyclonePlugin {
     const width = $gameMap.width();
     const workLayer = currentLayer <= 3 ? currentLayer : 0;
 
-    currentChange = {};
+    this.resetCurrentChange();
     for (const tileIndex of affectedArea) {
       const y = this.indexPositionY(tileIndex, workLayer);
       const x = tileIndex - this.tileIndex(0, y, workLayer);
@@ -3570,11 +3648,12 @@ class CycloneMapEditor extends CyclonePlugin {
   static updatePencil(x, y) {
     if (TouchInput.isPressed()) {
       if (!currentChange) {
-        currentChange = {};
+        this.resetCurrentChange();
       }
 
       if (currentLayer === Layers.blend) {
-        CycloneMapEditor._applyBlendBrush(x, y, false);
+        const offset = Input.isPressed('shift') ? 0.125 : 0.25;
+        CycloneMapEditor._applyBlendBrush(x - offset, y - offset, false);
         return;
       }
 
