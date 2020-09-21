@@ -1290,8 +1290,8 @@ const refreshMagic = throttle(() => {
     return;
   }
 
-  if (window.CycloneTileBlender) {
-    window.CycloneTileBlender.loadMagic();
+  if (window.CycloneMagic) {
+    window.CycloneMagic.loadMagic();
     forceBlenderRefresh(true);
   }
 });
@@ -3828,7 +3828,7 @@ class CycloneMapEditor$1 extends CyclonePlugin {
     const tileIndex = this.tileIndex(fx, fy, 0);
     const size = tileWidth * tileHeight;
 
-    const fullTable = previewOnly ? window.CycloneTileBlender.tileBlendingTable : tileBlendingTable;
+    const fullTable = previewOnly ? window.CycloneMagic.tileBlendingTable : tileBlendingTable;
     if (!fullTable[tileIndex]) {
       const buffer = new ArrayBuffer(size);
       fullTable[tileIndex] = new Int8Array(buffer);
@@ -3905,7 +3905,7 @@ class CycloneMapEditor$1 extends CyclonePlugin {
   }
 
   static forceBlenderRefresh(hardRefresh = false) {
-    if (!window.CycloneTileBlender) {
+    if (!window.CycloneMagic) {
       return;
     }
 
@@ -3951,7 +3951,7 @@ class CycloneMapEditor$1 extends CyclonePlugin {
   }
 
   static removeTileBlend(x, y, previewOnly = false) {
-    if (previewOnly && !window.CycloneTileBlender) {
+    if (previewOnly && !window.CycloneMagic) {
       return;
     }
 
@@ -3967,8 +3967,8 @@ class CycloneMapEditor$1 extends CyclonePlugin {
 
     const tileIndex = this.tileIndex(fx, fy, 0);
     if (previewOnly) {
-      if (window.CycloneTileBlender.tileBlendingTable[tileIndex]) {
-        delete window.CycloneTileBlender.tileBlendingTable[tileIndex];
+      if (window.CycloneMagic.tileBlendingTable[tileIndex]) {
+        delete window.CycloneMagic.tileBlendingTable[tileIndex];
       }
       return;
     }
@@ -3980,7 +3980,7 @@ class CycloneMapEditor$1 extends CyclonePlugin {
   }
 
   static _applyBlendBrush(x, y, previewOnly = false) {
-    if (previewOnly && !window.CycloneTileBlender) {
+    if (previewOnly && !window.CycloneMagic) {
       return;
     }
 
@@ -4018,15 +4018,15 @@ class CycloneMapEditor$1 extends CyclonePlugin {
       forceBlenderRefresh();
     } else {
       // Let's do a quick refresh first and then save the data a little later
-      if (window.CycloneTileBlender) {
-        window.CycloneTileBlender.tileBlendingTable = tileBlendingTable;
+      if (window.CycloneMagic) {
+        window.CycloneMagic.tileBlendingTable = tileBlendingTable;
         const maxTileX = tileX + Math.floor((pixelX + width) / tileWidth);
         const maxTileY = tileY + Math.floor((pixelY + height) / tileHeight);
 
-        if (window.CycloneTileBlender) {
+        if (window.CycloneMagic) {
           for (let cacheX = tileX; cacheX <= maxTileX; cacheX++) {
             for (let cacheY = tileY; cacheY <= maxTileY; cacheY++) {
-              window.CycloneTileBlender.clearPositionCache(cacheX, cacheY);
+              window.CycloneMagic.clearPositionCache(cacheX, cacheY);
             }
           }
         }
@@ -7625,7 +7625,7 @@ CycloneMapEditor.patchClass(Spriteset_Map, $super => class {
   }
 
   forceBlenderRefresh(hardRefresh = false) {
-    if (!window.CycloneTileBlender) {
+    if (!window.CycloneMagic) {
       return;
     }
 
@@ -7649,14 +7649,14 @@ CycloneMapEditor.patchClass(Spriteset_Map, $super => class {
         }
 
         found = true;
-        if (!window.CycloneTileBlender.isSpriteCached(sprite.spriteId)) {
+        if (!window.CycloneMagic.isSpriteCached(sprite.spriteId)) {
           sprite._bitmap = null;
         }
         break;
       }
 
       if (!found) {
-        const newSprite = new window.CycloneTileBlender.SpriteBlenderTile(tile.tiles, tile.x, tile.y, 1, 1);
+        const newSprite = new window.CycloneMagic.SpriteBlenderTile(tile.tiles, tile.x, tile.y, 1, 1);
         this._blenderTileSprites.push(newSprite);
         this._tilemap.addChild(newSprite);
       }
@@ -7802,7 +7802,7 @@ CycloneMapEditor.patchClass(Scene_Boot, $super => class {
 let delaysTried = 0;
 
 const addFilter = () => {
-  if (!window.CycloneTileBlender) {
+  if (!window.CycloneMagic) {
     if (delaysTried > 10) {
       return;
     }
@@ -7812,7 +7812,7 @@ const addFilter = () => {
     return;
   }
 
-  CycloneMapEditor.patchClass(window.CycloneTileBlender.SpriteBlenderTile, $super => class {
+  CycloneMapEditor.patchClass(window.CycloneMagic.SpriteBlenderTile, $super => class {
     update() {
       $super.update.call(this);
       this.visible = CycloneMapEditor.isLayerVisible(1);
