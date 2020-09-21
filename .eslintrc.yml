@@ -80,7 +80,7 @@ globals:
   CycloneTime: true
   CycloneMovement: true
   CycloneTilePriority: true
-  CycloneTileBlender: true
+  CycloneMagic: true
 
   WindowResizer: true
 rules:

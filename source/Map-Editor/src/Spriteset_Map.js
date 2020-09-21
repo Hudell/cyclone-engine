@@ -13,7 +13,7 @@ CycloneMapEditor.patchClass(Spriteset_Map, $super => class {
   }
 
   forceBlenderRefresh(hardRefresh = false) {
-    if (!window.CycloneTileBlender) {
+    if (!window.CycloneMagic) {
       return;
     }
 
@@ -37,14 +37,14 @@ CycloneMapEditor.patchClass(Spriteset_Map, $super => class {
         }
 
         found = true;
-        if (!window.CycloneTileBlender.isSpriteCached(sprite.spriteId)) {
+        if (!window.CycloneMagic.isSpriteCached(sprite.spriteId)) {
           sprite._bitmap = null;
         }
         break;
       }
 
       if (!found) {
-        const newSprite = new window.CycloneTileBlender.SpriteBlenderTile(tile.tiles, tile.x, tile.y, 1, 1);
+        const newSprite = new window.CycloneMagic.SpriteBlenderTile(tile.tiles, tile.x, tile.y, 1, 1);
         this._blenderTileSprites.push(newSprite);
         this._tilemap.addChild(newSprite);
       }

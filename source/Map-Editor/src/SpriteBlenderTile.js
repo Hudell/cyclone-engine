@@ -1,7 +1,7 @@
 let delaysTried = 0;
 
 const addFilter = () => {
-  if (!window.CycloneTileBlender) {
+  if (!window.CycloneMagic) {
     if (delaysTried > 10) {
       return;
     }
@@ -11,7 +11,7 @@ const addFilter = () => {
     return;
   }
 
-  CycloneMapEditor.patchClass(window.CycloneTileBlender.SpriteBlenderTile, $super => class {
+  CycloneMapEditor.patchClass(window.CycloneMagic.SpriteBlenderTile, $super => class {
     update() {
       $super.update.call(this);
       this.visible = CycloneMapEditor.isLayerVisible(1);
