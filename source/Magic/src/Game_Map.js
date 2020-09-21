@@ -1,13 +1,13 @@
-CycloneTileBlender.patchClass(Game_Map, $super => class {
+CycloneMagic.patchClass(Game_Map, $super => class {
   setup(mapId) {
     $super.setup.call(this, mapId);
     this._loadedMagic = true;
-    CycloneTileBlender.loadMagic();
+    CycloneMagic.loadMagic();
   }
 
   getMagicTilesLongList() {
     const list = [];
-    const fullTable = CycloneTileBlender.tileBlendingTable;
+    const fullTable = CycloneMagic.tileBlendingTable;
     if (!fullTable) {
       return list;
     }
@@ -154,7 +154,7 @@ CycloneTileBlender.patchClass(Game_Map, $super => class {
 
   isMagicTile(x, y, tileId) {
     const tileIndex = (y % $gameMap.height()) * $gameMap.width() + (x % $gameMap.width());
-    if (!(tileIndex in CycloneTileBlender.tileBlendingTable)) {
+    if (!(tileIndex in CycloneMagic.tileBlendingTable)) {
       return false;
     }
 

@@ -5,7 +5,7 @@ import { SpriteBlenderTile } from './SpriteBlenderTile';
 
 let tileBlendingTable = {};
 
-class CycloneTileBlender extends CyclonePatcher {
+class CycloneMagic extends CyclonePatcher {
   static get tileBlendingTable() {
     return tileBlendingTable;
   }
@@ -18,7 +18,7 @@ class CycloneTileBlender extends CyclonePatcher {
   }
 
   static register() {
-    this.initialize('CycloneTileBlender');
+    this.initialize('CycloneMagic');
     this._cachedTiles = new Map();
   }
 
@@ -177,7 +177,7 @@ class CycloneTileBlender extends CyclonePatcher {
     this.clearBitmapCache();
 
     const data = loadMapEditorData();
-    if (!data?.magic) {
+    if (data?.magic) {
       return;
     }
 
@@ -204,5 +204,5 @@ class CycloneTileBlender extends CyclonePatcher {
   }
 }
 
-globalThis.CycloneTileBlender = CycloneTileBlender;
-CycloneTileBlender.register();
+globalThis.CycloneMagic = CycloneMagic;
+CycloneMagic.register();

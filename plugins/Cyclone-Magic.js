@@ -1,12 +1,12 @@
 //=============================================================================
-// Cyclone Engine - Tile Blender
+// Cyclone Engine - Magic Features
 //=============================================================================
 
 /*:
  * @target MZ
  * @plugindesc . v1.00 - Premium
  *
- * <pluginName:CycloneTileBlender>
+ * <pluginName:CycloneMagic>
  * @author Hudell
  * @url 
  *
@@ -22,7 +22,7 @@
  *   `"Ybbd8"'     Y88'     `"Ybbd8"' 88  `"YbbdP"'  88       88  `"Ybbd8"'
  *                 d8'
  *                d8'
- * Tile Blender                                                      by Hudell
+ * Magic Features                                                    by Hudell
  * ===========================================================================
  * Terms of Use
  * ===========================================================================
@@ -405,7 +405,7 @@ class SpriteBlenderTile extends Sprite {
 
   updateBitmap() {
     if (!this.bitmap) {
-      this.bitmap = CycloneTileBlender.getTileBitmap(this.spriteId, this._tiles, this._mapX, this._mapY, this._mapWidth, this._mapHeight);
+      this.bitmap = CycloneMagic.getTileBitmap(this.spriteId, this._tiles, this._mapX, this._mapY, this._mapWidth, this._mapHeight);
     }
   }
 
@@ -422,7 +422,7 @@ class SpriteBlenderTile extends Sprite {
 
 let tileBlendingTable = {};
 
-class CycloneTileBlender$1 extends CyclonePatcher {
+class CycloneMagic$1 extends CyclonePatcher {
   static get tileBlendingTable() {
     return tileBlendingTable;
   }
@@ -435,7 +435,7 @@ class CycloneTileBlender$1 extends CyclonePatcher {
   }
 
   static register() {
-    this.initialize('CycloneTileBlender');
+    this.initialize('CycloneMagic');
     this._cachedTiles = new Map();
   }
 
@@ -594,7 +594,7 @@ class CycloneTileBlender$1 extends CyclonePatcher {
     this.clearBitmapCache();
 
     const data = loadMapEditorData();
-    if (!data?.magic) {
+    if (data?.magic) {
       return;
     }
 
@@ -621,10 +621,10 @@ class CycloneTileBlender$1 extends CyclonePatcher {
   }
 }
 
-globalThis.CycloneTileBlender = CycloneTileBlender$1;
-CycloneTileBlender$1.register();
+globalThis.CycloneMagic = CycloneMagic$1;
+CycloneMagic$1.register();
 
-CycloneTileBlender.patchClass(Tilemap, $super => class {
+CycloneMagic.patchClass(Tilemap, $super => class {
   _addSpotTile(tileId, dx, dy) {
     if (!this._isHigherTile(tileId)) {
       const mapX = Math.round(dx / this._tileWidth) + this._lastStartX;
@@ -642,14 +642,14 @@ CycloneTileBlender.patchClass(Tilemap, $super => class {
   }
 });
 
-CycloneTileBlender.patchClass(Spriteset_Map, $super => class {
+CycloneMagic.patchClass(Spriteset_Map, $super => class {
   createCharacters() {
     this.createBlenderTiles();
     $super.createCharacters.call(this);
   }
 
   createBlenderTiles() {
-    CycloneTileBlender.clearBitmapCache();
+    CycloneMagic.clearBitmapCache();
     this._blenderTileSprites = [];
 
     for (const {tiles, x, y, width, height } of $gameMap.magicTiles()) {
@@ -662,16 +662,16 @@ CycloneTileBlender.patchClass(Spriteset_Map, $super => class {
   }
 });
 
-CycloneTileBlender.patchClass(Game_Map, $super => class {
+CycloneMagic.patchClass(Game_Map, $super => class {
   setup(mapId) {
     $super.setup.call(this, mapId);
     this._loadedMagic = true;
-    CycloneTileBlender.loadMagic();
+    CycloneMagic.loadMagic();
   }
 
   getMagicTilesLongList() {
     const list = [];
-    const fullTable = CycloneTileBlender.tileBlendingTable;
+    const fullTable = CycloneMagic.tileBlendingTable;
     if (!fullTable) {
       return list;
     }
@@ -818,7 +818,7 @@ CycloneTileBlender.patchClass(Game_Map, $super => class {
 
   isMagicTile(x, y, tileId) {
     const tileIndex = (y % $gameMap.height()) * $gameMap.width() + (x % $gameMap.width());
-    if (!(tileIndex in CycloneTileBlender.tileBlendingTable)) {
+    if (!(tileIndex in CycloneMagic.tileBlendingTable)) {
       return false;
     }
 
@@ -831,12 +831,12 @@ CycloneTileBlender.patchClass(Game_Map, $super => class {
   }
 });
 
-CycloneTileBlender.patchClass(DataManager, $super => class {
+CycloneMagic.patchClass(DataManager, $super => class {
   static onLoad(object) {
     $super.onLoad.call(this, object);
 
     if (this.isMapObject(object)) {
-      CycloneTileBlender.loadMagic();
+      CycloneMagic.loadMagic();
     }
   }
 });

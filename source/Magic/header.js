@@ -1,12 +1,12 @@
 //=============================================================================
-// Cyclone Engine - Tile Blender
+// Cyclone Engine - Magic Features
 //=============================================================================
 
 /*:
  * @target MZ
  * @plugindesc . v1.00 - Premium
  *
- * <pluginName:CycloneTileBlender>
+ * <pluginName:CycloneMagic>
  * @author Hudell
  * @url 
  *
@@ -22,7 +22,7 @@
  *   `"Ybbd8"'     Y88'     `"Ybbd8"' 88  `"YbbdP"'  88       88  `"Ybbd8"'
  *                 d8'
  *                d8'
- * Tile Blender                                                      by Hudell
+ * Magic Features                                                    by Hudell
  * ===========================================================================
  * Terms of Use
  * ===========================================================================

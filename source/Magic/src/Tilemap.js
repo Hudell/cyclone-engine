@@ -1,4 +1,4 @@
-CycloneTileBlender.patchClass(Tilemap, $super => class {
+CycloneMagic.patchClass(Tilemap, $super => class {
   _addSpotTile(tileId, dx, dy) {
     if (!this._isHigherTile(tileId)) {
       const mapX = Math.round(dx / this._tileWidth) + this._lastStartX;

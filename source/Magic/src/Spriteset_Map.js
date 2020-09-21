@@ -1,13 +1,13 @@
 import { SpriteBlenderTile } from './SpriteBlenderTile';
 
-CycloneTileBlender.patchClass(Spriteset_Map, $super => class {
+CycloneMagic.patchClass(Spriteset_Map, $super => class {
   createCharacters() {
     this.createBlenderTiles();
     $super.createCharacters.call(this);
   }
 
   createBlenderTiles() {
-    CycloneTileBlender.clearBitmapCache();
+    CycloneMagic.clearBitmapCache();
     this._blenderTileSprites = [];
 
     for (const {tiles, x, y, width, height } of $gameMap.magicTiles()) {
