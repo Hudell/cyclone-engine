@@ -1,5 +1,6 @@
 import { CyclonePatcher } from '../../Core/patcher';
-import { drawTile, getTilesetIndex } from '../../Utils/drawTile';
+import { drawTile } from '../../Utils/drawTile';
+import { getTilesetIndex } from '../../Utils/getTilesetIndex';
 import { loadMapEditorData } from '../../Utils/loadMapEditorData';
 import { SpriteBlenderTile } from './SpriteBlenderTile';
 
@@ -177,7 +178,7 @@ class CycloneMagic extends CyclonePatcher {
     this.clearBitmapCache();
 
     const data = loadMapEditorData();
-    if (data?.magic) {
+    if (!data?.magic) {
       return;
     }
 
