@@ -1,5 +1,13 @@
 function _typeof(obj) { "@babel/helpers - typeof"; if (typeof Symbol === "function" && typeof Symbol.iterator === "symbol") { _typeof = function _typeof(obj) { return typeof obj; }; } else { _typeof = function _typeof(obj) { return obj && typeof Symbol === "function" && obj.constructor === Symbol && obj !== Symbol.prototype ? "symbol" : typeof obj; }; } return _typeof(obj); }
 
+function _toConsumableArray(arr) { return _arrayWithoutHoles(arr) || _iterableToArray(arr) || _unsupportedIterableToArray(arr) || _nonIterableSpread(); }
+
+function _nonIterableSpread() { throw new TypeError("Invalid attempt to spread non-iterable instance.\nIn order to be iterable, non-array objects must have a [Symbol.iterator]() method."); }
+
+function _iterableToArray(iter) { if (typeof Symbol !== "undefined" && Symbol.iterator in Object(iter)) return Array.from(iter); }
+
+function _arrayWithoutHoles(arr) { if (Array.isArray(arr)) return _arrayLikeToArray(arr); }
+
 function _inherits(subClass, superClass) { if (typeof superClass !== "function" && superClass !== null) { throw new TypeError("Super expression must either be null or a function"); } subClass.prototype = Object.create(superClass && superClass.prototype, { constructor: { value: subClass, writable: true, configurable: true } }); if (superClass) _setPrototypeOf(subClass, superClass); }
 
 function _setPrototypeOf(o, p) { _setPrototypeOf = Object.setPrototypeOf || function _setPrototypeOf(o, p) { o.__proto__ = p; return o; }; return _setPrototypeOf(o, p); }
@@ -700,28 +708,16 @@ function _createClass(Constructor, protoProps, staticProps) { if (protoProps) _d
           }
 
           var baseFlags = $super.tilesetFlags.call(this);
-          var tileset = $dataTilesets[this._extraTilesetId];
-          this._allFlags = baseFlags.map(function (item) {
-            return item;
-          });
+          var tileset = this.extraTileset();
+          this._allFlags = _toConsumableArray(baseFlags);
 
           if (tileset) {
             var newZero = Tilemap.TILE_ID_E + 256;
             var newFlags = tileset.flags;
 
-            var _iterator2 = _createForOfIteratorHelper(newFlags),
-                _step2;
-
-            try {
-              for (_iterator2.s(); !(_step2 = _iterator2.n()).done;) {
-                var tileId = _step2.value;
-                var newTileId = tileId + newZero;
-                this._allFlags[newTileId] = newFlags[tileId];
-              }
-            } catch (err) {
-              _iterator2.e(err);
-            } finally {
-              _iterator2.f();
+            for (var tileId = 0; tileId < Tilemap.TILE_ID_D; tileId++) {
+              var newTileId = tileId + newZero;
+              this._allFlags[newTileId] = newFlags[tileId] || 0;
             }
           }
 

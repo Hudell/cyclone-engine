@@ -313,16 +313,17 @@ CycloneExtraTilesets.patchClass(Game_Map, $super => class {
     }
 
     const baseFlags = $super.tilesetFlags.call(this);
-    const tileset = $dataTilesets[this._extraTilesetId];
+    const tileset = this.extraTileset();
 
-    this._allFlags = baseFlags.map(item => item);
+    this._allFlags = [...baseFlags];
 
     if (tileset) {
       const newZero = Tilemap.TILE_ID_E + 256;
       const newFlags = tileset.flags;
-      for (const tileId of newFlags) {
+
+      for (let tileId = 0; tileId < Tilemap.TILE_ID_D; tileId++) {
         const newTileId = tileId + newZero;
-        this._allFlags[newTileId] = newFlags[tileId];
+        this._allFlags[newTileId] = newFlags[tileId] || 0;
       }
     }
 
