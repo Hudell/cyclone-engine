@@ -73,6 +73,7 @@ globals:
   $dataCommonEvents: false
   $dataMap: false
   $dataSystem: false
+  $dataTilesets: false
 
   CyclonePlugin: true
   CycloneMapEditor: true
@@ -81,6 +82,7 @@ globals:
   CycloneMovement: true
   CycloneTilePriority: true
   CycloneMagic: true
+  CycloneExtraTilesets: true
 
   WindowResizer: true
 rules:

@@ -12,6 +12,7 @@
     "priority": "cd source/TilePriority & rollup -cw",
     "priority-mv": "cd source/TilePriority-MV & rollup -cw",
     "magic": "cd source/Magic & rollup -cw",
+    "extra": "cd source/ExtraTilesets & rollup -cw",
     "window": "cd source/WindowResizer & rollup -cw",
     "window-mv": "cd source/WindowResizer-MV & rollup -cw"
   },

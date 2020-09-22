@@ -152,7 +152,7 @@ CycloneMapEditor.patchClass(Bitmap, $super => class {
       return;
     }
 
-    if (tileId >= Tilemap.TILE_ID_A1) {
+    if (Tilemap.isAutotile(tileId)) {
       return this.drawAutoTile(tileId, x, y, drawWidth, drawHeight);
     }
 
