@@ -45,7 +45,7 @@ function _defineProperties(target, props) { for (var i = 0; i < props.length; i+
 function _createClass(Constructor, protoProps, staticProps) { if (protoProps) _defineProperties(Constructor.prototype, protoProps); if (staticProps) _defineProperties(Constructor, staticProps); return Constructor; }
 
 /*:
- * @plugindesc Live Map Editor - 1.06.01
+ * @plugindesc Live Map Editor - 1.07.00
  *
  * <pluginName:CycloneMapEditor>
  * @author Hudell
@@ -107,6 +107,11 @@ function _createClass(Constructor, protoProps, staticProps) { if (protoProps) _d
  * ===========================================================================
  * Change Log
  * ===========================================================================
+ * 2020-09-22 - Version 1.07.00
+ *   * Several quality-of-life updates
+ *   * Added support to Cyclone Magic
+ *   * Added support to Cyclone Extra Tilesets
+ *
  * 2020-09-18 - Version 1.06.01
  *   * Fixed "Default Collision Blocks" param options.
  *
@@ -2718,8 +2723,17 @@ function _createClass(Constructor, protoProps, staticProps) { if (protoProps) _d
           })
         });
         layerMenu.append(this.tagsButton);
+        menu.append(new nw.MenuItem({
+          label: 'Layer',
+          submenu: layerMenu
+        }));
+      }
+    }, {
+      key: "addBlendMenu",
+      value: function addBlendMenu(menu) {
+        var blendMenu = new nw.Menu();
         this.blendButton = new nw.MenuItem({
-          label: 'Blend',
+          label: 'Blend Layer',
           type: 'checkbox',
           checked: currentLayer === 10,
           key: 'B',
@@ -2727,10 +2741,25 @@ function _createClass(Constructor, protoProps, staticProps) { if (protoProps) _d
             CycloneMapEditor$1.changeCurrentLayer(10);
           })
         });
-        layerMenu.append(this.blendButton);
+        blendMenu.append(this.blendButton);
+        blendMenu.append(new nw.MenuItem({
+          type: 'separator'
+        }));
+        blendMenu.append(new nw.MenuItem({
+          label: 'Remove blend effect',
+          click: this.makeMenuEvent(function () {
+            CycloneMapEditor$1.removeAllBlendsButton();
+          })
+        }));
+        blendMenu.append(new nw.MenuItem({
+          label: 'Optimize blend effect',
+          click: this.makeMenuEvent(function () {
+            CycloneMapEditor$1.optimizeBlendsButton();
+          })
+        }));
         menu.append(new nw.MenuItem({
-          label: 'Layer',
-          submenu: layerMenu
+          label: 'Blend',
+          submenu: blendMenu
         }));
       }
     }, {
@@ -2793,6 +2822,74 @@ function _createClass(Constructor, protoProps, staticProps) { if (protoProps) _d
         menu.append(new nw.MenuItem({
           label: 'Tilesets',
           submenu: tilesetMenu
+        }));
+      }
+    }, {
+      key: "addJumpMenu",
+      value: function addJumpMenu(menu) {
+        var a1 = Tilemap.TILE_ID_A1;
+        var a2 = Tilemap.TILE_ID_A2;
+        var a3 = Tilemap.TILE_ID_A3;
+        var a4 = Tilemap.TILE_ID_A4;
+        var b = Tilemap.TILE_ID_B;
+        var c = Tilemap.TILE_ID_C;
+        var d = Tilemap.TILE_ID_D;
+        var e = Tilemap.TILE_ID_E;
+        var f = Tilemap.TILE_ID_E + 256;
+        var g = Tilemap.TILE_ID_E + 512;
+        var a5 = Tilemap.TILE_ID_A5;
+        var jumpToTabMenu = new nw.Menu();
+        jumpToTabMenu.append(new nw.MenuItem({
+          label: 'AutoTiles',
+          click: this.makeMenuEvent(function () {
+            CycloneMapEditor$1.jumpToOneTileOf([a1, a2, a3, a4]);
+          })
+        }));
+        jumpToTabMenu.append(new nw.MenuItem({
+          label: 'B Tiles',
+          click: this.makeMenuEvent(function () {
+            CycloneMapEditor$1.jumpToOneTileOf([b, c, d, e, f, g, a5]);
+          })
+        }));
+        jumpToTabMenu.append(new nw.MenuItem({
+          label: 'C Tiles',
+          click: this.makeMenuEvent(function () {
+            CycloneMapEditor$1.jumpToOneTileOf([c, d, e, f, g, a5]);
+          })
+        }));
+        jumpToTabMenu.append(new nw.MenuItem({
+          label: 'D Tiles',
+          click: this.makeMenuEvent(function () {
+            CycloneMapEditor$1.jumpToOneTileOf([d, e, f, g, a5]);
+          })
+        }));
+        jumpToTabMenu.append(new nw.MenuItem({
+          label: 'E Tiles',
+          click: this.makeMenuEvent(function () {
+            CycloneMapEditor$1.jumpToOneTileOf([e, f, g, a5]);
+          })
+        }));
+        jumpToTabMenu.append(new nw.MenuItem({
+          label: 'Extra B Tiles',
+          click: this.makeMenuEvent(function () {
+            CycloneMapEditor$1.jumpToOneTileOf([f, g, a5]);
+          })
+        }));
+        jumpToTabMenu.append(new nw.MenuItem({
+          label: 'Extra C Tiles',
+          click: this.makeMenuEvent(function () {
+            CycloneMapEditor$1.jumpToOneTileOf([g, a5]);
+          })
+        }));
+        jumpToTabMenu.append(new nw.MenuItem({
+          label: 'A5 Tiles',
+          click: this.makeMenuEvent(function () {
+            CycloneMapEditor$1.jumpToTile(a5);
+          })
+        }));
+        menu.append(new nw.MenuItem({
+          label: 'Jump To',
+          submenu: jumpToTabMenu
         }));
       }
     }, {
@@ -2956,6 +3053,26 @@ function _createClass(Constructor, protoProps, staticProps) { if (protoProps) _d
             require('nw.gui').Shell.openExternal('https://makerdevs.com/plugin/cyclone-map-editor');
           })
         }));
+        helpMenu.append(new nw.MenuItem({
+          label: 'Extra Tilesets Add-on',
+          click: this.makeMenuEvent(function () {
+            if (!globalThis.require) {
+              return;
+            }
+
+            require('nw.gui').Shell.openExternal('https://hudell.itch.io/cyclone-extra-tilesets');
+          })
+        }));
+        helpMenu.append(new nw.MenuItem({
+          label: 'Magic (Tile Blend) Add-on',
+          click: this.makeMenuEvent(function () {
+            if (!globalThis.require) {
+              return;
+            }
+
+            require('nw.gui').Shell.openExternal('https://hudell.itch.io/cyclone-magic');
+          })
+        }));
         menu.append(new nw.MenuItem({
           label: 'Help',
           submenu: helpMenu
@@ -2980,7 +3097,9 @@ function _createClass(Constructor, protoProps, staticProps) { if (protoProps) _d
         this.addMapMenu(menu);
         this.addModeMenu(menu);
         this.addLayerMenu(menu);
+        this.addBlendMenu(menu);
         this.addTilesetMenu(menu);
+        this.addJumpMenu(menu);
         this.addExportMenu(menu);
         this.addHelpMenu(menu);
         this.menu = menu;
@@ -3009,13 +3128,17 @@ function _createClass(Constructor, protoProps, staticProps) { if (protoProps) _d
       value: function toggleTileset(id) {
         if ($gameMap._extraTilesetId === id) {
           $gameMap._extraTilesetId = 0;
-          return;
+        } else {
+          $gameMap._extraTilesetId = id;
         }
 
-        $gameMap._extraTilesetId = id;
         $gameMap.buildTilesetFlags && $gameMap.buildTilesetFlags();
         this.refreshTilesetMenu();
         this.refreshMapEditor();
+
+        if (!this.jumpToTile(Tilemap.TILE_ID_E + 256) && !this.jumpToTile(Tilemap.TILE_ID_E + 512)) {
+          this.jumpToLastTile();
+        }
       }
     }, {
       key: "applyExtraData",
@@ -3662,6 +3785,20 @@ function _createClass(Constructor, protoProps, staticProps) { if (protoProps) _d
 
         if (undoHistory.length) {
           this.redoLastUndoneChange();
+        }
+      }
+    }, {
+      key: "removeAllBlendsButton",
+      value: function removeAllBlendsButton() {
+        if (confirm('Are you sure you want to remove all blend effects on this map?')) {
+          this.removeAllBlends();
+        }
+      }
+    }, {
+      key: "optimizeBlendsButton",
+      value: function optimizeBlendsButton() {
+        if (confirm('This option will remove the blend from tiles that are completely hidden by the effect and change the tile itself to transparent. Optimize now?')) {
+          this.optimizeBlends();
         }
       } // eslint-disable-next-line complexity
 
@@ -4766,8 +4903,9 @@ function _createClass(Constructor, protoProps, staticProps) { if (protoProps) _d
       value: function _eraseSingleLayerTile(x, y, z) {
         var updateNeighbors = arguments.length > 3 && arguments[3] !== undefined ? arguments[3] : true;
         var previewOnly = arguments.length > 4 && arguments[4] !== undefined ? arguments[4] : false;
+        var forceErasure = arguments.length > 5 && arguments[5] !== undefined ? arguments[5] : false;
 
-        if (!this.canEraseLayer(z)) {
+        if (!forceErasure && !this.canEraseLayer(z)) {
           return;
         }
 
@@ -4790,9 +4928,10 @@ function _createClass(Constructor, protoProps, staticProps) { if (protoProps) _d
       value: function _eraseSingleMapTile(x, y, z) {
         var updateNeighbors = arguments.length > 3 && arguments[3] !== undefined ? arguments[3] : true;
         var previewOnly = arguments.length > 4 && arguments[4] !== undefined ? arguments[4] : false;
+        var forceErasure = arguments.length > 5 && arguments[5] !== undefined ? arguments[5] : false;
 
         if (z > 3 && z !== Layers.auto) {
-          this._eraseSingleLayerTile(x, y, z, updateNeighbors, previewOnly);
+          this._eraseSingleLayerTile(x, y, z, updateNeighbors, previewOnly, forceErasure);
 
           return;
         }
@@ -4802,7 +4941,7 @@ function _createClass(Constructor, protoProps, staticProps) { if (protoProps) _d
             continue;
           }
 
-          this._eraseSingleLayerTile(x, y, newZ, updateNeighbors, previewOnly);
+          this._eraseSingleLayerTile(x, y, newZ, updateNeighbors, previewOnly, forceErasure);
 
           this.maybeUpdateTileNeighbors(x, y, z, updateNeighbors, previewOnly);
         }
@@ -5115,6 +5254,67 @@ function _createClass(Constructor, protoProps, staticProps) { if (protoProps) _d
         return this.getCircleData();
       }
     }, {
+      key: "optimizeBlends",
+      value: function optimizeBlends() {
+        this.resetCurrentChange();
+
+        for (var _x7 = 0; _x7 < $gameMap.width(); _x7++) {
+          for (var y = 0; y < $gameMap.height(); y++) {
+            this.optimizeTileBlend(_x7, y);
+          }
+        }
+
+        this.logChange(true);
+      }
+    }, {
+      key: "removeAllBlends",
+      value: function removeAllBlends() {
+        this.resetCurrentChange();
+
+        for (var _x8 = 0; _x8 < $gameMap.width(); _x8++) {
+          for (var y = 0; y < $gameMap.height(); y++) {
+            this.removeTileBlend(_x8, y, false);
+          }
+        }
+
+        this.logChange(true);
+      }
+    }, {
+      key: "optimizeTileBlend",
+      value: function optimizeTileBlend(x, y) {
+        var fx = Math.floor(x);
+        var fy = Math.floor(y);
+
+        if (fx < 0 || fx >= $gameMap.width()) {
+          return;
+        }
+
+        if (fy < 0 || fy >= $gameMap.height()) {
+          return;
+        }
+
+        var tileIndex = this.tileIndex(fx, fy, 0);
+
+        if (!tileBlendingTable[tileIndex]) {
+          return;
+        }
+
+        var hasZero = tileBlendingTable[tileIndex].includes(0);
+        var hasOne = tileBlendingTable[tileIndex].includes(1);
+
+        if (hasZero === hasOne) {
+          return;
+        } // If it's all blended, then remove whatever tile is on layer 2
+
+
+        if (hasOne) {
+          this._applySingleMapTile(x, y, 1, 0, false, false, true);
+        }
+
+        currentChange.blend[tileIndex] = tileBlendingTable[tileIndex];
+        delete tileBlendingTable[tileIndex];
+      }
+    }, {
       key: "removeTileBlend",
       value: function removeTileBlend(x, y) {
         var previewOnly = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : false;
@@ -5222,13 +5422,14 @@ function _createClass(Constructor, protoProps, staticProps) { if (protoProps) _d
       value: function _applySingleMapTile(x, y, z, tileId) {
         var updateNeighbors = arguments.length > 4 && arguments[4] !== undefined ? arguments[4] : true;
         var previewOnly = arguments.length > 5 && arguments[5] !== undefined ? arguments[5] : false;
+        var forceErasure = arguments.length > 6 && arguments[6] !== undefined ? arguments[6] : false;
 
         if (z === Layers.collisions) {
           return this._applySingleCollision(x, y, tileId, previewOnly);
         }
 
         if (!tileId) {
-          this._eraseSingleMapTile(x, y, z, updateNeighbors, previewOnly);
+          this._eraseSingleMapTile(x, y, z, updateNeighbors, previewOnly, forceErasure);
 
           return;
         }
@@ -5241,7 +5442,7 @@ function _createClass(Constructor, protoProps, staticProps) { if (protoProps) _d
         try {
           for (_iterator13.s(); !(_step13 = _iterator13.n()).done;) {
             var _step13$value = _step13.value,
-                _x7 = _step13$value.x,
+                _x9 = _step13$value.x,
                 _y = _step13$value.y,
                 _z = _step13$value.z,
                 _tileId = _step13$value.tileId;
@@ -5250,15 +5451,15 @@ function _createClass(Constructor, protoProps, staticProps) { if (protoProps) _d
               continue;
             }
 
-            var tileIndex = this.tileIndex(_x7, _y, _z);
+            var tileIndex = this.tileIndex(_x9, _y, _z);
             var effectiveTileId = _tileId;
 
             if (Tilemap.isAutotile(_tileId)) {
-              effectiveTileId = this.changeAutoTileShapeForPosition(_x7, _y, _z, _tileId, false);
+              effectiveTileId = this.changeAutoTileShapeForPosition(_x9, _y, _z, _tileId, false);
             }
 
             if (_z === 1) {
-              this.removeTileBlend(_x7, _y, previewOnly);
+              this.removeTileBlend(_x9, _y, previewOnly);
             }
 
             if (previewOnly) {
@@ -5273,7 +5474,7 @@ function _createClass(Constructor, protoProps, staticProps) { if (protoProps) _d
               $dataMap.data[tileIndex] = effectiveTileId;
             }
 
-            this.maybeUpdateTileNeighbors(_x7, _y, _z, updateNeighbors, previewOnly);
+            this.maybeUpdateTileNeighbors(_x9, _y, _z, updateNeighbors, previewOnly);
           }
         } catch (err) {
           _iterator13.e(err);
@@ -5798,11 +5999,11 @@ function _createClass(Constructor, protoProps, staticProps) { if (protoProps) _d
             var tileIndex = _step14.value;
             var y = this.indexPositionY(tileIndex, workLayer);
 
-            var _x8 = tileIndex - this.tileIndex(0, y, workLayer);
+            var _x10 = tileIndex - this.tileIndex(0, y, workLayer);
 
-            var xDiff = (_x8 + width - mapX) % tileCols;
+            var xDiff = (_x10 + width - mapX) % tileCols;
             var yDiff = (y + height - mapY) % tileRows;
-            this.setSelectionTileMaybeMultiLayer(_x8, y, xDiff, yDiff, false);
+            this.setSelectionTileMaybeMultiLayer(_x10, y, xDiff, yDiff, false);
           }
         } catch (err) {
           _iterator14.e(err);
@@ -5843,17 +6044,17 @@ function _createClass(Constructor, protoProps, staticProps) { if (protoProps) _d
         var increment = 1 / gridRatio;
 
         for (var y = mapY; y < mapY + tileRows; y += increment) {
-          for (var _x9 = mapX; _x9 < mapX + tileCols; _x9 += increment) {
-            if (!$gameMap.isValid(_x9, y)) {
+          for (var _x11 = mapX; _x11 < mapX + tileCols; _x11 += increment) {
+            if (!$gameMap.isValid(_x11, y)) {
               continue;
             }
 
             if (currentLayer === 7 && multiLayerSelection.length) {
               for (var z = 0; z <= 3; z++) {
-                this.setMapTile(_x9, y, z, multiLayerSelection[z][index]);
+                this.setMapTile(_x11, y, z, multiLayerSelection[z][index]);
               }
             } else {
-              this.setMapTile(_x9, y, currentLayer, selectedTileList[index]);
+              this.setMapTile(_x11, y, currentLayer, selectedTileList[index]);
             }
 
             index++;
@@ -6160,6 +6361,40 @@ function _createClass(Constructor, protoProps, staticProps) { if (protoProps) _d
 
         if (SceneManager._scene instanceof Scene_Map) {
           SceneManager._scene._mapEditorGrid.requestRefresh();
+        }
+      }
+    }, {
+      key: "jumpToTile",
+      value: function jumpToTile(tileId) {
+        return SceneManager._scene._mapEditorWindow && SceneManager._scene._mapEditorWindow.jumpToTile(tileId);
+      }
+    }, {
+      key: "jumpToLastTile",
+      value: function jumpToLastTile() {
+        if (!SceneManager._scene._mapEditorWindow) {
+          return;
+        }
+
+        SceneManager._scene._mapEditorWindow.setTopRow(SceneManager._scene._mapEditorWindow.maxTopRow());
+      }
+    }, {
+      key: "jumpToOneTileOf",
+      value: function jumpToOneTileOf(tileList) {
+        var _iterator15 = _createForOfIteratorHelper(tileList),
+            _step15;
+
+        try {
+          for (_iterator15.s(); !(_step15 = _iterator15.n()).done;) {
+            var tileId = _step15.value;
+
+            if (this.jumpToTile(tileId)) {
+              return;
+            }
+          }
+        } catch (err) {
+          _iterator15.e(err);
+        } finally {
+          _iterator15.f();
         }
       }
     }, {
@@ -7454,8 +7689,8 @@ function _createClass(Constructor, protoProps, staticProps) { if (protoProps) _d
         var rightPos = Math.min(Graphics.width, mapEndX);
         var bottomPos = Math.min(Graphics.height, mapEndY);
 
-        for (var _x10 = mapStartX; _x10 < rightPos; _x10 += drawWidth) {
-          if (_x10 + drawWidth < 0) {
+        for (var _x12 = mapStartX; _x12 < rightPos; _x12 += drawWidth) {
+          if (_x12 + drawWidth < 0) {
             continue;
           }
 
@@ -7464,7 +7699,7 @@ function _createClass(Constructor, protoProps, staticProps) { if (protoProps) _d
               continue;
             }
 
-            this.drawCell(_x10, y);
+            this.drawCell(_x12, y);
           }
         }
 
@@ -7479,12 +7714,12 @@ function _createClass(Constructor, protoProps, staticProps) { if (protoProps) _d
         var drawWidth = $gameMap.tileWidth();
         var drawHeight = $gameMap.tileHeight();
 
-        var _iterator15 = _createForOfIteratorHelper($gameMap._events),
-            _step15;
+        var _iterator16 = _createForOfIteratorHelper($gameMap._events),
+            _step16;
 
         try {
-          for (_iterator15.s(); !(_step15 = _iterator15.n()).done;) {
-            var event = _step15.value;
+          for (_iterator16.s(); !(_step16 = _iterator16.n()).done;) {
+            var event = _step16.value;
 
             if (!event) {
               continue;
@@ -7494,11 +7729,11 @@ function _createClass(Constructor, protoProps, staticProps) { if (protoProps) _d
               continue;
             }
 
-            var _x11 = event.x * $gameMap.tileWidth();
+            var _x13 = event.x * $gameMap.tileWidth();
 
             var y = event.y * $gameMap.tileHeight();
 
-            var drawX = _x11 - $gameMap._displayX * $gameMap.tileWidth();
+            var drawX = _x13 - $gameMap._displayX * $gameMap.tileWidth();
 
             var drawY = y - $gameMap._displayY * $gameMap.tileHeight();
 
@@ -7509,9 +7744,9 @@ function _createClass(Constructor, protoProps, staticProps) { if (protoProps) _d
             this.contents.fillRect(drawX, drawY, drawWidth, drawHeight, '#FF00FF66');
           }
         } catch (err) {
-          _iterator15.e(err);
+          _iterator16.e(err);
         } finally {
-          _iterator15.f();
+          _iterator16.f();
         }
       }
     }, {
@@ -7900,18 +8135,18 @@ function _createClass(Constructor, protoProps, staticProps) { if (protoProps) _d
           this.drawText(names[i], 40, i * 30, CycloneMapEditor.windowWidth / 2 - 40, 'left');
 
           if (names[i + 4]) {
-            var _x12 = CycloneMapEditor.windowWidth / 2;
+            var _x14 = CycloneMapEditor.windowWidth / 2;
 
             if (i !== 3) {
-              ctx.drawImage(CycloneMapEditor.layerVisibility[i + 4] ? visibleIcon : hiddenIcon, _x12 - 4, 30 * i - 4, 48, 48);
-              _x12 += 40;
+              ctx.drawImage(CycloneMapEditor.layerVisibility[i + 4] ? visibleIcon : hiddenIcon, _x14 - 4, 30 * i - 4, 48, 48);
+              _x14 += 40;
             } else {
-              _x12 += 10;
+              _x14 += 10;
             }
 
             this.contents.fontBold = CycloneMapEditor.currentLayer === i + 4;
             this.changeTextColor(CycloneMapEditor.currentLayer === i + 4 ? ColorManager.powerUpColor() : ColorManager.normalColor());
-            this.drawText(names[i + 4], _x12, i * 30, CycloneMapEditor.windowWidth / 2 - 40, 'left');
+            this.drawText(names[i + 4], _x14, i * 30, CycloneMapEditor.windowWidth / 2 - 40, 'left');
           }
         }
       }
@@ -8063,13 +8298,23 @@ function _createClass(Constructor, protoProps, staticProps) { if (protoProps) _d
         return 12;
       }
     }, {
+      key: "drawMainLine",
+      value: function drawMainLine() {
+        var line = this.makeLine();
+        this.drawText(line, 8, this.textY(), this.width - 8, 'left');
+      }
+    }, {
+      key: "drawRightLine",
+      value: function drawRightLine() {
+        this.drawText("TileId: ".concat(CycloneMapEditor.statusTileId), 0, this.textY(), this.width - 8, 'right');
+      }
+    }, {
       key: "drawContents",
       value: function drawContents() {
         this.contents.clear();
         this.contents.fontSize = 16;
-        var line = this.makeLine();
-        this.drawText(line, 8, this.textY(), this.width - 8, 'left');
-        this.drawText("TileId: ".concat(CycloneMapEditor.statusTileId), 0, this.textY(), this.width - 8, 'right');
+        this.drawMainLine();
+        this.drawRightLine();
       }
     }]);
 
@@ -8239,6 +8484,31 @@ function _createClass(Constructor, protoProps, staticProps) { if (protoProps) _d
         this.addCommand(28, 'collision', true, 28);
         this.addCommand(4, 'collision', true, 4);
         this.addCommand(5, 'collision', true, 5);
+      }
+    }, {
+      key: "getTileRow",
+      value: function getTileRow(tileId) {
+        var index = this._list.findIndex(function (item) {
+          return (item === null || item === void 0 ? void 0 : item.name) === tileId;
+        });
+
+        if (index >= 0) {
+          return Math.floor(index / this.maxCols());
+        }
+
+        return -1;
+      }
+    }, {
+      key: "jumpToTile",
+      value: function jumpToTile(tileId) {
+        var row = this.getTileRow(tileId);
+
+        if (row < 0) {
+          return false;
+        }
+
+        this.setTopRow(row || 0);
+        return true;
       }
     }, {
       key: "ensureSelectionVisible",
@@ -8495,10 +8765,10 @@ function _createClass(Constructor, protoProps, staticProps) { if (protoProps) _d
           context.moveTo(baseX, baseY - outerRadius);
 
           for (var i = 0; i < 5; i++) {
-            var _x13 = baseX + Math.cos(rot) * outerRadius;
+            var _x15 = baseX + Math.cos(rot) * outerRadius;
 
             var y = baseY + Math.sin(rot) * outerRadius;
-            context.lineTo(_x13, y);
+            context.lineTo(_x15, y);
             rot += step;
             var inX = baseX + Math.cos(rot) * innerRadius;
             var inY = baseY + Math.sin(rot) * innerRadius;
@@ -8689,21 +8959,21 @@ function _createClass(Constructor, protoProps, staticProps) { if (protoProps) _d
           if (isSelected) {
             this._selectionIndex = index;
           } else {
-            var _iterator16 = _createForOfIteratorHelper(CycloneMapEditor.selectedTileList),
-                _step16;
+            var _iterator17 = _createForOfIteratorHelper(CycloneMapEditor.selectedTileList),
+                _step17;
 
             try {
-              for (_iterator16.s(); !(_step16 = _iterator16.n()).done;) {
-                var tileId = _step16.value;
+              for (_iterator17.s(); !(_step17 = _iterator17.n()).done;) {
+                var tileId = _step17.value;
 
                 if (Tilemap.isSameKindTile(tileId, item.name)) {
                   isSelected = true;
                 }
               }
             } catch (err) {
-              _iterator16.e(err);
+              _iterator17.e(err);
             } finally {
-              _iterator16.f();
+              _iterator17.f();
             }
           }
 
@@ -8846,8 +9116,8 @@ function _createClass(Constructor, protoProps, staticProps) { if (protoProps) _d
         var selectionIndex = 0;
 
         for (var y = topRow; y < topRow + CycloneMapEditor.tileRows; y++) {
-          for (var _x14 = leftCol; _x14 < leftCol + CycloneMapEditor.tileCols; _x14++) {
-            var newIndex = y * maxCols + _x14;
+          for (var _x16 = leftCol; _x16 < leftCol + CycloneMapEditor.tileCols; _x16++) {
+            var newIndex = y * maxCols + _x16;
             var newTileId = this.commandName(newIndex);
             CycloneMapEditor.selectedTileList[selectionIndex] = newTileId;
             selectionIndex++;
@@ -9267,6 +9537,8 @@ function _createClass(Constructor, protoProps, staticProps) { if (protoProps) _d
       }, {
         key: "updateMouse",
         value: function updateMouse() {
+          var _this$getSelectionTil;
+
           if (!this.canUpdateMouse()) {
             CycloneMapEditor.wasPressing = false;
             return;
@@ -9281,11 +9553,13 @@ function _createClass(Constructor, protoProps, staticProps) { if (protoProps) _d
               y = _TouchInput2.y;
           var mapX = CycloneMapEditor.canvasToMapX(x);
           var mapY = CycloneMapEditor.canvasToMapY(y);
-          var tile1 = CycloneMapEditor.getCurrentTileAtPosition(mapX, mapY, 0, true);
-          var tile2 = CycloneMapEditor.getCurrentTileAtPosition(mapX, mapY, 1, true);
-          var tile3 = CycloneMapEditor.getCurrentTileAtPosition(mapX, mapY, 2, true);
-          var tile4 = CycloneMapEditor.getCurrentTileAtPosition(mapX, mapY, 3, true);
-          var tileId = this.getSelectionTileAt(x, y);
+          var fx = Math.floor(mapX);
+          var fy = Math.floor(mapY);
+          var tile1 = CycloneMapEditor.getCurrentTileAtPosition(fx, fy, 0, true);
+          var tile2 = CycloneMapEditor.getCurrentTileAtPosition(fx, fy, 1, true);
+          var tile3 = CycloneMapEditor.getCurrentTileAtPosition(fx, fy, 2, true);
+          var tile4 = CycloneMapEditor.getCurrentTileAtPosition(fx, fy, 3, true);
+          var tileId = (_this$getSelectionTil = this.getSelectionTileAt(x, y)) !== null && _this$getSelectionTil !== void 0 ? _this$getSelectionTil : '';
           CycloneMapEditor.updateStatus({
             mapX: mapX,
             mapY: mapY,
@@ -9528,28 +9802,28 @@ function _createClass(Constructor, protoProps, staticProps) { if (protoProps) _d
           var column = 0;
           var row = 0;
 
-          var _iterator17 = _createForOfIteratorHelper(CycloneMapEditor.multiLayerSelection[z]),
-              _step17;
+          var _iterator18 = _createForOfIteratorHelper(CycloneMapEditor.multiLayerSelection[z]),
+              _step18;
 
           try {
-            for (_iterator17.s(); !(_step17 = _iterator17.n()).done;) {
-              var tileId = _step17.value;
+            for (_iterator18.s(); !(_step18 = _iterator18.n()).done;) {
+              var tileId = _step18.value;
 
               if (column >= CycloneMapEditor.tileCols) {
                 column = 0;
                 row++;
               }
 
-              var _x15 = column * CycloneMapEditor.tileWidth;
+              var _x17 = column * CycloneMapEditor.tileWidth;
 
               var y = row * CycloneMapEditor.tileHeight;
-              this.bitmap.drawTile(tileId, _x15, y);
+              this.bitmap.drawTile(tileId, _x17, y);
               column++;
             }
           } catch (err) {
-            _iterator17.e(err);
+            _iterator18.e(err);
           } finally {
-            _iterator17.f();
+            _iterator18.f();
           }
         }
       }
@@ -9564,38 +9838,38 @@ function _createClass(Constructor, protoProps, staticProps) { if (protoProps) _d
         var column = 0;
         var row = 0;
 
-        var _iterator18 = _createForOfIteratorHelper(CycloneMapEditor.selectedTileList),
-            _step18;
+        var _iterator19 = _createForOfIteratorHelper(CycloneMapEditor.selectedTileList),
+            _step19;
 
         try {
-          for (_iterator18.s(); !(_step18 = _iterator18.n()).done;) {
-            var tileId = _step18.value;
+          for (_iterator19.s(); !(_step19 = _iterator19.n()).done;) {
+            var tileId = _step19.value;
 
             if (column >= CycloneMapEditor.tileCols) {
               column = 0;
               row++;
             }
 
-            var _x16 = column * CycloneMapEditor.tileWidth;
+            var _x18 = column * CycloneMapEditor.tileWidth;
 
             var y = row * CycloneMapEditor.tileHeight;
 
             if (CycloneMapEditor.currentLayer === 5) {
-              this.bitmap.drawRegion(tileId, _x16, y);
+              this.bitmap.drawRegion(tileId, _x18, y);
             } else if (CycloneMapEditor.currentLayer === 4) {
-              this.bitmap.drawShadow(tileId, _x16, y);
+              this.bitmap.drawShadow(tileId, _x18, y);
             } else if (CycloneMapEditor.currentLayer === 8) {
-              this.drawCollision(tileId, _x16, y);
+              this.drawCollision(tileId, _x18, y);
             } else {
-              this.bitmap.drawTile(tileId, _x16, y);
+              this.bitmap.drawTile(tileId, _x18, y);
             }
 
             column++;
           }
         } catch (err) {
-          _iterator18.e(err);
+          _iterator19.e(err);
         } finally {
-          _iterator18.f();
+          _iterator19.f();
         }
       }
     }, {
@@ -9730,19 +10004,19 @@ function _createClass(Constructor, protoProps, staticProps) { if (protoProps) _d
           }
 
           if (hardRefresh) {
-            var _iterator19 = _createForOfIteratorHelper(this._blenderTileSprites),
-                _step19;
+            var _iterator20 = _createForOfIteratorHelper(this._blenderTileSprites),
+                _step20;
 
             try {
-              for (_iterator19.s(); !(_step19 = _iterator19.n()).done;) {
-                var sprite = _step19.value;
+              for (_iterator20.s(); !(_step20 = _iterator20.n()).done;) {
+                var sprite = _step20.value;
                 sprite.parent.removeChild(sprite);
                 sprite.destroy();
               }
             } catch (err) {
-              _iterator19.e(err);
+              _iterator20.e(err);
             } finally {
-              _iterator19.f();
+              _iterator20.f();
             }
 
             this._blenderTileSprites = [];
@@ -9752,20 +10026,20 @@ function _createClass(Constructor, protoProps, staticProps) { if (protoProps) _d
 
           var magicTiles = $gameMap.magicTiles();
 
-          var _iterator20 = _createForOfIteratorHelper(magicTiles),
-              _step20;
+          var _iterator21 = _createForOfIteratorHelper(magicTiles),
+              _step21;
 
           try {
-            for (_iterator20.s(); !(_step20 = _iterator20.n()).done;) {
-              var tile = _step20.value;
+            for (_iterator21.s(); !(_step21 = _iterator21.n()).done;) {
+              var tile = _step21.value;
               var found = false;
 
-              var _iterator21 = _createForOfIteratorHelper(this._blenderTileSprites),
-                  _step21;
+              var _iterator22 = _createForOfIteratorHelper(this._blenderTileSprites),
+                  _step22;
 
               try {
-                for (_iterator21.s(); !(_step21 = _iterator21.n()).done;) {
-                  var _sprite = _step21.value;
+                for (_iterator22.s(); !(_step22 = _iterator22.n()).done;) {
+                  var _sprite = _step22.value;
 
                   if (_sprite._mapX !== tile.x || _sprite._mapY !== tile.y) {
                     continue;
@@ -9780,9 +10054,9 @@ function _createClass(Constructor, protoProps, staticProps) { if (protoProps) _d
                   break;
                 }
               } catch (err) {
-                _iterator21.e(err);
+                _iterator22.e(err);
               } finally {
-                _iterator21.f();
+                _iterator22.f();
               }
 
               if (!found) {
@@ -9794,9 +10068,9 @@ function _createClass(Constructor, protoProps, staticProps) { if (protoProps) _d
               }
             }
           } catch (err) {
-            _iterator20.e(err);
+            _iterator21.e(err);
           } finally {
-            _iterator20.f();
+            _iterator21.f();
           }
 
           this._tilemap.refresh();
@@ -10071,6 +10345,10 @@ function _createClass(Constructor, protoProps, staticProps) { if (protoProps) _d
 
   WindowCycloneMapEditorStatus.prototype.standardPadding = function () {
     return 8;
+  };
+
+  WindowCycloneMapEditorStatus.prototype.drawRightLine = function () {
+    this.drawText("TileId: ".concat(CycloneMapEditor.statusTileId), 0, this.textY(), this.width - 16, 'right');
   };
 
   CycloneMapEditor.patchClass(Scene_Boot, function ($super) {
