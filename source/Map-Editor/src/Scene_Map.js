@@ -221,12 +221,14 @@ CycloneMapEditor.patchClass(Scene_Map, $super => class {
     const { x, y } = TouchInput;
     const mapX = CycloneMapEditor.canvasToMapX(x);
     const mapY = CycloneMapEditor.canvasToMapY(y);
+    const fx = Math.floor(mapX);
+    const fy = Math.floor(mapY);
 
-    const tile1 = CycloneMapEditor.getCurrentTileAtPosition(mapX, mapY, 0, true);
-    const tile2 = CycloneMapEditor.getCurrentTileAtPosition(mapX, mapY, 1, true);
-    const tile3 = CycloneMapEditor.getCurrentTileAtPosition(mapX, mapY, 2, true);
-    const tile4 = CycloneMapEditor.getCurrentTileAtPosition(mapX, mapY, 3, true);
-    const tileId = this.getSelectionTileAt(x, y);
+    const tile1 = CycloneMapEditor.getCurrentTileAtPosition(fx, fy, 0, true);
+    const tile2 = CycloneMapEditor.getCurrentTileAtPosition(fx, fy, 1, true);
+    const tile3 = CycloneMapEditor.getCurrentTileAtPosition(fx, fy, 2, true);
+    const tile4 = CycloneMapEditor.getCurrentTileAtPosition(fx, fy, 3, true);
+    const tileId = this.getSelectionTileAt(x, y) ?? '';
 
     CycloneMapEditor.updateStatus({
       mapX,

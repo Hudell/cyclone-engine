@@ -146,6 +146,25 @@ class WindowCycloneMapEditor extends Window_Command {
     this.addCommand(5, 'collision', true, 5);
   }
 
+  getTileRow(tileId) {
+    const index = this._list.findIndex(item => item?.name === tileId);
+    if (index >= 0) {
+      return Math.floor(index / this.maxCols());
+    }
+
+    return -1;
+  }
+
+  jumpToTile(tileId) {
+    const row = this.getTileRow(tileId);
+    if (row < 0) {
+      return false;
+    }
+
+    this.setTopRow(row || 0);
+    return true;
+  }
+
   ensureSelectionVisible() {
     if (this._selectionIndex < 0 || CycloneMapEditor.currentTileId === undefined) {
       return;

@@ -64,14 +64,21 @@ class WindowCycloneMapEditorStatus extends Window_Base {
     return 12;
   }
 
+  drawMainLine() {
+    const line = this.makeLine();
+    this.drawText(line, 8, this.textY(), this.width - 8, 'left');
+  }
+
+  drawRightLine() {
+    this.drawText(`TileId: ${ CycloneMapEditor.statusTileId }`, 0, this.textY(), this.width - 8, 'right');
+  }
+
   drawContents() {
     this.contents.clear();
     this.contents.fontSize = 16;
 
-    const line = this.makeLine();
-
-    this.drawText(line, 8, this.textY(), this.width - 8, 'left');
-    this.drawText(`TileId: ${ CycloneMapEditor.statusTileId }`, 0, this.textY(), this.width - 8, 'right');
+    this.drawMainLine();
+    this.drawRightLine();
   }
 }
 

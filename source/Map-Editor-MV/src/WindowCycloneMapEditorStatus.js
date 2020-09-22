@@ -13,3 +13,7 @@ WindowCycloneMapEditorStatus.prototype.textY = function() {
 WindowCycloneMapEditorStatus.prototype.standardPadding = function() {
   return 8;
 };
+
+WindowCycloneMapEditorStatus.prototype.drawRightLine = function() {
+  this.drawText(`TileId: ${ CycloneMapEditor.statusTileId }`, 0, this.textY(), this.width - 16, 'right');
+};

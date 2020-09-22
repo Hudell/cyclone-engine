@@ -869,8 +869,18 @@ class CycloneMapEditor extends CyclonePlugin {
       })
     });
     layerMenu.append(this.tagsButton);
+
+    menu.append(new nw.MenuItem({
+      label: 'Layer',
+      submenu: layerMenu,
+    }));
+  }
+
+  static addBlendMenu(menu) {
+    const blendMenu = new nw.Menu();
+
     this.blendButton = new nw.MenuItem( {
-      label: 'Blend',
+      label: 'Blend Layer',
       type: 'checkbox',
       checked: currentLayer === 10,
       key: 'B',
@@ -878,11 +888,26 @@ class CycloneMapEditor extends CyclonePlugin {
         CycloneMapEditor.changeCurrentLayer(10);
       })
     });
-    layerMenu.append(this.blendButton);
+    blendMenu.append(this.blendButton);
+
+    blendMenu.append(new nw.MenuItem( {type: 'separator'}));
+    blendMenu.append(new nw.MenuItem( {
+      label: 'Remove blend effect',
+      click: this.makeMenuEvent(() => {
+        CycloneMapEditor.removeAllBlendsButton();
+      })
+    }));
+    blendMenu.append(new nw.MenuItem( {
+      label: 'Optimize blend effect',
+      click: this.makeMenuEvent(() => {
+        CycloneMapEditor.optimizeBlendsButton();
+      })
+    }));
+
 
     menu.append(new nw.MenuItem({
-      label: 'Layer',
-      submenu: layerMenu,
+      label: 'Blend',
+      submenu: blendMenu,
     }));
   }
 
@@ -927,6 +952,75 @@ class CycloneMapEditor extends CyclonePlugin {
     menu.append(new nw.MenuItem({
       label: 'Tilesets',
       submenu: tilesetMenu,
+    }));
+  }
+
+  static addJumpMenu(menu) {
+    const a1 = Tilemap.TILE_ID_A1;
+    const a2 = Tilemap.TILE_ID_A2;
+    const a3 = Tilemap.TILE_ID_A3;
+    const a4 = Tilemap.TILE_ID_A4;
+    const b = Tilemap.TILE_ID_B;
+    const c = Tilemap.TILE_ID_C;
+    const d = Tilemap.TILE_ID_D;
+    const e = Tilemap.TILE_ID_E;
+    const f = Tilemap.TILE_ID_E + 256;
+    const g = Tilemap.TILE_ID_E + 512;
+    const a5 = Tilemap.TILE_ID_A5;
+
+    const jumpToTabMenu = new nw.Menu();
+    jumpToTabMenu.append(new nw.MenuItem({
+      label: 'AutoTiles',
+      click: this.makeMenuEvent(() => {
+        CycloneMapEditor.jumpToOneTileOf([a1, a2, a3, a4]);
+      }),
+    }));
+    jumpToTabMenu.append(new nw.MenuItem({
+      label: 'B Tiles',
+      click: this.makeMenuEvent(() => {
+        CycloneMapEditor.jumpToOneTileOf([b, c, d, e, f, g, a5]);
+      }),
+    }));
+    jumpToTabMenu.append(new nw.MenuItem({
+      label: 'C Tiles',
+      click: this.makeMenuEvent(() => {
+        CycloneMapEditor.jumpToOneTileOf([c, d, e, f, g, a5]);
+      }),
+    }));
+    jumpToTabMenu.append(new nw.MenuItem({
+      label: 'D Tiles',
+      click: this.makeMenuEvent(() => {
+        CycloneMapEditor.jumpToOneTileOf([d, e, f, g, a5]);
+      }),
+    }));
+    jumpToTabMenu.append(new nw.MenuItem({
+      label: 'E Tiles',
+      click: this.makeMenuEvent(() => {
+        CycloneMapEditor.jumpToOneTileOf([e, f, g, a5]);
+      }),
+    }));
+    jumpToTabMenu.append(new nw.MenuItem({
+      label: 'Extra B Tiles',
+      click: this.makeMenuEvent(() => {
+        CycloneMapEditor.jumpToOneTileOf([f, g, a5]);
+      }),
+    }));
+    jumpToTabMenu.append(new nw.MenuItem({
+      label: 'Extra C Tiles',
+      click: this.makeMenuEvent(() => {
+        CycloneMapEditor.jumpToOneTileOf([g, a5]);
+      }),
+    }));
+    jumpToTabMenu.append(new nw.MenuItem({
+      label: 'A5 Tiles',
+      click: this.makeMenuEvent(() => {
+        CycloneMapEditor.jumpToTile(a5);
+      }),
+    }));
+
+    menu.append(new nw.MenuItem({
+      label: 'Jump To',
+      submenu: jumpToTabMenu,
     }));
   }
 
@@ -1078,6 +1172,28 @@ class CycloneMapEditor extends CyclonePlugin {
       }),
     }));
 
+    helpMenu.append(new nw.MenuItem( {
+      label: 'Extra Tilesets Add-on',
+      click: this.makeMenuEvent(() => {
+        if (!globalThis.require) {
+          return;
+        }
+
+        require('nw.gui').Shell.openExternal('https://hudell.itch.io/cyclone-extra-tilesets');
+      }),
+    }));
+
+    helpMenu.append(new nw.MenuItem( {
+      label: 'Magic (Tile Blend) Add-on',
+      click: this.makeMenuEvent(() => {
+        if (!globalThis.require) {
+          return;
+        }
+
+        require('nw.gui').Shell.openExternal('https://hudell.itch.io/cyclone-magic');
+      }),
+    }));
+
     menu.append(new nw.MenuItem({
       label: 'Help',
       submenu: helpMenu,
@@ -1099,7 +1215,9 @@ class CycloneMapEditor extends CyclonePlugin {
     this.addMapMenu(menu);
     this.addModeMenu(menu);
     this.addLayerMenu(menu);
+    this.addBlendMenu(menu);
     this.addTilesetMenu(menu);
+    this.addJumpMenu(menu);
     this.addExportMenu(menu);
     this.addHelpMenu(menu);
 
@@ -1128,13 +1246,18 @@ class CycloneMapEditor extends CyclonePlugin {
   static toggleTileset(id) {
     if ($gameMap._extraTilesetId === id) {
       $gameMap._extraTilesetId = 0;
-      return;
+    } else {
+      $gameMap._extraTilesetId = id;
     }
-    $gameMap._extraTilesetId = id;
+
     $gameMap.buildTilesetFlags && $gameMap.buildTilesetFlags();
 
     this.refreshTilesetMenu();
     this.refreshMapEditor();
+
+    if (!this.jumpToTile(Tilemap.TILE_ID_E + 256) && !this.jumpToTile(Tilemap.TILE_ID_E + 512)) {
+      this.jumpToLastTile();
+    }
   }
 
   static applyExtraData(data) {
@@ -1696,6 +1819,18 @@ class CycloneMapEditor extends CyclonePlugin {
 
     if (undoHistory.length) {
       this.redoLastUndoneChange();
+    }
+  }
+
+  static removeAllBlendsButton() {
+    if (confirm('Are you sure you want to remove all blend effects on this map?')) {
+      this.removeAllBlends();
+    }
+  }
+
+  static optimizeBlendsButton() {
+    if (confirm('This option will remove the blend from tiles that are completely hidden by the effect and change the tile itself to transparent. Optimize now?')) {
+      this.optimizeBlends();
     }
   }
 
@@ -2672,8 +2807,8 @@ class CycloneMapEditor extends CyclonePlugin {
     return false;
   }
 
-  static _eraseSingleLayerTile(x, y, z, updateNeighbors = true, previewOnly = false) {
-    if (!this.canEraseLayer(z)) {
+  static _eraseSingleLayerTile(x, y, z, updateNeighbors = true, previewOnly = false, forceErasure = false) {
+    if (!forceErasure && !this.canEraseLayer(z)) {
       return;
     }
 
@@ -2690,9 +2825,9 @@ class CycloneMapEditor extends CyclonePlugin {
     }
   }
 
-  static _eraseSingleMapTile(x, y, z, updateNeighbors = true, previewOnly = false) {
+  static _eraseSingleMapTile(x, y, z, updateNeighbors = true, previewOnly = false, forceErasure = false) {
     if (z > 3 && z !== Layers.auto) {
-      this._eraseSingleLayerTile(x, y, z, updateNeighbors, previewOnly);
+      this._eraseSingleLayerTile(x, y, z, updateNeighbors, previewOnly, forceErasure);
       return;
     }
 
@@ -2701,7 +2836,7 @@ class CycloneMapEditor extends CyclonePlugin {
         continue;
       }
 
-      this._eraseSingleLayerTile(x, y, newZ, updateNeighbors, previewOnly);
+      this._eraseSingleLayerTile(x, y, newZ, updateNeighbors, previewOnly, forceErasure);
       this.maybeUpdateTileNeighbors(x, y, z, updateNeighbors, previewOnly);
     }
   }
@@ -2976,6 +3111,61 @@ class CycloneMapEditor extends CyclonePlugin {
     return this.getCircleData();
   }
 
+  static optimizeBlends() {
+    this.resetCurrentChange();
+
+    for (let x = 0; x < $gameMap.width(); x++) {
+      for (let y = 0; y < $gameMap.height(); y++) {
+        this.optimizeTileBlend(x, y);
+      }
+    }
+
+    this.logChange(true);
+  }
+
+  static removeAllBlends() {
+    this.resetCurrentChange();
+    for (let x = 0; x < $gameMap.width(); x++) {
+      for (let y = 0; y < $gameMap.height(); y++) {
+        this.removeTileBlend(x, y, false);
+      }
+    }
+
+    this.logChange(true);
+  }
+
+  static optimizeTileBlend(x, y) {
+    const fx = Math.floor(x);
+    const fy = Math.floor(y);
+
+    if (fx < 0 || fx >= $gameMap.width()) {
+      return;
+    }
+    if (fy < 0 || fy >= $gameMap.height()) {
+      return;
+    }
+
+    const tileIndex = this.tileIndex(fx, fy, 0);
+    if (!tileBlendingTable[tileIndex]) {
+      return;
+    }
+
+    const hasZero = tileBlendingTable[tileIndex].includes(0);
+    const hasOne = tileBlendingTable[tileIndex].includes(1);
+
+    if (hasZero === hasOne) {
+      return;
+    }
+
+    // If it's all blended, then remove whatever tile is on layer 2
+    if (hasOne) {
+      this._applySingleMapTile(x, y, 1, 0, false, false, true);
+    }
+
+    currentChange.blend[tileIndex] = tileBlendingTable[tileIndex];
+    delete tileBlendingTable[tileIndex];
+  }
+
   static removeTileBlend(x, y, previewOnly = false) {
     if (previewOnly && !window.CycloneMagic) {
       return;
@@ -3071,13 +3261,13 @@ class CycloneMapEditor extends CyclonePlugin {
     this._changePositionBlend(x, y, 1);
   }
 
-  static _applySingleMapTile(x, y, z, tileId, updateNeighbors = true, previewOnly = false) {
+  static _applySingleMapTile(x, y, z, tileId, updateNeighbors = true, previewOnly = false, forceErasure = false) {
     if (z === Layers.collisions) {
       return this._applySingleCollision(x, y, tileId, previewOnly);
     }
 
     if (!tileId) {
-      this._eraseSingleMapTile(x, y, z, updateNeighbors, previewOnly);
+      this._eraseSingleMapTile(x, y, z, updateNeighbors, previewOnly, forceErasure);
       return;
     }
 
@@ -3864,6 +4054,26 @@ class CycloneMapEditor extends CyclonePlugin {
 
     if (SceneManager._scene instanceof Scene_Map) {
       SceneManager._scene._mapEditorGrid.requestRefresh();
+    }
+  }
+
+  static jumpToTile(tileId) {
+    return SceneManager._scene._mapEditorWindow && SceneManager._scene._mapEditorWindow.jumpToTile(tileId);
+  }
+
+  static jumpToLastTile() {
+    if (!SceneManager._scene._mapEditorWindow) {
+      return;
+    }
+
+    SceneManager._scene._mapEditorWindow.setTopRow(SceneManager._scene._mapEditorWindow.maxTopRow());
+  }
+
+  static jumpToOneTileOf(tileList) {
+    for (const tileId of tileList) {
+      if (this.jumpToTile(tileId)) {
+        return;
+      }
     }
   }
 }
