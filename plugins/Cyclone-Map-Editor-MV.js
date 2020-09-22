@@ -1,5 +1,11 @@
 function _typeof(obj) { "@babel/helpers - typeof"; if (typeof Symbol === "function" && typeof Symbol.iterator === "symbol") { _typeof = function _typeof(obj) { return typeof obj; }; } else { _typeof = function _typeof(obj) { return obj && typeof Symbol === "function" && obj.constructor === Symbol && obj !== Symbol.prototype ? "symbol" : typeof obj; }; } return _typeof(obj); }
 
+function ownKeys(object, enumerableOnly) { var keys = Object.keys(object); if (Object.getOwnPropertySymbols) { var symbols = Object.getOwnPropertySymbols(object); if (enumerableOnly) symbols = symbols.filter(function (sym) { return Object.getOwnPropertyDescriptor(object, sym).enumerable; }); keys.push.apply(keys, symbols); } return keys; }
+
+function _objectSpread(target) { for (var i = 1; i < arguments.length; i++) { var source = arguments[i] != null ? arguments[i] : {}; if (i % 2) { ownKeys(Object(source), true).forEach(function (key) { _defineProperty(target, key, source[key]); }); } else if (Object.getOwnPropertyDescriptors) { Object.defineProperties(target, Object.getOwnPropertyDescriptors(source)); } else { ownKeys(Object(source)).forEach(function (key) { Object.defineProperty(target, key, Object.getOwnPropertyDescriptor(source, key)); }); } } return target; }
+
+function _defineProperty(obj, key, value) { if (key in obj) { Object.defineProperty(obj, key, { value: value, enumerable: true, configurable: true, writable: true }); } else { obj[key] = value; } return obj; }
+
 function _toConsumableArray(arr) { return _arrayWithoutHoles(arr) || _iterableToArray(arr) || _unsupportedIterableToArray(arr) || _nonIterableSpread(); }
 
 function _nonIterableSpread() { throw new TypeError("Invalid attempt to spread non-iterable instance.\nIn order to be iterable, non-array objects must have a [Symbol.iterator]() method."); }
@@ -1300,7 +1306,8 @@ function _createClass(Constructor, protoProps, staticProps) { if (protoProps) _d
     events: 6,
     auto: 7,
     collisions: 8,
-    tags: 9
+    tags: 9,
+    blend: 10
   };
   var Tools = {
     eraser: 'eraser',
@@ -1857,6 +1864,21 @@ function _createClass(Constructor, protoProps, staticProps) { if (protoProps) _d
     return debounced;
   }
 
+  function debounce(fn, delay) {
+    var clearTimer;
+    return function () {
+      for (var _len3 = arguments.length, args = new Array(_len3), _key3 = 0; _key3 < _len3; _key3++) {
+        args[_key3] = arguments[_key3];
+      }
+
+      var context = this;
+      clearTimeout(clearTimer);
+      clearTimer = setTimeout(function () {
+        return fn.call.apply(fn, [context].concat(args));
+      }, delay);
+    };
+  }
+
   var DirectionHelper = /*#__PURE__*/function () {
     function DirectionHelper() {
       _classCallCheck(this, DirectionHelper);
@@ -1963,11 +1985,61 @@ function _createClass(Constructor, protoProps, staticProps) { if (protoProps) _d
     return DirectionHelper;
   }();
 
-  var layerVisibility = [true, true, true, true, true, false, true, false, false, false];
+  function _logImage(canvas, text) {
+    var url = canvas.toDataURL();
+    var scale = 1;
+    var img = new Image();
+
+    function getBox(width, height) {
+      return {
+        string: '+',
+        style: "font-size: 1px; padding: ".concat(Math.floor(height / 2), "px ").concat(Math.floor(width / 2), "px; line-height: ").concat(height, "px;")
+      };
+    }
+
+    img.onload = function () {
+      var dim = getBox(this.width * scale, this.height * scale);
+
+      if (text) {
+        console.log(text);
+      }
+
+      console.log("%c".concat(dim.string), "".concat(dim.style, "background: url('").concat(url, "'); background-size: ").concat(this.width * scale, "px ").concat(this.height * scale, "px; color: transparent;"));
+    };
+
+    img.src = url;
+  }
+
+  function getTilesetIndex(tileId) {
+    if (Tilemap.isTileA1(tileId)) {
+      return 0;
+    }
+
+    if (Tilemap.isTileA2(tileId)) {
+      return 1;
+    }
+
+    if (Tilemap.isTileA3(tileId)) {
+      return 2;
+    }
+
+    if (Tilemap.isTileA4(tileId)) {
+      return 3;
+    }
+
+    if (Tilemap.isTileA5(tileId)) {
+      return 4;
+    }
+
+    return 5 + Math.floor(tileId / 256);
+  }
+
+  var layerVisibility = [true, true, true, true, true, false, true, false, false, false, false];
   var editorActive = true;
   var windowWidth = 216;
   var mapCaches = {};
   var customCollisionTable = {};
+  var tileBlendingTable = {};
   var currentLayer = 7;
   var currentTab = 'A';
   var currentTileId = undefined;
@@ -2012,6 +2084,8 @@ function _createClass(Constructor, protoProps, staticProps) { if (protoProps) _d
   var statusDamage = false;
   var statusLadder = false;
   var currentZoom = 1;
+  var circleData = false;
+  var smallCircleData = false;
   var _ = '';
   var o = true;
   var x = false;
@@ -2080,12 +2154,29 @@ function _createClass(Constructor, protoProps, staticProps) { if (protoProps) _d
       setTimeout(function () {
         refreshCollision();
       }, 1);
+      return;
     }
 
     if (window.CycloneMovement) {
       window.CycloneMovement.setupCollision();
     }
   }, 200);
+  var refreshMagic = throttle(function () {
+    if (TouchInput.isPressed()) {
+      setTimeout(function () {
+        refreshMagic();
+      }, 1);
+      return;
+    }
+
+    if (window.CycloneMagic) {
+      window.CycloneMagic.loadMagic();
+      forceBlenderRefresh(true);
+    }
+  });
+  var forceBlenderRefresh = throttle(function () {
+    CycloneMapEditor$1.forceBlenderRefresh.apply(CycloneMapEditor$1, arguments);
+  }, 50);
   var saveExtraData = throttle(function () {
     var refreshCollisionToo = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : false;
 
@@ -2100,8 +2191,12 @@ function _createClass(Constructor, protoProps, staticProps) { if (protoProps) _d
 
     if (refreshCollisionToo) {
       refreshCollision();
+      refreshMagic();
     }
   }, 200);
+  var fullRefresh = debounce(function () {
+    saveExtraData(true);
+  }, 500);
 
   var CycloneMapEditor$1 = /*#__PURE__*/function (_CyclonePlugin) {
     _inherits(CycloneMapEditor$1, _CyclonePlugin);
@@ -2226,19 +2321,8 @@ function _createClass(Constructor, protoProps, staticProps) { if (protoProps) _d
         };
       }
     }, {
-      key: "addMenuBar",
-      value: function addMenuBar() {
-        if (!Utils.isNwjs()) {
-          return;
-        }
-
-        if (this.menu) {
-          return this.refreshMenuVisibility();
-        }
-
-        var menu = new nw.Menu({
-          type: 'menubar'
-        });
+      key: "addFileMenu",
+      value: function addFileMenu(menu) {
         var fileMenu = new nw.Menu();
         fileMenu.append(new nw.MenuItem({
           label: 'Save Current Map',
@@ -2269,6 +2353,10 @@ function _createClass(Constructor, protoProps, staticProps) { if (protoProps) _d
           label: 'File',
           submenu: fileMenu
         }));
+      }
+    }, {
+      key: "addEditMenu",
+      value: function addEditMenu(menu) {
         var editMenu = new nw.Menu();
         editMenu.append(new nw.MenuItem({
           label: 'Undo',
@@ -2345,6 +2433,10 @@ function _createClass(Constructor, protoProps, staticProps) { if (protoProps) _d
           label: 'Edit',
           submenu: editMenu
         }));
+      }
+    }, {
+      key: "addMapMenu",
+      value: function addMapMenu(menu) {
         var mapMenu = new nw.Menu();
         mapMenu.append(new nw.MenuItem({
           label: 'Scroll Up',
@@ -2378,6 +2470,10 @@ function _createClass(Constructor, protoProps, staticProps) { if (protoProps) _d
           label: 'Map',
           submenu: mapMenu
         }));
+      }
+    }, {
+      key: "addModeMenu",
+      value: function addModeMenu(menu) {
         var modeMenu = new nw.Menu();
         this.pencilMenu = new nw.MenuItem({
           label: 'Pencil',
@@ -2511,6 +2607,10 @@ function _createClass(Constructor, protoProps, staticProps) { if (protoProps) _d
           label: 'Mode',
           submenu: modeMenu
         }));
+      }
+    }, {
+      key: "addLayerMenu",
+      value: function addLayerMenu(menu) {
         var layerMenu = new nw.Menu();
         this.autoLayerButton = new nw.MenuItem({
           label: 'Automatic',
@@ -2618,10 +2718,119 @@ function _createClass(Constructor, protoProps, staticProps) { if (protoProps) _d
           })
         });
         layerMenu.append(this.tagsButton);
+        this.blendButton = new nw.MenuItem({
+          label: 'Blend',
+          type: 'checkbox',
+          checked: currentLayer === 10,
+          key: 'B',
+          click: this.makeMenuEvent(function () {
+            CycloneMapEditor$1.changeCurrentLayer(10);
+          })
+        });
+        layerMenu.append(this.blendButton);
         menu.append(new nw.MenuItem({
           label: 'Layer',
           submenu: layerMenu
         }));
+      }
+    }, {
+      key: "addTilesetMenu",
+      value: function addTilesetMenu(menu) {
+        var _this10 = this;
+
+        var tilesetMenu = new nw.Menu();
+        this._mainTilesetMenu = new nw.MenuItem({
+          label: 'Main Tileset',
+          enabled: false
+        });
+        tilesetMenu.append(this._mainTilesetMenu);
+        this._extraTilesetMenu = new nw.Menu();
+
+        var _iterator8 = _createForOfIteratorHelper($dataTilesets),
+            _step8;
+
+        try {
+          var _loop = function _loop() {
+            var tileset = _step8.value;
+
+            if (!tileset) {
+              return "continue";
+            }
+
+            var tilesetNames = tileset.tilesetNames;
+
+            if (!tilesetNames[5] && !tilesetNames[6]) {
+              return "continue";
+            }
+
+            var menuItem = new nw.MenuItem({
+              label: "".concat(tileset.id.padZero(4), " ").concat(tileset.name),
+              enabled: true,
+              type: 'checkbox',
+              click: _this10.makeMenuEvent(function () {
+                _this10.toggleTileset(tileset.id);
+              })
+            });
+
+            _this10._extraTilesetMenu.append(menuItem);
+          };
+
+          for (_iterator8.s(); !(_step8 = _iterator8.n()).done;) {
+            var _ret = _loop();
+
+            if (_ret === "continue") continue;
+          }
+        } catch (err) {
+          _iterator8.e(err);
+        } finally {
+          _iterator8.f();
+        }
+
+        tilesetMenu.append(new nw.MenuItem({
+          label: 'Extra Tileset',
+          submenu: this._extraTilesetMenu
+        }));
+        menu.append(new nw.MenuItem({
+          label: 'Tilesets',
+          submenu: tilesetMenu
+        }));
+      }
+    }, {
+      key: "refreshTilesetMenu",
+      value: function refreshTilesetMenu() {
+        if (!this._extraTilesetMenu) {
+          return;
+        }
+
+        var tileset = $gameMap.tileset();
+        this._mainTilesetMenu.label = "".concat(tileset.id.padZero(4), " ").concat(tileset.name);
+
+        var _iterator9 = _createForOfIteratorHelper(this._extraTilesetMenu.items),
+            _step9;
+
+        try {
+          for (_iterator9.s(); !(_step9 = _iterator9.n()).done;) {
+            var item = _step9.value;
+            var id = parseInt(item.label.substring(0, 4), 10);
+
+            if (id === $gameMap._tilesetId) {
+              item.checked = false;
+              item.enabled = false;
+              continue;
+            }
+
+            item.enabled = true;
+            item.checked = $gameMap._extraTilesetId === id;
+          }
+        } catch (err) {
+          _iterator9.e(err);
+        } finally {
+          _iterator9.f();
+        }
+      }
+    }, {
+      key: "addExportMenu",
+      value: function addExportMenu(menu) {
         var exportMenu = new nw.Menu();
         var exportLayersMenu = new nw.Menu();
         exportLayersMenu.append(new nw.MenuItem({
@@ -2731,6 +2940,10 @@ function _createClass(Constructor, protoProps, staticProps) { if (protoProps) _d
           label: 'Export',
           submenu: exportMenu
         }));
+      }
+    }, {
+      key: "addHelpMenu",
+      value: function addHelpMenu(menu) {
         var helpMenu = new nw.Menu();
         helpMenu.append(new nw.MenuItem({
           label: 'Plugin Page',
@@ -2747,7 +2960,31 @@ function _createClass(Constructor, protoProps, staticProps) { if (protoProps) _d
           label: 'Help',
           submenu: helpMenu
         }));
+      }
+    }, {
+      key: "addMenuBar",
+      value: function addMenuBar() {
+        if (!Utils.isNwjs()) {
+          return;
+        }
+
+        if (this.menu) {
+          return this.refreshMenuVisibility();
+        }
+
+        var menu = new nw.Menu({
+          type: 'menubar'
+        });
+        this.addFileMenu(menu);
+        this.addEditMenu(menu);
+        this.addMapMenu(menu);
+        this.addModeMenu(menu);
+        this.addLayerMenu(menu);
+        this.addTilesetMenu(menu);
+        this.addExportMenu(menu);
+        this.addHelpMenu(menu);
         this.menu = menu;
+        this.refreshTilesetMenu();
         this.refreshMenuVisibility();
       }
     }, {
@@ -2763,12 +3000,28 @@ function _createClass(Constructor, protoProps, staticProps) { if (protoProps) _d
         rectangleHeight = 0;
         rectangleBackWidth = 0;
         rectangleBackHeight = 0;
+        customCollisionTable = {};
+        tileBlendingTable = {};
         this.clearSelection();
+      }
+    }, {
+      key: "toggleTileset",
+      value: function toggleTileset(id) {
+        if ($gameMap._extraTilesetId === id) {
+          $gameMap._extraTilesetId = 0;
+          return;
+        }
+
+        $gameMap._extraTilesetId = id;
+        this.refreshTilesetMenu();
+        this.refreshMapEditor();
       }
     }, {
       key: "applyExtraData",
       value: function applyExtraData(data) {
         customCollisionTable = {};
+        tileBlendingTable = {};
+        $gameMap._extraTilesetId = 0;
         var radix = (data === null || data === void 0 ? void 0 : data.radix) || 10;
 
         if (data === null || data === void 0 ? void 0 : data.collision) {
@@ -2780,11 +3033,38 @@ function _createClass(Constructor, protoProps, staticProps) { if (protoProps) _d
             }
           }
         }
+
+        if (data === null || data === void 0 ? void 0 : data.magic) {
+          for (var tileId in data.magic) {
+            if (!data.magic[tileId]) {
+              continue;
+            }
+
+            var line = data.magic[tileId];
+            var buffer = new ArrayBuffer(line.length);
+            var list = new Uint8Array(buffer);
+
+            for (var _i = line.indexOf('1'); _i < line.length; _i++) {
+              if (line[_i] !== '0') {
+                list[_i] = Number(line[_i]);
+              }
+            }
+
+            tileBlendingTable[tileId] = list;
+          }
+        }
+
+        if (data === null || data === void 0 ? void 0 : data.extraTilesetId) {
+          $gameMap._extraTilesetId = data.extraTilesetId;
+        }
+
+        this.refreshTilesetMenu();
+        this.refreshMapEditor();
       }
     }, {
       key: "dataVersion",
       value: function dataVersion() {
-        return '01';
+        return '02';
       }
     }, {
       key: "compress",
@@ -2832,12 +3112,12 @@ function _createClass(Constructor, protoProps, staticProps) { if (protoProps) _d
       key: "loadExtraData",
       value: function loadExtraData() {
         // Check if there's any event called CycloneMapEditor
-        var _iterator8 = _createForOfIteratorHelper($dataMap.events),
-            _step8;
+        var _iterator10 = _createForOfIteratorHelper($dataMap.events),
+            _step10;
 
         try {
-          for (_iterator8.s(); !(_step8 = _iterator8.n()).done;) {
-            var event = _step8.value;
+          for (_iterator10.s(); !(_step10 = _iterator10.n()).done;) {
+            var event = _step10.value;
 
             if (!event) {
               continue;
@@ -2851,9 +3131,9 @@ function _createClass(Constructor, protoProps, staticProps) { if (protoProps) _d
             return;
           }
         } catch (err) {
-          _iterator8.e(err);
+          _iterator10.e(err);
         } finally {
-          _iterator8.f();
+          _iterator10.f();
         }
       }
     }, {
@@ -2874,9 +3154,27 @@ function _createClass(Constructor, protoProps, staticProps) { if (protoProps) _d
           }
         }
 
+        var magic = {};
+
+        for (var tileId in tileBlendingTable) {
+          if (!tileBlendingTable[tileId]) {
+            continue;
+          }
+
+          var line = tileBlendingTable[tileId].join('');
+
+          if (!line.includes('1')) {
+            continue;
+          }
+
+          magic[tileId] = line;
+        }
+
         return {
           radix: radix,
-          collision: collision.join('')
+          collision: collision.join(''),
+          magic: magic,
+          extraTilesetId: $gameMap._extraTilesetId
         };
       }
     }, {
@@ -2889,12 +3187,12 @@ function _createClass(Constructor, protoProps, staticProps) { if (protoProps) _d
       value: function saveExtraData() {
         var data = this.getExtraDataJson(); // Check if there's any event called CycloneMapEditor
 
-        var _iterator9 = _createForOfIteratorHelper($dataMap.events),
-            _step9;
+        var _iterator11 = _createForOfIteratorHelper($dataMap.events),
+            _step11;
 
         try {
-          for (_iterator9.s(); !(_step9 = _iterator9.n()).done;) {
-            var event = _step9.value;
+          for (_iterator11.s(); !(_step11 = _iterator11.n()).done;) {
+            var event = _step11.value;
 
             if (!event) {
               continue;
@@ -2909,9 +3207,9 @@ function _createClass(Constructor, protoProps, staticProps) { if (protoProps) _d
           } // Create a new event then
 
         } catch (err) {
-          _iterator9.e(err);
+          _iterator11.e(err);
         } finally {
-          _iterator9.f();
+          _iterator11.f();
         }
 
         $dataMap.events.push({
@@ -2953,7 +3251,7 @@ function _createClass(Constructor, protoProps, staticProps) { if (protoProps) _d
     }, {
       key: "refreshScreenSize",
       value: function refreshScreenSize() {
-        var _this10 = this;
+        var _this11 = this;
 
         if (this.resizeTimeout) {
           clearTimeout(this.resizeTimeout);
@@ -2965,8 +3263,8 @@ function _createClass(Constructor, protoProps, staticProps) { if (protoProps) _d
 
         this.resizeTimeout = setTimeout(function () {
           // Adds a second timeout to block the show/hide functionality for a little while
-          _this10.resizeTimeout = setTimeout(function () {
-            _this10.resizeTimeout = false;
+          _this11.resizeTimeout = setTimeout(function () {
+            _this11.resizeTimeout = false;
           }, 500);
           var xDelta = Graphics.width - window.innerWidth;
           var yDelta = Graphics.height - window.innerHeight;
@@ -3000,6 +3298,11 @@ function _createClass(Constructor, protoProps, staticProps) { if (protoProps) _d
         this.refreshScreenSize();
       }
     }, {
+      key: "logImage",
+      value: function logImage(canvas, text) {
+        _logImage(canvas, text);
+      }
+    }, {
       key: "isTabValid",
       value: function isTabValid(tab) {
         var tileset = $gameMap.tileset();
@@ -3020,10 +3323,10 @@ function _createClass(Constructor, protoProps, staticProps) { if (protoProps) _d
     }, {
       key: "validTabs",
       value: function validTabs() {
-        var _this11 = this;
+        var _this12 = this;
 
         return tabs.filter(function (tab) {
-          return _this11.isTabValid(tab);
+          return _this12.isTabValid(tab);
         });
       }
     }, {
@@ -3034,7 +3337,7 @@ function _createClass(Constructor, protoProps, staticProps) { if (protoProps) _d
     }, {
       key: "isLayerVisible",
       value: function isLayerVisible(index) {
-        if (index === 8 || index === 9) {
+        if (index >= 8 && index <= 10) {
           return currentLayer === index;
         }
 
@@ -3571,11 +3874,52 @@ function _createClass(Constructor, protoProps, staticProps) { if (protoProps) _d
         fs.writeFileSync(filePath, json);
       }
     }, {
+      key: "_makeMapJson",
+      value: function _makeMapJson() {
+        var _map$note;
+
+        var map = _objectSpread(_objectSpread({}, $dataMap), {}, {
+          data: _toConsumableArray($dataMap.data)
+        });
+
+        var size = map.width * map.height;
+        var extraTiles = new Array(size * 4);
+        var anyExtraTile = false;
+
+        for (var i = 0; i < extraTiles.length; i++) {
+          if (map.data[i] >= Tilemap.TILE_ID_E + 256 && map.data[i] < Tilemap.TILE_ID_A5) {
+            extraTiles[i] = map.data[i];
+            map.data[i] = 0;
+            anyExtraTile = true;
+          } else {
+            extraTiles[i] = 0;
+          }
+        }
+
+        var extraTilesTag = '';
+
+        if (anyExtraTile) {
+          var compressed = LZString.compressToBase64(JSON.stringify(extraTiles, null, 0));
+          extraTilesTag = "<CycloneExtraTiles>".concat(compressed, "</CycloneExtraTiles>");
+        }
+
+        if ((_map$note = map.note) === null || _map$note === void 0 ? void 0 : _map$note.includes('<CycloneExtraTiles>')) {
+          map.note = map.note.replace(/<CycloneExtraTiles>.*<\/CycloneExtraTiles>/i, extraTilesTag);
+        } else {
+          var _map$note2;
+
+          map.note = "".concat((_map$note2 = map.note) !== null && _map$note2 !== void 0 ? _map$note2 : '', "\n").concat(extraTilesTag);
+        }
+
+        return JSON.stringify(map, null, 0);
+      }
+    }, {
       key: "_doSave",
       value: function _doSave() {
         this.saveExtraData();
         var fileName = "Map".concat($gameMap._mapId.padZero(3), ".json");
-        var json = JSON.stringify($dataMap, null, 0);
+
+        var json = this._makeMapJson();
 
         if (Utils.isNwjs()) {
           this._doLocalSave(json, fileName);
@@ -3723,37 +4067,13 @@ function _createClass(Constructor, protoProps, staticProps) { if (protoProps) _d
     }, {
       key: "getTileIdTilesetIndex",
       value: function getTileIdTilesetIndex(tileId) {
-        if (tileId < Tilemap.TILE_ID_A5) {
-          var tilesetIndex = Math.floor(tileId / 256);
-
-          if (tilesetIndex >= 0 && tilesetIndex < 4) {
-            return 5 + tilesetIndex;
+        if (tileId !== 0) {
+          if (!Tilemap.isVisibleTile(tileId)) {
+            return -1;
           }
-
-          return -1;
         }
 
-        if (tileId < Tilemap.TILE_ID_A1) {
-          return 4;
-        }
-
-        if (tileId < Tilemap.TILE_ID_A2) {
-          return 0;
-        }
-
-        if (tileId < Tilemap.TILE_ID_A3) {
-          return 1;
-        }
-
-        if (tileId < Tilemap.TILE_ID_A4) {
-          return 2;
-        }
-
-        if (tileId < Tilemap.TILE_ID_MAX) {
-          return 3;
-        }
-
-        return -1;
+        return getTilesetIndex(tileId);
       }
     }, {
       key: "getTilesetName",
@@ -3770,7 +4090,23 @@ function _createClass(Constructor, protoProps, staticProps) { if (protoProps) _d
           return;
         }
 
-        return tileset.tilesetNames[tilesetIndex];
+        if (tilesetIndex < tileset.tilesetNames.length) {
+          return tileset.tilesetNames[tilesetIndex];
+        }
+
+        if (!window.CycloneExtraTilesets) {
+          return;
+        }
+
+        var extraTileset = $gameMap.extraTileset();
+
+        if (!extraTileset) {
+          return;
+        }
+
+        var extraIndex = tilesetIndex - 9;
+        var newIndex = extraIndex + 5;
+        return extraTileset.tilesetNames[newIndex];
       }
     }, {
       key: "loadTilesetBitmap",
@@ -3810,6 +4146,7 @@ function _createClass(Constructor, protoProps, staticProps) { if (protoProps) _d
           this.autoLayerButton.checked = newIndex === 7;
           this.collisionsButton.checked = newIndex === 8;
           this.tagsButton.checked = newIndex === 9;
+          this.blendButton.checked = newIndex === 10;
         }
 
         if (SceneManager._scene instanceof Scene_Map) {
@@ -3876,7 +4213,7 @@ function _createClass(Constructor, protoProps, staticProps) { if (protoProps) _d
     }, {
       key: "getWallColumnTypeForPosition",
       value: function getWallColumnTypeForPosition(x, y, z, tileId) {
-        var _this12 = this;
+        var _this13 = this;
 
         var skipPreview = arguments.length > 4 && arguments[4] !== undefined ? arguments[4] : true;
         // wall auto tiles need the left and right columns to have the same amount of rows for it to match
@@ -3884,9 +4221,9 @@ function _createClass(Constructor, protoProps, staticProps) { if (protoProps) _d
         var hasRightColumn = true;
 
         var compareWallAutoTileLine = function compareWallAutoTileLine(newY, sameCenter) {
-          var leftTileId = _this12.getCurrentTileAtPosition(x - 1, newY, z, skipPreview);
+          var leftTileId = _this13.getCurrentTileAtPosition(x - 1, newY, z, skipPreview);
 
-          var rightTileId = _this12.getCurrentTileAtPosition(x + 1, newY, z, skipPreview);
+          var rightTileId = _this13.getCurrentTileAtPosition(x + 1, newY, z, skipPreview);
 
           if (sameCenter) {
             if (!Tilemap.isSameKindTile(tileId, leftTileId)) {
@@ -4129,6 +4466,15 @@ function _createClass(Constructor, protoProps, staticProps) { if (protoProps) _d
         }
       }
     }, {
+      key: "resetCurrentChange",
+      value: function resetCurrentChange() {
+        currentChange = {
+          tiles: {},
+          collision: {},
+          blend: {}
+        };
+      }
+    }, {
       key: "undoLastChange",
       value: function undoLastChange() {
         if (this.changingTileProps) {
@@ -4141,20 +4487,32 @@ function _createClass(Constructor, protoProps, staticProps) { if (protoProps) _d
         }
 
         var lastChange = changeHistory.pop();
-        currentChange = {
-          type: lastChange.type,
-          data: {}
-        };
+        this.resetCurrentChange();
+        var size = $gameMap.tileWidth() * $gameMap.tileHeight();
 
-        for (var tileIndex in lastChange.data) {
-          if (lastChange.type === 'collision') {
-            currentChange.data[tileIndex] = customCollisionTable[tileIndex];
-            customCollisionTable[tileIndex] = lastChange.data[tileIndex];
-            continue;
+        for (var tileIndex in lastChange.tiles) {
+          currentChange.tiles[tileIndex] = $dataMap.data[tileIndex];
+          $dataMap.data[tileIndex] = lastChange.tiles[tileIndex];
+        }
+
+        for (var _tileIndex in lastChange.collision) {
+          currentChange.collision[_tileIndex] = customCollisionTable[_tileIndex];
+          customCollisionTable[_tileIndex] = lastChange.collision[_tileIndex];
+        }
+
+        for (var _tileIndex2 in lastChange.blend) {
+          if (!tileBlendingTable[_tileIndex2]) {
+            var buffer = new ArrayBuffer(size);
+            tileBlendingTable[_tileIndex2] = new Int8Array(buffer);
           }
 
-          currentChange.data[tileIndex] = $dataMap.data[tileIndex];
-          $dataMap.data[tileIndex] = lastChange.data[tileIndex];
+          var tilePixels = tileBlendingTable[_tileIndex2];
+          currentChange.blend[_tileIndex2] = {};
+
+          for (var pixelIndex in lastChange.blend[_tileIndex2]) {
+            currentChange.blend[_tileIndex2][pixelIndex] = tilePixels[pixelIndex];
+            tilePixels[pixelIndex] = lastChange.blend[_tileIndex2][pixelIndex];
+          }
         }
 
         undoHistory.push(currentChange);
@@ -4166,6 +4524,7 @@ function _createClass(Constructor, protoProps, staticProps) { if (protoProps) _d
 
         mapCaches[$gameMap._mapId] = $dataMap;
         this.refreshTilemap();
+        saveExtraData(true);
       }
     }, {
       key: "redoLastUndoneChange",
@@ -4180,35 +4539,75 @@ function _createClass(Constructor, protoProps, staticProps) { if (protoProps) _d
         }
 
         var lastChange = undoHistory.pop();
-        currentChange = {};
+        var size = $gameMap.tileWidth() * $gameMap.tileHeight();
+        this.resetCurrentChange();
+        var needsSaving = false;
 
-        for (var tileIndex in lastChange.data) {
-          if (lastChange.type === 'collision') {
-            currentChange[tileIndex] = customCollisionTable[tileIndex];
-            customCollisionTable[tileIndex] = lastChange.data[tileIndex];
-            continue;
-          }
-
-          currentChange[tileIndex] = $dataMap.data[tileIndex];
-          $dataMap.data[tileIndex] = lastChange.data[tileIndex];
+        for (var tileIndex in lastChange.tiles) {
+          currentChange.tiles[tileIndex] = $dataMap.data[tileIndex];
+          $dataMap.data[tileIndex] = lastChange.tiles[tileIndex];
         }
 
-        this.logChange(false, lastChange.type);
+        for (var _tileIndex3 in lastChange.collision) {
+          currentChange.collision[_tileIndex3] = customCollisionTable[_tileIndex3];
+          customCollisionTable[_tileIndex3] = lastChange.collision[_tileIndex3];
+          needsSaving = true;
+        }
+
+        for (var _tileIndex4 in lastChange.blend) {
+          if (!tileBlendingTable[_tileIndex4]) {
+            var buffer = new ArrayBuffer(size);
+            tileBlendingTable[_tileIndex4] = new Int8Array(buffer);
+          }
+
+          var tilePixels = tileBlendingTable[_tileIndex4];
+          currentChange.blend[_tileIndex4] = {};
+
+          for (var pixelIndex in lastChange.blend[_tileIndex4]) {
+            currentChange.blend[_tileIndex4][pixelIndex] = tilePixels[pixelIndex];
+            tilePixels[pixelIndex] = lastChange.blend[_tileIndex4][pixelIndex];
+            needsSaving = true;
+          }
+        }
+
+        this.logChange(false);
+
+        if (needsSaving) {
+          saveExtraData(true);
+        }
+
         this.refreshTilemap();
+      }
+    }, {
+      key: "getCurrentLayerChangeType",
+      value: function getCurrentLayerChangeType() {
+        switch (currentLayer) {
+          case Layers.collisions:
+            return 'collision';
+
+          case Layers.blend:
+            return 'blend';
+
+          default:
+            return 'tile';
+        }
       }
     }, {
       key: "logChange",
       value: function logChange() {
         var clearUndo = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : true;
-        var type = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : undefined;
-        var hasChanges = Object.keys(currentChange).length > 0;
-        type = type || currentLayer === Layers.collisions ? 'collision' : 'tile';
+
+        if (!currentChange) {
+          return;
+        }
+
+        var hasTiles = Object.keys(currentChange.tiles).length > 0;
+        var hasBlend = Object.keys(currentChange.blend).length > 0;
+        var hasCollision = Object.keys(currentChange.collision).length > 0;
+        var hasChanges = hasTiles || hasBlend || hasCollision;
 
         if (hasChanges) {
-          changeHistory.push({
-            type: type,
-            data: currentChange
-          });
+          changeHistory.push(currentChange);
 
           if (clearUndo) {
             undoHistory = [];
@@ -4223,9 +4622,13 @@ function _createClass(Constructor, protoProps, staticProps) { if (protoProps) _d
 
         SceneManager._scene._mapEditorCommands.redraw();
 
-        SceneManager._scene._mapEditorGrid.refresh();
+        SceneManager._scene._mapEditorGrid.refresh(); // if (hasBlend) {
+        //   forceBlenderRefresh(true);
+        // }
+
 
         mapCaches[$gameMap._mapId] = $dataMap;
+        fullRefresh();
       }
     }, {
       key: "maybeUpdateTileNeighbors",
@@ -4374,8 +4777,8 @@ function _createClass(Constructor, protoProps, staticProps) { if (protoProps) _d
         } else {
           var oldTile = $dataMap.data[tileIndex];
 
-          if (currentChange[tileIndex] === undefined && oldTile !== 0) {
-            currentChange[tileIndex] = oldTile;
+          if (currentChange.tiles[tileIndex] === undefined && oldTile !== 0) {
+            currentChange.tiles[tileIndex] = oldTile;
           }
 
           $dataMap.data[tileIndex] = 0;
@@ -4528,8 +4931,8 @@ function _createClass(Constructor, protoProps, staticProps) { if (protoProps) _d
 
             var oldTile = customCollisionTable[index] || 0;
 
-            if (currentChange[index] === undefined && oldTile !== blockCollision) {
-              currentChange[index] = oldTile;
+            if (currentChange.collision[index] === undefined && oldTile !== blockCollision) {
+              currentChange.collision[index] = oldTile;
             }
 
             if (!blockCollision) {
@@ -4540,6 +4943,278 @@ function _createClass(Constructor, protoProps, staticProps) { if (protoProps) _d
             customCollisionTable[index] = blockCollision;
           }
         }
+      }
+    }, {
+      key: "_changePixelPositionBlend",
+      value: function _changePixelPositionBlend(x, y, px, py, newBlend) {
+        var _currentChange$blend$, _table$pixelIndex;
+
+        var previewOnly = arguments.length > 5 && arguments[5] !== undefined ? arguments[5] : false;
+        var tileWidth = $gameMap.tileWidth();
+        var tileHeight = $gameMap.tileHeight();
+        var fx = Math.floor(x) + Math.floor(px / tileWidth);
+        var fy = Math.floor(y) + Math.floor(py / tileHeight);
+        var pixelX = px % tileWidth;
+        var pixelY = py % tileHeight;
+
+        if (fx < 0 || fx >= $gameMap.width()) {
+          return;
+        }
+
+        if (fy < 0 || fy >= $gameMap.height()) {
+          return;
+        }
+
+        var tileIndex = this.tileIndex(fx, fy, 0);
+        var size = tileWidth * tileHeight;
+        var fullTable = previewOnly ? window.CycloneMagic.tileBlendingTable : tileBlendingTable;
+
+        if (!fullTable[tileIndex]) {
+          var buffer = new ArrayBuffer(size);
+          fullTable[tileIndex] = new Int8Array(buffer);
+        }
+
+        var table = fullTable[tileIndex];
+        var pixelIndex = pixelY * tileWidth + pixelX;
+
+        if (((_currentChange$blend$ = currentChange.blend[tileIndex]) === null || _currentChange$blend$ === void 0 ? void 0 : _currentChange$blend$[pixelIndex]) === undefined && ((_table$pixelIndex = table[pixelIndex]) !== null && _table$pixelIndex !== void 0 ? _table$pixelIndex : 0) !== newBlend) {
+          var _table$pixelIndex2;
+
+          if (currentChange.blend[tileIndex] === undefined) {
+            currentChange.blend[tileIndex] = {};
+          }
+
+          currentChange.blend[tileIndex][pixelIndex] = (_table$pixelIndex2 = table[pixelIndex]) !== null && _table$pixelIndex2 !== void 0 ? _table$pixelIndex2 : 0;
+        }
+
+        table[pixelIndex] = newBlend;
+      }
+    }, {
+      key: "_changePositionBlend",
+      value: function _changePositionBlend(x, y, newBlend) {
+        var fx = Math.floor(x);
+        var fy = Math.floor(y);
+        var tileIndex = this.tileIndex(fx, fy, 0);
+        var gridRatio = this.getGridRatio();
+        var tileWidth = $gameMap.tileWidth();
+        var tileHeight = $gameMap.tileHeight();
+        var size = tileWidth * tileHeight;
+
+        if (!tileBlendingTable[tileIndex]) {
+          var buffer = new ArrayBuffer(size);
+          tileBlendingTable[tileIndex] = new Int8Array(buffer);
+        }
+
+        var table = tileBlendingTable[tileIndex];
+        var subX = x - fx;
+        var subY = y - fy;
+        var leftPx = Math.round(subX * tileWidth);
+        var topPx = Math.round(subY * tileHeight);
+        var blockWidth = Math.floor(tileWidth / gridRatio);
+        var blockHeight = Math.floor(tileHeight / gridRatio);
+        var rightPx = leftPx + blockWidth;
+        var bottomPx = topPx + blockHeight;
+
+        for (var px = leftPx; px < rightPx; px++) {
+          for (var py = topPx; py < bottomPx; py++) {
+            var _currentChange$blend$2, _table$pixelIndex3;
+
+            var pixelIndex = py * tileWidth + px;
+
+            if (((_currentChange$blend$2 = currentChange.blend[tileIndex]) === null || _currentChange$blend$2 === void 0 ? void 0 : _currentChange$blend$2[pixelIndex]) === undefined && ((_table$pixelIndex3 = table[pixelIndex]) !== null && _table$pixelIndex3 !== void 0 ? _table$pixelIndex3 : 0) !== newBlend) {
+              var _table$pixelIndex4;
+
+              if (currentChange.blend[tileIndex] === undefined) {
+                currentChange.blend[tileIndex] = {};
+              }
+
+              currentChange.blend[tileIndex][pixelIndex] = (_table$pixelIndex4 = table[pixelIndex]) !== null && _table$pixelIndex4 !== void 0 ? _table$pixelIndex4 : 0;
+            }
+
+            table[pixelIndex] = newBlend;
+          }
+        }
+      }
+    }, {
+      key: "isPositionBlendSpriteReady",
+      value: function isPositionBlendSpriteReady(x, y) {
+        var _SceneManager$_scene$;
+
+        if (!((_SceneManager$_scene$ = SceneManager._scene._spriteset) === null || _SceneManager$_scene$ === void 0 ? void 0 : _SceneManager$_scene$._blenderTileSprites)) {
+          return false;
+        }
+
+        var _iterator12 = _createForOfIteratorHelper(SceneManager._scene._spriteset._blenderTileSprites),
+            _step12;
+
+        try {
+          for (_iterator12.s(); !(_step12 = _iterator12.n()).done;) {
+            var sprite = _step12.value;
+
+            if (sprite._mapX === x && sprite._mapY === y) {
+              return true;
+            }
+          }
+        } catch (err) {
+          _iterator12.e(err);
+        } finally {
+          _iterator12.f();
+        }
+
+        return false;
+      }
+    }, {
+      key: "forceBlenderRefresh",
+      value: function forceBlenderRefresh() {
+        var _SceneManager$_scene$2;
+
+        var hardRefresh = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : false;
+
+        if (!window.CycloneMagic) {
+          return;
+        }
+
+        ((_SceneManager$_scene$2 = SceneManager._scene._spriteset) === null || _SceneManager$_scene$2 === void 0 ? void 0 : _SceneManager$_scene$2.forceBlenderRefresh) && SceneManager._scene._spriteset.forceBlenderRefresh(hardRefresh);
+      }
+    }, {
+      key: "buildSmallCircle",
+      value: function buildSmallCircle() {
+        var width = tileWidth / 4;
+        var height = tileHeight / 4;
+        var bitmap = new Bitmap(width, height);
+        bitmap.drawCircle(width / 2, height / 2, Math.min(width, height) / 2, '#0000FF');
+        bitmap.drawCircle(width / 2, height / 2, Math.min(width, height) / 2 - 2, '#00FF00');
+        var imageData = bitmap.context.getImageData(0, 0, width, height);
+        smallCircleData = imageData.data;
+      }
+    }, {
+      key: "buildCircle",
+      value: function buildCircle() {
+        var width = tileWidth / 2;
+        var height = tileHeight / 2;
+        var bitmap = new Bitmap(width, height);
+        bitmap.drawCircle(width / 2, height / 2, Math.min(width, height) / 2, '#0000FF');
+        bitmap.drawCircle(width / 2, height / 2, Math.min(width, height) / 2 - 4, '#00FF00');
+        var imageData = bitmap.context.getImageData(0, 0, width, height);
+        circleData = imageData.data;
+      }
+    }, {
+      key: "getCircleData",
+      value: function getCircleData() {
+        if (circleData) {
+          if (Input.isPressed('shift')) {
+            return smallCircleData;
+          }
+
+          return circleData;
+        }
+
+        this.buildSmallCircle();
+        this.buildCircle();
+        return this.getCircleData();
+      }
+    }, {
+      key: "removeTileBlend",
+      value: function removeTileBlend(x, y) {
+        var previewOnly = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : false;
+
+        if (previewOnly && !window.CycloneMagic) {
+          return;
+        }
+
+        var fx = Math.floor(x);
+        var fy = Math.floor(y);
+
+        if (fx < 0 || fx >= $gameMap.width()) {
+          return;
+        }
+
+        if (fy < 0 || fy >= $gameMap.height()) {
+          return;
+        }
+
+        var tileIndex = this.tileIndex(fx, fy, 0);
+
+        if (previewOnly) {
+          if (window.CycloneMagic.tileBlendingTable[tileIndex]) {
+            delete window.CycloneMagic.tileBlendingTable[tileIndex];
+          }
+
+          return;
+        }
+
+        if (tileBlendingTable[tileIndex]) {
+          currentChange.blend[tileIndex] = tileBlendingTable[tileIndex];
+          delete tileBlendingTable[tileIndex];
+        }
+      }
+    }, {
+      key: "_applyBlendBrush",
+      value: function _applyBlendBrush(x, y) {
+        var previewOnly = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : false;
+
+        if (previewOnly && !window.CycloneMagic) {
+          return;
+        }
+
+        var tileWidth = $gameMap.tileWidth();
+        var tileHeight = $gameMap.tileHeight();
+        var divider = Input.isPressed('shift') ? 4 : 2;
+        var width = tileWidth / divider;
+        var height = tileHeight / divider;
+        var pixels = this.getCircleData();
+        var index = -1;
+        var tileX = Math.floor(x);
+        var tileY = Math.floor(y);
+        var pixelX = Math.floor((x - tileX) * tileWidth);
+        var pixelY = Math.floor((y - tileY) * tileHeight);
+        var newBlend = currentTool === Tools.eraser ? 0 : 1;
+
+        for (var py = 0; py < height; py++) {
+          for (var px = 0; px < width; px++) {
+            index++;
+
+            if (pixels[index * 4 + 1] > 0) {
+              this._changePixelPositionBlend(x, y, pixelX + px, pixelY + py, newBlend, previewOnly);
+            } else if (pixels[index * 4 + 2] > 0) {
+              if (Math.randomInt(10) > 5) {
+                this._changePixelPositionBlend(x, y, pixelX + px, pixelY + py, newBlend, previewOnly);
+              }
+            }
+          }
+        }
+
+        if (previewOnly) {
+          forceBlenderRefresh();
+        } else {
+          // Let's do a quick refresh first and then save the data a little later
+          if (window.CycloneMagic) {
+            window.CycloneMagic.tileBlendingTable = tileBlendingTable;
+            var maxTileX = tileX + Math.floor((pixelX + width) / tileWidth);
+            var maxTileY = tileY + Math.floor((pixelY + height) / tileHeight);
+
+            if (window.CycloneMagic) {
+              for (var cacheX = tileX; cacheX <= maxTileX; cacheX++) {
+                for (var cacheY = tileY; cacheY <= maxTileY; cacheY++) {
+                  window.CycloneMagic.clearPositionCache(cacheX, cacheY);
+                }
+              }
+            }
+
+            forceBlenderRefresh();
+          }
+        }
+      }
+    }, {
+      key: "_applySingleBlend",
+      value: function _applySingleBlend(x, y) {
+        if (currentTool === Tools.eraser) {
+          this._changePositionBlend(x, y, 0);
+
+          return;
+        }
+
+        this._changePositionBlend(x, y, 1);
       }
     }, {
       key: "_applySingleMapTile",
@@ -4559,16 +5234,16 @@ function _createClass(Constructor, protoProps, staticProps) { if (protoProps) _d
 
         var itemsToChange = this.getItemsToChange(x, y, z, tileId, !previewOnly, updateNeighbors);
 
-        var _iterator10 = _createForOfIteratorHelper(itemsToChange),
-            _step10;
+        var _iterator13 = _createForOfIteratorHelper(itemsToChange),
+            _step13;
 
         try {
-          for (_iterator10.s(); !(_step10 = _iterator10.n()).done;) {
-            var _step10$value = _step10.value,
-                _x7 = _step10$value.x,
-                _y = _step10$value.y,
-                _z = _step10$value.z,
-                _tileId = _step10$value.tileId;
+          for (_iterator13.s(); !(_step13 = _iterator13.n()).done;) {
+            var _step13$value = _step13.value,
+                _x7 = _step13$value.x,
+                _y = _step13$value.y,
+                _z = _step13$value.z,
+                _tileId = _step13$value.tileId;
 
             if (_z > 5) {
               continue;
@@ -4581,13 +5256,17 @@ function _createClass(Constructor, protoProps, staticProps) { if (protoProps) _d
               effectiveTileId = this.changeAutoTileShapeForPosition(_x7, _y, _z, _tileId, false);
             }
 
+            if (_z === 1) {
+              this.removeTileBlend(_x7, _y, previewOnly);
+            }
+
             if (previewOnly) {
               previewChanges[tileIndex] = effectiveTileId;
             } else {
               var oldTile = $dataMap.data[tileIndex];
 
-              if (currentChange[tileIndex] === undefined && oldTile !== effectiveTileId) {
-                currentChange[tileIndex] = oldTile;
+              if (currentChange.tiles[tileIndex] === undefined && oldTile !== effectiveTileId) {
+                currentChange.tiles[tileIndex] = oldTile;
               }
 
               $dataMap.data[tileIndex] = effectiveTileId;
@@ -4596,9 +5275,9 @@ function _createClass(Constructor, protoProps, staticProps) { if (protoProps) _d
             this.maybeUpdateTileNeighbors(_x7, _y, _z, updateNeighbors, previewOnly);
           }
         } catch (err) {
-          _iterator10.e(err);
+          _iterator13.e(err);
         } finally {
-          _iterator10.f();
+          _iterator13.f();
         }
       }
     }, {
@@ -4608,6 +5287,14 @@ function _createClass(Constructor, protoProps, staticProps) { if (protoProps) _d
         var previewOnly = arguments.length > 5 && arguments[5] !== undefined ? arguments[5] : false;
 
         if (!$gameMap.isValid(x, y)) {
+          return;
+        }
+
+        if (currentLayer === Layers.blend) {
+          if (!previewOnly) {
+            CycloneMapEditor$1._applySingleBlend(x, y);
+          }
+
           return;
         }
 
@@ -4683,7 +5370,7 @@ function _createClass(Constructor, protoProps, staticProps) { if (protoProps) _d
     }, {
       key: "canApplyRectangle",
       value: function canApplyRectangle() {
-        return currentTileId !== undefined || currentTool === 'eraser';
+        return currentTileId !== undefined || currentTool === 'eraser' || currentLayer === Layers.blend;
       }
     }, {
       key: "isAutoEraser",
@@ -4693,13 +5380,13 @@ function _createClass(Constructor, protoProps, staticProps) { if (protoProps) _d
     }, {
       key: "getHighestLayerOnArea",
       value: function getHighestLayerOnArea(startX, startY, width, height) {
-        var _this13 = this;
+        var _this14 = this;
 
         var highestLayer = function () {
           for (var z = 3; z >= 1; z--) {
             for (var tileY = startY; tileY < startY + height; tileY++) {
               for (var tileX = startX; tileX < startX + width; tileX++) {
-                var tileIndex = _this13.tileIndex(tileX, tileY, z);
+                var tileIndex = _this14.tileIndex(tileX, tileY, z);
 
                 var tileId = $dataMap.data[tileIndex];
 
@@ -4728,7 +5415,6 @@ function _createClass(Constructor, protoProps, staticProps) { if (protoProps) _d
           return;
         }
 
-        console.log('apply rectangle');
         this.ensureLayerVisibility();
         var gridRatio = this.getGridRatio();
         var initialRow = 0;
@@ -4752,7 +5438,7 @@ function _createClass(Constructor, protoProps, staticProps) { if (protoProps) _d
         if (previewOnly) {
           previewChanges = {};
         } else {
-          currentChange = {};
+          this.resetCurrentChange();
         }
 
         var effectiveLayer = currentLayer;
@@ -4797,7 +5483,7 @@ function _createClass(Constructor, protoProps, staticProps) { if (protoProps) _d
       value: function refreshTilemap() {
         previewChanges = {};
 
-        if (currentLayer === Layers.collisions) {
+        if (currentLayer === Layers.collisions || currentLayer === Layers.blend) {
           saveExtraData(true);
         }
 
@@ -4812,7 +5498,7 @@ function _createClass(Constructor, protoProps, staticProps) { if (protoProps) _d
     }, {
       key: "copyAutoRectangle",
       value: function copyAutoRectangle(startX, startY, width, height) {
-        var _this14 = this;
+        var _this15 = this;
 
         for (var z = 0; z <= 3; z++) {
           multiLayerSelection[z] = Array(width * height);
@@ -4820,7 +5506,7 @@ function _createClass(Constructor, protoProps, staticProps) { if (protoProps) _d
 
         this.iterateRectangle(startX, startY, width, height, function (tileX, tileY, index) {
           for (var _z2 = 0; _z2 <= 3; _z2++) {
-            var tileIndex = _this14.tileIndex(tileX, tileY, _z2);
+            var tileIndex = _this15.tileIndex(tileX, tileY, _z2);
 
             multiLayerSelection[_z2][index] = $dataMap.data[tileIndex] || 0;
             selectedTileList[index] = $dataMap.data[tileIndex] || selectedTileList[index] || 0;
@@ -4866,7 +5552,7 @@ function _createClass(Constructor, protoProps, staticProps) { if (protoProps) _d
     }, {
       key: "copyHigherAutoRectangle",
       value: function copyHigherAutoRectangle(startX, startY, width, height) {
-        var _this15 = this;
+        var _this16 = this;
 
         for (var z = 0; z <= 3; z++) {
           multiLayerSelection[z] = Array(width * height);
@@ -4874,54 +5560,16 @@ function _createClass(Constructor, protoProps, staticProps) { if (protoProps) _d
 
         var foundAny = false;
 
-        var _loop = function _loop(_z3) {
-          if (!_this15.isLayerVisible(_z3)) {
-            return "continue";
-          }
-
-          _this15.iterateRectangle(startX, startY, width, height, function (tileX, tileY, index) {
-            var tileIndex = _this15.tileIndex(tileX, tileY, _z3);
-
-            multiLayerSelection[_z3][index] = $dataMap.data[tileIndex] || 0;
-            selectedTileList[index] = $dataMap.data[tileIndex] || selectedTileList[index] || 0;
-
-            _this15._selectTileIfNoneSelectedYet(selectedTileList[index]);
-
-            if ($dataMap.data[tileIndex]) {
-              foundAny = true;
-            }
-          });
-
-          if (_this15._shouldSkipRemainingLayersCopy(foundAny, _z3)) {
-            return {
-              v: void 0
-            };
-          }
-        };
-
-        for (var _z3 = 3; _z3 >= 0; _z3--) {
-          var _ret = _loop(_z3);
-
-          if (_ret === "continue") continue;
-          if (_typeof(_ret) === "object") return _ret.v;
-        }
-      }
-    }, {
-      key: "copyHigherRectangle",
-      value: function copyHigherRectangle(startX, startY, width, height) {
-        var _this16 = this;
-
-        var foundAny = false;
-
-        var _loop2 = function _loop2(z) {
-          if (!_this16.isLayerVisible(z)) {
+        var _loop2 = function _loop2(_z3) {
+          if (!_this16.isLayerVisible(_z3)) {
             return "continue";
           }
 
           _this16.iterateRectangle(startX, startY, width, height, function (tileX, tileY, index) {
-            var tileIndex = _this16.tileIndex(tileX, tileY, z);
+            var tileIndex = _this16.tileIndex(tileX, tileY, _z3);
 
-            selectedTileList[index] = selectedTileList[index] || $dataMap.data[tileIndex] || 0;
+            multiLayerSelection[_z3][index] = $dataMap.data[tileIndex] || 0;
+            selectedTileList[index] = $dataMap.data[tileIndex] || selectedTileList[index] || 0;
 
             _this16._selectTileIfNoneSelectedYet(selectedTileList[index]);
 
@@ -4930,7 +5578,45 @@ function _createClass(Constructor, protoProps, staticProps) { if (protoProps) _d
             }
           });
 
-          if (_this16._shouldSkipRemainingLayersCopy(foundAny, z)) {
+          if (_this16._shouldSkipRemainingLayersCopy(foundAny, _z3)) {
+            return {
+              v: void 0
+            };
+          }
+        };
+
+        for (var _z3 = 3; _z3 >= 0; _z3--) {
+          var _ret2 = _loop2(_z3);
+
+          if (_ret2 === "continue") continue;
+          if (_typeof(_ret2) === "object") return _ret2.v;
+        }
+      }
+    }, {
+      key: "copyHigherRectangle",
+      value: function copyHigherRectangle(startX, startY, width, height) {
+        var _this17 = this;
+
+        var foundAny = false;
+
+        var _loop3 = function _loop3(z) {
+          if (!_this17.isLayerVisible(z)) {
+            return "continue";
+          }
+
+          _this17.iterateRectangle(startX, startY, width, height, function (tileX, tileY, index) {
+            var tileIndex = _this17.tileIndex(tileX, tileY, z);
+
+            selectedTileList[index] = selectedTileList[index] || $dataMap.data[tileIndex] || 0;
+
+            _this17._selectTileIfNoneSelectedYet(selectedTileList[index]);
+
+            if ($dataMap.data[tileIndex]) {
+              foundAny = true;
+            }
+          });
+
+          if (_this17._shouldSkipRemainingLayersCopy(foundAny, z)) {
             return {
               v: void 0
             };
@@ -4938,23 +5624,23 @@ function _createClass(Constructor, protoProps, staticProps) { if (protoProps) _d
         };
 
         for (var z = 3; z >= 0; z--) {
-          var _ret2 = _loop2(z);
+          var _ret3 = _loop3(z);
 
-          if (_ret2 === "continue") continue;
-          if (_typeof(_ret2) === "object") return _ret2.v;
+          if (_ret3 === "continue") continue;
+          if (_typeof(_ret3) === "object") return _ret3.v;
         }
       }
     }, {
       key: "copyManualRectangle",
       value: function copyManualRectangle(startX, startY, width, height) {
-        var _this17 = this;
+        var _this18 = this;
 
         this.iterateRectangle(startX, startY, width, height, function (tileX, tileY, index) {
-          var tileIndex = _this17.tileIndex(tileX, tileY, currentLayer);
+          var tileIndex = _this18.tileIndex(tileX, tileY, currentLayer);
 
           selectedTileList[index] = $dataMap.data[tileIndex] || 0;
 
-          _this17._selectTileIfNoneSelectedYet(selectedTileList[index]);
+          _this18._selectTileIfNoneSelectedYet(selectedTileList[index]);
         });
       }
     }, {
@@ -5101,14 +5787,14 @@ function _createClass(Constructor, protoProps, staticProps) { if (protoProps) _d
         var height = $gameMap.height();
         var width = $gameMap.width();
         var workLayer = currentLayer <= 3 ? currentLayer : 0;
-        currentChange = {};
+        this.resetCurrentChange();
 
-        var _iterator11 = _createForOfIteratorHelper(affectedArea),
-            _step11;
+        var _iterator14 = _createForOfIteratorHelper(affectedArea),
+            _step14;
 
         try {
-          for (_iterator11.s(); !(_step11 = _iterator11.n()).done;) {
-            var tileIndex = _step11.value;
+          for (_iterator14.s(); !(_step14 = _iterator14.n()).done;) {
+            var tileIndex = _step14.value;
             var y = this.indexPositionY(tileIndex, workLayer);
 
             var _x8 = tileIndex - this.tileIndex(0, y, workLayer);
@@ -5118,9 +5804,9 @@ function _createClass(Constructor, protoProps, staticProps) { if (protoProps) _d
             this.setSelectionTileMaybeMultiLayer(_x8, y, xDiff, yDiff, false);
           }
         } catch (err) {
-          _iterator11.e(err);
+          _iterator14.e(err);
         } finally {
-          _iterator11.f();
+          _iterator14.f();
         }
 
         this.logChange();
@@ -5140,12 +5826,14 @@ function _createClass(Constructor, protoProps, staticProps) { if (protoProps) _d
     }, {
       key: "applySelectedTiles",
       value: function applySelectedTiles(mapX, mapY) {
-        if (currentTileId === undefined) {
-          return;
-        }
+        if (currentLayer !== Layers.blend) {
+          if (currentTileId === undefined) {
+            return;
+          }
 
-        if (selectedTileList.length < tileCols * tileRows) {
-          return;
+          if (selectedTileList.length < tileCols * tileRows) {
+            return;
+          }
         }
 
         this.ensureLayerVisibility();
@@ -5384,6 +6072,11 @@ function _createClass(Constructor, protoProps, staticProps) { if (protoProps) _d
     }, {
       key: "updateEraser",
       value: function updateEraser(x, y) {
+        if (this.isLayerVisible(Layers.blend)) {
+          this.updatePencil(x, y);
+          return;
+        }
+
         this.updateRectangle(x, y);
       }
     }, {
@@ -5391,7 +6084,15 @@ function _createClass(Constructor, protoProps, staticProps) { if (protoProps) _d
       value: function updatePencil(x, y) {
         if (TouchInput.isPressed()) {
           if (!currentChange) {
-            currentChange = {};
+            this.resetCurrentChange();
+          }
+
+          if (currentLayer === Layers.blend) {
+            var offset = Input.isPressed('shift') ? 0.125 : 0.25;
+
+            CycloneMapEditor$1._applyBlendBrush(x - offset, y - offset, false);
+
+            return;
           }
 
           CycloneMapEditor$1.applySelectedTiles(x, y);
@@ -5405,6 +6106,14 @@ function _createClass(Constructor, protoProps, staticProps) { if (protoProps) _d
     }, {
       key: "getGridRatio",
       value: function getGridRatio() {
+        var drawRatio = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : false;
+
+        if (!drawRatio) {
+          if (currentLayer === Layers.blend) {
+            return 16;
+          }
+        }
+
         if (currentLayer === Layers.collisions) {
           if (window.CycloneMovement) {
             return window.CycloneMovement.collisionStepCount;
@@ -5803,6 +6512,11 @@ function _createClass(Constructor, protoProps, staticProps) { if (protoProps) _d
         return customCollisionTable;
       }
     }, {
+      key: "tileBlendingTable",
+      get: function get() {
+        return tileBlendingTable;
+      }
+    }, {
       key: "mapCaches",
       get: function get() {
         return mapCaches;
@@ -5996,7 +6710,7 @@ function _createClass(Constructor, protoProps, staticProps) { if (protoProps) _d
             return;
           }
 
-          if (tileId >= Tilemap.TILE_ID_A1) {
+          if (Tilemap.isAutotile(tileId)) {
             return this.drawAutoTile(tileId, x, y, drawWidth, drawHeight);
           }
 
@@ -6423,8 +7137,8 @@ function _createClass(Constructor, protoProps, staticProps) { if (protoProps) _d
             }
           }
 
-          for (var _len3 = arguments.length, args = new Array(_len3 > 1 ? _len3 - 1 : 0), _key3 = 1; _key3 < _len3; _key3++) {
-            args[_key3 - 1] = arguments[_key3];
+          for (var _len4 = arguments.length, args = new Array(_len4 > 1 ? _len4 - 1 : 0), _key4 = 1; _key4 < _len4; _key4++) {
+            args[_key4 - 1] = arguments[_key4];
           }
 
           (_$super$reserveTransf = $super.reserveTransfer).call.apply(_$super$reserveTransf, [this, mapId].concat(args));
@@ -6497,11 +7211,11 @@ function _createClass(Constructor, protoProps, staticProps) { if (protoProps) _d
           return;
         }
 
-        var gridRatio = CycloneMapEditor.getGridRatio();
+        var gridRatio = CycloneMapEditor.getGridRatio(true);
         var drawWidth = Math.floor(CycloneMapEditor.tileWidth * CycloneMapEditor.currentZoom) / gridRatio;
         var drawHeight = Math.floor(CycloneMapEditor.tileHeight * CycloneMapEditor.currentZoom) / gridRatio;
         var context = this.contents.context;
-        context.strokeStyle = '#000000';
+        context.strokeStyle = '#666666';
 
         for (var cellX = 0; cellX < gridRatio; cellX++) {
           for (var cellY = 0; cellY < gridRatio; cellY++) {
@@ -6764,12 +7478,12 @@ function _createClass(Constructor, protoProps, staticProps) { if (protoProps) _d
         var drawWidth = $gameMap.tileWidth();
         var drawHeight = $gameMap.tileHeight();
 
-        var _iterator12 = _createForOfIteratorHelper($gameMap._events),
-            _step12;
+        var _iterator15 = _createForOfIteratorHelper($gameMap._events),
+            _step15;
 
         try {
-          for (_iterator12.s(); !(_step12 = _iterator12.n()).done;) {
-            var event = _step12.value;
+          for (_iterator15.s(); !(_step15 = _iterator15.n()).done;) {
+            var event = _step15.value;
 
             if (!event) {
               continue;
@@ -6794,9 +7508,9 @@ function _createClass(Constructor, protoProps, staticProps) { if (protoProps) _d
             this.contents.fillRect(drawX, drawY, drawWidth, drawHeight, '#FF00FF66');
           }
         } catch (err) {
-          _iterator12.e(err);
+          _iterator15.e(err);
         } finally {
-          _iterator12.f();
+          _iterator15.f();
         }
       }
     }, {
@@ -6907,47 +7621,47 @@ function _createClass(Constructor, protoProps, staticProps) { if (protoProps) _d
     }, {
       key: "configureHandlers",
       value: function configureHandlers() {
-        var _this18 = this;
+        var _this19 = this;
 
         this.setHandler('undo', function () {
           CycloneMapEditor.undoButton();
 
-          _this18.activate();
+          _this19.activate();
         });
         this.setHandler('redo', function () {
           CycloneMapEditor.redoButton();
 
-          _this18.activate();
+          _this19.activate();
         });
         this.setHandler('pencil', function () {
           CycloneMapEditor.pencilButton();
 
-          _this18.activate();
+          _this19.activate();
         });
         this.setHandler('rectangle', function () {
           CycloneMapEditor.rectangleButton();
 
-          _this18.activate();
+          _this19.activate();
         });
         this.setHandler('fill', function () {
           CycloneMapEditor.fillButton();
 
-          _this18.activate();
+          _this19.activate();
         });
         this.setHandler('eraser', function () {
           CycloneMapEditor.eraserButton();
 
-          _this18.activate();
+          _this19.activate();
         });
         this.setHandler('save', function () {
           CycloneMapEditor.saveButton();
 
-          _this18.activate();
+          _this19.activate();
         });
         this.setHandler('reload', function () {
           CycloneMapEditor.reloadButton();
 
-          _this18.activate();
+          _this19.activate();
         });
       }
     }, {
@@ -7662,7 +8376,7 @@ function _createClass(Constructor, protoProps, staticProps) { if (protoProps) _d
     }, {
       key: "drawItem",
       value: function drawItem(index) {
-        var _this19 = this;
+        var _this20 = this;
 
         this.resetTextColor();
         this.changePaintOpacity(this.isCommandEnabled(index));
@@ -7694,7 +8408,7 @@ function _createClass(Constructor, protoProps, staticProps) { if (protoProps) _d
 
         if (!bitmap.isReady() && bitmap._loadListeners.length < 2) {
           bitmap.addLoadListener(function () {
-            _this19._needsRedraw = true;
+            _this20._needsRedraw = true;
           });
         }
 
@@ -7974,21 +8688,21 @@ function _createClass(Constructor, protoProps, staticProps) { if (protoProps) _d
           if (isSelected) {
             this._selectionIndex = index;
           } else {
-            var _iterator13 = _createForOfIteratorHelper(CycloneMapEditor.selectedTileList),
-                _step13;
+            var _iterator16 = _createForOfIteratorHelper(CycloneMapEditor.selectedTileList),
+                _step16;
 
             try {
-              for (_iterator13.s(); !(_step13 = _iterator13.n()).done;) {
-                var tileId = _step13.value;
+              for (_iterator16.s(); !(_step16 = _iterator16.n()).done;) {
+                var tileId = _step16.value;
 
                 if (Tilemap.isSameKindTile(tileId, item.name)) {
                   isSelected = true;
                 }
               }
             } catch (err) {
-              _iterator13.e(err);
+              _iterator16.e(err);
             } finally {
-              _iterator13.f();
+              _iterator16.f();
             }
           }
 
@@ -8589,7 +9303,15 @@ function _createClass(Constructor, protoProps, staticProps) { if (protoProps) _d
             return;
           }
 
-          if (mapX >= 0 && mapY >= 0) {
+          var minX = 0;
+          var minY = 0;
+
+          if (CycloneMapEditor.isLayerVisible(Layers.blend) && [Tools.pencil, Tools.eraser].includes(CycloneMapEditor.currentTool)) {
+            minX--;
+            minY--;
+          }
+
+          if (mapX >= minX && mapY >= minY) {
             if (Input.isPressed('control') && !CycloneMapEditor.wasPressing) {
               CycloneMapEditor.selectHigherLayer(mapX, mapY);
             } else {
@@ -8685,16 +9407,24 @@ function _createClass(Constructor, protoProps, staticProps) { if (protoProps) _d
         }
 
         switch (CycloneMapEditor.currentTool) {
-          case 'fill':
+          case Tools.fill:
             return this.updateTiles();
 
-          case 'pencil':
+          case Tools.pencil:
+            if (CycloneMapEditor.isLayerVisible(Layers.blend)) {
+              return this.updateBrush();
+            }
+
             return this.updateTiles();
 
-          case 'eraser':
+          case Tools.eraser:
+            if (CycloneMapEditor.isLayerVisible(Layers.blend)) {
+              return this.updateBrush();
+            }
+
             return this.updateEraser();
 
-          case 'rectangle':
+          case Tools.rectangle:
             if (!CycloneMapEditor.rectangleWidth && !CycloneMapEditor.rectangleBackWidth || !CycloneMapEditor.rectangleHeight && !CycloneMapEditor.rectangleBackHeight) {
               this.updateTiles();
               return;
@@ -8749,6 +9479,22 @@ function _createClass(Constructor, protoProps, staticProps) { if (protoProps) _d
         }
       }
     }, {
+      key: "updateBrush",
+      value: function updateBrush() {
+        var size = Input.isPressed('shift') ? 4 : 2;
+        var width = $gameMap.tileWidth() / size;
+        var height = $gameMap.tileHeight() / size;
+
+        if (width !== this.bitmap.width || height !== this.bitmap.height) {
+          this.bitmap = new Bitmap(width, height);
+        } else {
+          this.bitmap.clear();
+        }
+
+        var fillColor = CycloneMapEditor.currentTool === Tools.eraser ? '#99000099' : '#00999999';
+        this.bitmap.drawCircle(width / 2, height / 2, Math.min(width, height) / 2, fillColor);
+      }
+    }, {
       key: "updateEraser",
       value: function updateEraser() {
         var width = this.getNewBitmapWidth();
@@ -8781,12 +9527,12 @@ function _createClass(Constructor, protoProps, staticProps) { if (protoProps) _d
           var column = 0;
           var row = 0;
 
-          var _iterator14 = _createForOfIteratorHelper(CycloneMapEditor.multiLayerSelection[z]),
-              _step14;
+          var _iterator17 = _createForOfIteratorHelper(CycloneMapEditor.multiLayerSelection[z]),
+              _step17;
 
           try {
-            for (_iterator14.s(); !(_step14 = _iterator14.n()).done;) {
-              var tileId = _step14.value;
+            for (_iterator17.s(); !(_step17 = _iterator17.n()).done;) {
+              var tileId = _step17.value;
 
               if (column >= CycloneMapEditor.tileCols) {
                 column = 0;
@@ -8800,9 +9546,9 @@ function _createClass(Constructor, protoProps, staticProps) { if (protoProps) _d
               column++;
             }
           } catch (err) {
-            _iterator14.e(err);
+            _iterator17.e(err);
           } finally {
-            _iterator14.f();
+            _iterator17.f();
           }
         }
       }
@@ -8817,12 +9563,12 @@ function _createClass(Constructor, protoProps, staticProps) { if (protoProps) _d
         var column = 0;
         var row = 0;
 
-        var _iterator15 = _createForOfIteratorHelper(CycloneMapEditor.selectedTileList),
-            _step15;
+        var _iterator18 = _createForOfIteratorHelper(CycloneMapEditor.selectedTileList),
+            _step18;
 
         try {
-          for (_iterator15.s(); !(_step15 = _iterator15.n()).done;) {
-            var tileId = _step15.value;
+          for (_iterator18.s(); !(_step18 = _iterator18.n()).done;) {
+            var tileId = _step18.value;
 
             if (column >= CycloneMapEditor.tileCols) {
               column = 0;
@@ -8846,9 +9592,9 @@ function _createClass(Constructor, protoProps, staticProps) { if (protoProps) _d
             column++;
           }
         } catch (err) {
-          _iterator15.e(err);
+          _iterator18.e(err);
         } finally {
-          _iterator15.f();
+          _iterator18.f();
         }
       }
     }, {
@@ -8939,8 +9685,16 @@ function _createClass(Constructor, protoProps, staticProps) { if (protoProps) _d
 
         var tileX = this.getCursorTileX();
         var tileY = this.getCursorTileY();
-        this.x = Math.floor($gameMap.adjustX(tileX) * CycloneMapEditor.tileWidth);
-        this.y = Math.floor($gameMap.adjustY(tileY) * CycloneMapEditor.tileHeight);
+        var offsetX = 0;
+        var offsetY = 0;
+
+        if (CycloneMapEditor.isLayerVisible(Layers.blend) && [Tools.eraser, Tools.pencil].includes(CycloneMapEditor.currentTool)) {
+          offsetX -= Math.floor(this.bitmap.width / 2);
+          offsetY -= Math.floor(this.bitmap.height / 2);
+        }
+
+        this.x = Math.floor($gameMap.adjustX(tileX) * CycloneMapEditor.tileWidth) + offsetX;
+        this.y = Math.floor($gameMap.adjustY(tileY) * CycloneMapEditor.tileHeight) + offsetY;
       }
     }]);
 
@@ -8964,6 +9718,87 @@ function _createClass(Constructor, protoProps, staticProps) { if (protoProps) _d
         value: function createMapEditorCursor() {
           this._mapEditorCursor = new SpriteMapEditorCursor();
           this.addChild(this._mapEditorCursor);
+        }
+      }, {
+        key: "forceBlenderRefresh",
+        value: function forceBlenderRefresh() {
+          var hardRefresh = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : false;
+
+          if (!window.CycloneMagic) {
+            return;
+          }
+
+          if (hardRefresh) {
+            var _iterator19 = _createForOfIteratorHelper(this._blenderTileSprites),
+                _step19;
+
+            try {
+              for (_iterator19.s(); !(_step19 = _iterator19.n()).done;) {
+                var sprite = _step19.value;
+                sprite.parent.removeChild(sprite);
+                sprite.destroy();
+              }
+            } catch (err) {
+              _iterator19.e(err);
+            } finally {
+              _iterator19.f();
+            }
+
+            this._blenderTileSprites = [];
+            this.createBlenderTiles();
+            return;
+          }
+
+          var magicTiles = $gameMap.magicTiles();
+
+          var _iterator20 = _createForOfIteratorHelper(magicTiles),
+              _step20;
+
+          try {
+            for (_iterator20.s(); !(_step20 = _iterator20.n()).done;) {
+              var tile = _step20.value;
+              var found = false;
+
+              var _iterator21 = _createForOfIteratorHelper(this._blenderTileSprites),
+                  _step21;
+
+              try {
+                for (_iterator21.s(); !(_step21 = _iterator21.n()).done;) {
+                  var _sprite = _step21.value;
+
+                  if (_sprite._mapX !== tile.x || _sprite._mapY !== tile.y) {
+                    continue;
+                  }
+
+                  found = true;
+
+                  if (!window.CycloneMagic.isSpriteCached(_sprite.spriteId)) {
+                    _sprite._bitmap = null;
+                  }
+
+                  break;
+                }
+              } catch (err) {
+                _iterator21.e(err);
+              } finally {
+                _iterator21.f();
+              }
+
+              if (!found) {
+                var newSprite = new window.CycloneMagic.SpriteBlenderTile(tile.tiles, tile.x, tile.y, 1, 1);
+
+                this._blenderTileSprites.push(newSprite);
+
+                this._tilemap.addChild(newSprite);
+              }
+            }
+          } catch (err) {
+            _iterator20.e(err);
+          } finally {
+            _iterator20.f();
+          }
+
+          this._tilemap.refresh();
         } // updatePosition() {
         //   if (!CycloneMapEditor.active) {
         //     return $super.updatePosition.call(this);
@@ -9014,6 +9849,16 @@ function _createClass(Constructor, protoProps, staticProps) { if (protoProps) _d
           }
 
           return $super._readMapData.call(this, x, y, z);
+        }
+      }, {
+        key: "update",
+        value: function update() {
+          // Prevent the water animation while modifying blending
+          if (CycloneMapEditor.active && CycloneMapEditor.isLayerVisible(Layers.blend) && TouchInput.isPressed()) {
+            this.animationCount--;
+          }
+
+          $super.update.call(this);
         }
       }]);
 
@@ -9096,8 +9941,8 @@ function _createClass(Constructor, protoProps, staticProps) { if (protoProps) _d
             }
           }
 
-          for (var _len4 = arguments.length, args = new Array(_len4), _key4 = 0; _key4 < _len4; _key4++) {
-            args[_key4] = arguments[_key4];
+          for (var _len5 = arguments.length, args = new Array(_len5), _key5 = 0; _key5 < _len5; _key5++) {
+            args[_key5] = arguments[_key5];
           }
 
           (_$super$update = $super.update).call.apply(_$super$update, [this].concat(args));

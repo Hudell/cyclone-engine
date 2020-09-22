@@ -2078,6 +2078,10 @@ class CycloneMapEditor extends CyclonePlugin {
       return tileset.tilesetNames[tilesetIndex];
     }
 
+    if (!window.CycloneExtraTilesets) {
+      return;
+    }
+
     const extraTileset = $gameMap.extraTileset();
     if (!extraTileset) {
       return;
