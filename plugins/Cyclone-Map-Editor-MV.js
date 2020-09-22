@@ -3013,6 +3013,7 @@ function _createClass(Constructor, protoProps, staticProps) { if (protoProps) _d
         }
 
         $gameMap._extraTilesetId = id;
+        $gameMap.buildTilesetFlags && $gameMap.buildTilesetFlags();
         this.refreshTilesetMenu();
         this.refreshMapEditor();
       }

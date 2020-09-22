@@ -2276,6 +2276,7 @@ class CycloneMapEditor$1 extends CyclonePlugin {
       return;
     }
     $gameMap._extraTilesetId = id;
+    $gameMap.buildTilesetFlags && $gameMap.buildTilesetFlags();
 
     this.refreshTilesetMenu();
     this.refreshMapEditor();
