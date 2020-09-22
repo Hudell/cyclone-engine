@@ -4,11 +4,11 @@
 
 /*:
  * @target MZ
- * @plugindesc . v1.00 - Premium
- *
+ * @plugindesc Blend layers to create smooth paths on your map. v1.00 - Premium.
+ * Integrates with Cyclone Map Editor.
  * <pluginName:CycloneMagic>
  * @author Hudell
- * @url 
+ * @url https://hudell.itch.io/cyclone-magic
  *
  * @help
  * ===========================================================================
@@ -63,6 +63,15 @@
  *
  * 9. I'm not responsible for anything created with this plugin.
  * ===========================================================================
+ * Instructions
+ * ===========================================================================
+ * The easiest way to use this plugin is to add the Cyclone Map Editor to
+ * your project. It can be found here:
+ * https://makerdevs.com/plugin/cyclone-map-editor
+ *
+ * When both plugins are in your project, you'll be able to use the "blend"
+ * tool of the map editor to erase specific pixels from Layer 2, blending
+ * it with the lower layer to create smoother paths.
  **/
 
 (function () {
