@@ -1,6 +1,6 @@
 /*:
  * @target MZ
- * @plugindesc Live Map Editor - v1.06.00
+ * @plugindesc Live Map Editor - v1.07.00
  *
  * <pluginName:CycloneMapEditor>
  * @author Hudell
@@ -62,6 +62,11 @@
  * ===========================================================================
  * Change Log
  * ===========================================================================
+ * 2020-09-22 - Version 1.07.00
+ *   * Several quality-of-life updates
+ *   * Added support to Cyclone Magic
+ *   * Added support to Cyclone Extra Tilesets
+ *
  * 2020-09-15 - Version 1.06.00
  *   * New option to view tile properties such as tags, passability, bush,
  *   ladder and so on.
@@ -6545,14 +6550,21 @@ class WindowCycloneMapEditorStatus extends Window_Base {
     return 12;
   }
 
+  drawMainLine() {
+    const line = this.makeLine();
+    this.drawText(line, 8, this.textY(), this.width - 8, 'left');
+  }
+
+  drawRightLine() {
+    this.drawText(`TileId: ${ CycloneMapEditor.statusTileId }`, 0, this.textY(), this.width - 8, 'right');
+  }
+
   drawContents() {
     this.contents.clear();
     this.contents.fontSize = 16;
 
-    const line = this.makeLine();
-
-    this.drawText(line, 8, this.textY(), this.width - 8, 'left');
-    this.drawText(`TileId: ${ CycloneMapEditor.statusTileId }`, 0, this.textY(), this.width - 8, 'right');
+    this.drawMainLine();
+    this.drawRightLine();
   }
 }
 
@@ -7666,7 +7678,7 @@ CycloneMapEditor.patchClass(Scene_Map, $super => class {
     const tile2 = CycloneMapEditor.getCurrentTileAtPosition(fx, fy, 1, true);
     const tile3 = CycloneMapEditor.getCurrentTileAtPosition(fx, fy, 2, true);
     const tile4 = CycloneMapEditor.getCurrentTileAtPosition(fx, fy, 3, true);
-    const tileId = this.getSelectionTileAt(x, y);
+    const tileId = this.getSelectionTileAt(x, y) ?? '';
 
     CycloneMapEditor.updateStatus({
       mapX,

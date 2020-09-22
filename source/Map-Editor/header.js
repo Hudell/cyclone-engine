@@ -1,6 +1,6 @@
 /*:
  * @target MZ
- * @plugindesc Live Map Editor - v1.06.00
+ * @plugindesc Live Map Editor - v1.07.00
  *
  * <pluginName:CycloneMapEditor>
  * @author Hudell
@@ -62,6 +62,11 @@
  * ===========================================================================
  * Change Log
  * ===========================================================================
+ * 2020-09-22 - Version 1.07.00
+ *   * Several quality-of-life updates
+ *   * Added support to Cyclone Magic
+ *   * Added support to Cyclone Extra Tilesets
+ *
  * 2020-09-15 - Version 1.06.00
  *   * New option to view tile properties such as tags, passability, bush,
  *   ladder and so on.
