@@ -360,7 +360,7 @@ class CycloneMapEditor extends CyclonePlugin {
     currentZoom = value;
     $gameScreen._zoomScale = value;
 
-    if (SceneManager._scene instanceof Scene_Map) {
+    if (this.isMapEditorScene()) {
       $gameMap.zoom = new Point(value, value);
       SceneManager._scene._mapEditorGrid.refresh();
       SceneManager._scene._spriteset.updatePosition();
@@ -460,6 +460,14 @@ class CycloneMapEditor extends CyclonePlugin {
         }
       }
     }
+  }
+
+  static mapEditorScene() {
+    return Scene_Map;
+  }
+
+  static isMapEditorScene() {
+    return SceneManager._scene instanceof (this.mapEditorScene());
   }
 
   static makeMenuEvent(fn) {
@@ -1438,7 +1446,7 @@ class CycloneMapEditor extends CyclonePlugin {
       return false;
     }
 
-    if (!(SceneManager._scene instanceof Scene_Map)) {
+    if (!this.isMapEditorScene()) {
       return false;
     }
 
@@ -1558,7 +1566,7 @@ class CycloneMapEditor extends CyclonePlugin {
     }
 
     const scene = SceneManager._scene;
-    if (!(scene instanceof Scene_Map)) {
+    if (!this.isMapEditorScene()) {
       return;
     }
 
@@ -1662,6 +1670,10 @@ class CycloneMapEditor extends CyclonePlugin {
     }
   }
 
+  static sceneToReload() {
+    return Scene_Map;
+  }
+
   static loadMapFile() {
     SceneManager._scene._mapEditorCommands.hide();
     delete mapCaches[$gameMap._mapId];
@@ -1680,7 +1692,7 @@ class CycloneMapEditor extends CyclonePlugin {
         // eslint-disable-next-line no-global-assign
         $dataMap = data;
         SoundManager.playLoad();
-        SceneManager.goto(Scene_Map);
+        SceneManager.goto(this.sceneToReload());
       } catch (e) {
         alert('Failed to parse map data.');
         SceneManager._scene.refreshMapEditorWindows();
@@ -1803,7 +1815,7 @@ class CycloneMapEditor extends CyclonePlugin {
   }
 
   static undoButton() {
-    if (!(SceneManager._scene instanceof Scene_Map)) {
+    if (!this.isMapEditorScene()) {
       return;
     }
 
@@ -1813,7 +1825,7 @@ class CycloneMapEditor extends CyclonePlugin {
   }
 
   static redoButton() {
-    if (!(SceneManager._scene instanceof Scene_Map)) {
+    if (!this.isMapEditorScene()) {
       return;
     }
 
@@ -1910,13 +1922,13 @@ class CycloneMapEditor extends CyclonePlugin {
       return;
     }
 
-    if (SceneManager._scene instanceof Scene_Map) {
+    if (this.isMapEditorScene()) {
       SceneManager._scene._mapEditorStatus.refresh();
     }
   }
 
   static showGridButton() {
-    if (!(SceneManager._scene instanceof Scene_Map)) {
+    if (!this.isMapEditorScene()) {
       return;
     }
 
@@ -1986,7 +1998,7 @@ class CycloneMapEditor extends CyclonePlugin {
   }
 
   static toolButton(toolType) {
-    if (!(SceneManager._scene instanceof Scene_Map)) {
+    if (!this.isMapEditorScene()) {
       return;
     }
 
@@ -2075,7 +2087,7 @@ class CycloneMapEditor extends CyclonePlugin {
   }
 
   static saveButton() {
-    if (!(SceneManager._scene instanceof Scene_Map)) {
+    if (!this.isMapEditorScene()) {
       return;
     }
 
@@ -2091,7 +2103,7 @@ class CycloneMapEditor extends CyclonePlugin {
   }
 
   static reloadButton() {
-    if (!(SceneManager._scene instanceof Scene_Map)) {
+    if (!this.isMapEditorScene()) {
       return;
     }
 
@@ -2173,7 +2185,7 @@ class CycloneMapEditor extends CyclonePlugin {
     }
 
     const scene = SceneManager._scene;
-    if (!(scene instanceof Scene_Map)) {
+    if (!this.isMapEditorScene()) {
       return;
     }
 
@@ -2182,7 +2194,7 @@ class CycloneMapEditor extends CyclonePlugin {
 
   static refreshMapEditor() {
     const scene = SceneManager._scene;
-    if (!(scene instanceof Scene_Map)) {
+    if (!this.isMapEditorScene()) {
       return;
     }
 
@@ -2265,7 +2277,7 @@ class CycloneMapEditor extends CyclonePlugin {
       this.blendButton.checked = newIndex === 10;
     }
 
-    if (SceneManager._scene instanceof Scene_Map) {
+    if (this.isMapEditorScene()) {
       SceneManager._scene._mapEditorLayerListWindow.refresh();
       SceneManager._scene._mapEditorWindow.refresh();
       SceneManager._scene._mapEditorStatus.refresh();
@@ -3738,7 +3750,7 @@ class CycloneMapEditor extends CyclonePlugin {
     if (!layerVisibility[currentLayer]) {
       layerVisibility[currentLayer] = true;
 
-      if (SceneManager._scene instanceof Scene_Map) {
+      if (this.isMapEditorScene()) {
         SceneManager._scene._mapEditorLayerListWindow.refresh();
       }
     }
@@ -4052,7 +4064,7 @@ class CycloneMapEditor extends CyclonePlugin {
       return;
     }
 
-    if (SceneManager._scene instanceof Scene_Map) {
+    if (this.isMapEditorScene()) {
       SceneManager._scene._mapEditorGrid.requestRefresh();
     }
   }

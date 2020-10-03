@@ -14,9 +14,17 @@ CycloneMapEditor.patchClass(Tilemap, $super => class {
     return $super._readMapData.call(this, x, y, z);
   }
 
+  canUpdateAnimationCount() {
+    if (CycloneMapEditor.active && CycloneMapEditor.isLayerVisible(Layers.blend) && TouchInput.isPressed()) {
+      return false;
+    }
+
+    return true;
+  }
+
   update() {
     // Prevent the water animation while modifying blending
-    if (CycloneMapEditor.active && CycloneMapEditor.isLayerVisible(Layers.blend) && TouchInput.isPressed()) {
+    if (!this.canUpdateAnimationCount()) {
       this.animationCount--;
     }
 
