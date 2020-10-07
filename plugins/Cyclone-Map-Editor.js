@@ -1135,6 +1135,10 @@ function logImage(canvas, text) {
 }
 
 function getTilesetIndex(tileId) {
+  if (tileId >= (Tilemap.TILE_ID_A5 + 256) && tileId < Tilemap.TILE_ID_A1) {
+    return 11;
+  }
+
   if (Tilemap.isTileA1(tileId)) {
     return 0;
   }
