@@ -2848,6 +2848,7 @@ function _createClass(Constructor, protoProps, staticProps) { if (protoProps) _d
         var f = Tilemap.TILE_ID_E + 256;
         var g = Tilemap.TILE_ID_E + 512;
         var a5 = Tilemap.TILE_ID_A5;
+        var h = Tilemap.TILE_ID_A5 + 256;
         var jumpToTabMenu = new nw.Menu();
         jumpToTabMenu.append(new nw.MenuItem({
           label: 'AutoTiles',
@@ -2895,6 +2896,12 @@ function _createClass(Constructor, protoProps, staticProps) { if (protoProps) _d
           label: 'A5 Tiles',
           click: this.makeMenuEvent(function () {
             CycloneMapEditor$1.jumpToTile(a5);
+          })
+        }));
+        jumpToTabMenu.append(new nw.MenuItem({
+          label: 'Extra D Tiles',
+          click: this.makeMenuEvent(function () {
+            CycloneMapEditor$1.jumpToOneTileOf([h, a5]);
           })
         }));
         menu.append(new nw.MenuItem({
@@ -4043,6 +4050,10 @@ function _createClass(Constructor, protoProps, staticProps) { if (protoProps) _d
 
         for (var i = 0; i < extraTiles.length; i++) {
           if (map.data[i] >= Tilemap.TILE_ID_E + 256 && map.data[i] < Tilemap.TILE_ID_A5) {
+            extraTiles[i] = map.data[i];
+            map.data[i] = 0;
+            anyExtraTile = true;
+          } else if (map.data[i] >= Tilemap.TILE_ID_A5 + 256 && map.data[i] < Tilemap.TILE_ID_A1) {
             extraTiles[i] = map.data[i];
             map.data[i] = 0;
             anyExtraTile = true;

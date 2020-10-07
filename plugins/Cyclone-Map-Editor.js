@@ -2125,6 +2125,7 @@ class CycloneMapEditor$1 extends CyclonePlugin {
     const f = Tilemap.TILE_ID_E + 256;
     const g = Tilemap.TILE_ID_E + 512;
     const a5 = Tilemap.TILE_ID_A5;
+    const h = Tilemap.TILE_ID_A5 + 256;
 
     const jumpToTabMenu = new nw.Menu();
     jumpToTabMenu.append(new nw.MenuItem({
@@ -2173,6 +2174,12 @@ class CycloneMapEditor$1 extends CyclonePlugin {
       label: 'A5 Tiles',
       click: this.makeMenuEvent(() => {
         CycloneMapEditor$1.jumpToTile(a5);
+      }),
+    }));
+    jumpToTabMenu.append(new nw.MenuItem({
+      label: 'Extra D Tiles',
+      click: this.makeMenuEvent(() => {
+        CycloneMapEditor$1.jumpToOneTileOf([h, a5]);
       }),
     }));
 
@@ -3197,6 +3204,10 @@ class CycloneMapEditor$1 extends CyclonePlugin {
 
     for (let i = 0; i < extraTiles.length; i++) {
       if (map.data[i] >= Tilemap.TILE_ID_E + 256 && map.data[i] < Tilemap.TILE_ID_A5) {
+        extraTiles[i] = map.data[i];
+        map.data[i] = 0;
+        anyExtraTile = true;
+      } else if (map.data[i] >= Tilemap.TILE_ID_A5 + 256 && map.data[i] < Tilemap.TILE_ID_A1) {
         extraTiles[i] = map.data[i];
         map.data[i] = 0;
         anyExtraTile = true;
