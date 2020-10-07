@@ -6674,7 +6674,10 @@ class WindowCycloneMapEditor extends Window_Command {
       this.addTile(tileId);
     }
 
-    for (let tileId = Tilemap.TILE_ID_B; tileId < Tilemap.TILE_ID_A5; tileId++) {
+    for (let tileId = Tilemap.TILE_ID_B; tileId < Tilemap.TILE_ID_A1; tileId++) {
+      if (tileId >= Tilemap.TILE_ID_A5 + 128 && tileId < Tilemap.TILE_ID_A5 + 256) {
+        continue;
+      }
       this.addTile(tileId);
     }
   }
