@@ -35,6 +35,10 @@ export function parseMapEditorData(note) {
 }
 
 export function loadMapEditorData() {
+  if (!$dataMap) {
+    return false;
+  }
+
   for (const event of $dataMap.events) {
     if (!event) {
       continue;

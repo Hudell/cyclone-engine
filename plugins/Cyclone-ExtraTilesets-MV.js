@@ -583,6 +583,10 @@ function _createClass(Constructor, protoProps, staticProps) { if (protoProps) _d
   }
 
   function loadMapEditorData() {
+    if (!$dataMap) {
+      return false;
+    }
+
     var _iterator = _createForOfIteratorHelper($dataMap.events),
         _step;
 
@@ -715,9 +719,15 @@ function _createClass(Constructor, protoProps, staticProps) { if (protoProps) _d
             var newZero = Tilemap.TILE_ID_E + 256;
             var newFlags = tileset.flags;
 
-            for (var tileId = 0; tileId < Tilemap.TILE_ID_D; tileId++) {
+            for (var tileId = Tilemap.TILE_ID_B; tileId < Tilemap.TILE_ID_D; tileId++) {
               var newTileId = tileId + newZero;
               this._allFlags[newTileId] = newFlags[tileId] || 0;
+            }
+
+            for (var _tileId = Tilemap.TILE_ID_D; _tileId < Tilemap.TILE_ID_E; _tileId++) {
+              var _newTileId = _tileId - Tilemap.TILE_ID_D + Tilemap.TILE_ID_A5 + 256;
+
+              this._allFlags[_newTileId] = newFlags[_tileId] || 0;
             }
           }
 
@@ -759,7 +769,7 @@ function _createClass(Constructor, protoProps, staticProps) { if (protoProps) _d
         value: function onLoad(object) {
           $super.onLoad.call(this, object);
 
-          if (this.isMapObject(object)) {
+          if (this.isMapObject(object) && window.$dataMap) {
             CycloneExtraTilesets.loadExtraTilesets(object);
           }
         }

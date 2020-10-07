@@ -4,7 +4,7 @@
 
 /*:
  * @target MZ
- * @plugindesc Loads additional tiles from a second tileset. v1.00 - Premium.
+ * @plugindesc Loads additional tiles from a second tileset. v1.01 - Premium.
  * Integrates with Cyclone Map Editor.
  * <pluginName:CycloneExtraTilesets>
  * @author Hudell
@@ -71,6 +71,6 @@
  *
  * When both plugins are in your project, run your game and open the "Tilesets"
  * menu, then select the extra tileset you want to use.
- * Cyclone Map Editor will then let you use anything from the B and C tabs
+ * Cyclone Map Editor will then let you use anything from the B, C and D tabs
  * of the extra tileset you picked.
  **/

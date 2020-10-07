@@ -4,7 +4,7 @@
 
 /*:
  * @target MZ
- * @plugindesc Loads additional tiles from a second tileset. v1.00 - Premium.
+ * @plugindesc Loads additional tiles from a second tileset. v1.01 - Premium.
  * Integrates with Cyclone Map Editor.
  * <pluginName:CycloneExtraTilesets>
  * @author Hudell
@@ -71,7 +71,7 @@
  *
  * When both plugins are in your project, run your game and open the "Tilesets"
  * menu, then select the extra tileset you want to use.
- * Cyclone Map Editor will then let you use anything from the B and C tabs
+ * Cyclone Map Editor will then let you use anything from the B, C and D tabs
  * of the extra tileset you picked.
  **/
 
@@ -228,6 +228,10 @@ function parseMapEditorData(note) {
 }
 
 function loadMapEditorData() {
+  if (!$dataMap) {
+    return false;
+  }
+
   for (const event of $dataMap.events) {
     if (!event) {
       continue;
@@ -321,8 +325,13 @@ CycloneExtraTilesets.patchClass(Game_Map, $super => class {
       const newZero = Tilemap.TILE_ID_E + 256;
       const newFlags = tileset.flags;
 
-      for (let tileId = 0; tileId < Tilemap.TILE_ID_D; tileId++) {
+      for (let tileId = Tilemap.TILE_ID_B; tileId < Tilemap.TILE_ID_D; tileId++) {
         const newTileId = tileId + newZero;
+        this._allFlags[newTileId] = newFlags[tileId] || 0;
+      }
+
+      for (let tileId = Tilemap.TILE_ID_D; tileId < Tilemap.TILE_ID_E; tileId++) {
+        const newTileId = tileId - Tilemap.TILE_ID_D + Tilemap.TILE_ID_A5 + 256;
         this._allFlags[newTileId] = newFlags[tileId] || 0;
       }
     }
@@ -352,7 +361,7 @@ CycloneExtraTilesets.patchClass(DataManager, $super => class {
   static onLoad(object) {
     $super.onLoad.call(this, object);
 
-    if (this.isMapObject(object)) {
+    if (this.isMapObject(object) && window.$dataMap) {
       CycloneExtraTilesets.loadExtraTilesets(object);
     }
   }
@@ -390,6 +399,27 @@ CycloneExtraTilesets.patchClass(Spriteset_Map, $super => class {
     }
 
     $super.updateTileset.call(this);
+  }
+});
+
+CycloneExtraTilesets.patchClass(Tilemap, $super => class {
+  isTileA5(tileId) {
+    return tileId >= Tilemap.TILE_ID_A5 && tileId < (Tilemap.TILE_ID_A5 + 128);
+  }
+
+  _addNormalTile(layer, tileId, dx, dy) {
+    if (tileId >= Tilemap.TILE_ID_A5 + 256 && tileId < Tilemap.TILE_ID_A1) {
+      const setNumber = 11;
+      const w = this._tileWidth;
+      const h = this._tileHeight;
+      const sx = ((Math.floor(tileId / 128) % 2) * 8 + (tileId % 8)) * w;
+      const sy = (Math.floor((tileId % 256) / 8) % 16) * h;
+
+      layer.addRect(setNumber, sx, sy, dx, dy, w, h);
+      return;
+    }
+
+    $super._addNormalTile.call(this, layer, tileId, dx, dy);
   }
 });
 })();
