@@ -8454,7 +8454,11 @@ function _createClass(Constructor, protoProps, staticProps) { if (protoProps) _d
           this.addTile(tileId);
         }
 
-        for (var _tileId4 = Tilemap.TILE_ID_B; _tileId4 < Tilemap.TILE_ID_A5; _tileId4++) {
+        for (var _tileId4 = Tilemap.TILE_ID_B; _tileId4 < Tilemap.TILE_ID_A1; _tileId4++) {
+          if (_tileId4 >= Tilemap.TILE_ID_A5 + 128 && _tileId4 < Tilemap.TILE_ID_A5 + 256) {
+            continue;
+          }
+
           this.addTile(_tileId4);
         }
       }
