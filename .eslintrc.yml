@@ -37,6 +37,7 @@ globals:
   Scene_Menu: false
   Scene_MenuBase: false
   Scene_Boot: false
+  Scene_Title: false
   Spriteset_Map: false
   Sprite_Clickable: false
   Sprite_Balloon: false
@@ -77,12 +78,14 @@ globals:
 
   CyclonePlugin: true
   CycloneMapEditor: true
+  CycloneMapEditorPro: true
   CycloneMaps: true
   CycloneTime: true
   CycloneMovement: true
   CycloneTilePriority: true
   CycloneMagic: true
   CycloneExtraTilesets: true
+  CycloneExtraLayers: true
 
   WindowResizer: true
 rules:

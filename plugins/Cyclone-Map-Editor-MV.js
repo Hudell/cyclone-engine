@@ -45,7 +45,7 @@ function _defineProperties(target, props) { for (var i = 0; i < props.length; i+
 function _createClass(Constructor, protoProps, staticProps) { if (protoProps) _defineProperties(Constructor.prototype, protoProps); if (staticProps) _defineProperties(Constructor, staticProps); return Constructor; }
 
 /*:
- * @plugindesc Live Map Editor - 1.07.00
+ * @plugindesc Live Map Editor - 1.08.00
  *
  * <pluginName:CycloneMapEditor>
  * @author Hudell
@@ -107,6 +107,9 @@ function _createClass(Constructor, protoProps, staticProps) { if (protoProps) _d
  * ===========================================================================
  * Change Log
  * ===========================================================================
+ * 2020-10-07 - Version 1.08.00
+ *   * Added support to Cyclone Extra Tilesets v1.1
+ *
  * 2020-09-22 - Version 1.07.00
  *   * Several quality-of-life updates
  *   * Added support to Cyclone Magic
@@ -2016,6 +2019,10 @@ function _createClass(Constructor, protoProps, staticProps) { if (protoProps) _d
   }
 
   function getTilesetIndex(tileId) {
+    if (tileId >= Tilemap.TILE_ID_A5 + 256 && tileId < Tilemap.TILE_ID_A1) {
+      return 11;
+    }
+
     if (Tilemap.isTileA1(tileId)) {
       return 0;
     }

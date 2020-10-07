@@ -1,6 +1,6 @@
 /*:
  * @target MZ
- * @plugindesc Live Map Editor - v1.07.00
+ * @plugindesc Live Map Editor - v1.08.00
  *
  * <pluginName:CycloneMapEditor>
  * @author Hudell
@@ -62,6 +62,9 @@
  * ===========================================================================
  * Change Log
  * ===========================================================================
+ * 2020-10-07 - Version 1.08.00
+ *   * Added support to Cyclone Extra Tilesets v1.1
+ *
  * 2020-09-22 - Version 1.07.00
  *   * Several quality-of-life updates
  *   * Added support to Cyclone Magic
