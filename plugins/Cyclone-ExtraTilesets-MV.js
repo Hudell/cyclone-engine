@@ -39,7 +39,7 @@ function _createClass(Constructor, protoProps, staticProps) { if (protoProps) _d
 //=============================================================================
 
 /*:
-* @plugindesc Loads additional tiles from a second tileset. v1.00 - Premium.
+* @plugindesc Loads additional tiles from a second tileset. v1.01 - Premium.
 * Integrates with Cyclone Map Editor.
 * <pluginName:CycloneExtraTilesets>
 * @author Hudell
@@ -106,7 +106,7 @@ function _createClass(Constructor, protoProps, staticProps) { if (protoProps) _d
 *
 * When both plugins are in your project, run your game and open the "Tilesets"
 * menu, then select the extra tileset you want to use.
-* Cyclone Map Editor will then let you use anything from the B and C tabs
+* Cyclone Map Editor will then let you use anything from the B, C and D tabs
 * of the extra tileset you picked.
 **/
 (function () {
@@ -778,13 +778,75 @@ function _createClass(Constructor, protoProps, staticProps) { if (protoProps) _d
       return _class2;
     }();
   });
-  CycloneExtraTilesets.patchClass(Spriteset_Map, function ($super) {
+  CycloneExtraTilesets.patchClass(Tilemap, function ($super) {
     return /*#__PURE__*/function () {
       function _class3() {
         _classCallCheck(this, _class3);
       }
 
       _createClass(_class3, [{
+        key: "isTileA5",
+        value: function isTileA5(tileId) {
+          return tileId >= Tilemap.TILE_ID_A5 && tileId < Tilemap.TILE_ID_A5 + 128;
+        }
+      }, {
+        key: "_drawNormalTile",
+        value: function _drawNormalTile(bitmap, tileId, dx, dy) {
+          if (tileId >= Tilemap.TILE_ID_A5 + 256 && tileId < Tilemap.TILE_ID_A1) {
+            var setNumber = 11;
+            var w = this._tileWidth;
+            var h = this._tileHeight;
+            var sx = (Math.floor(tileId / 128) % 2 * 8 + tileId % 8) * w;
+            var sy = Math.floor(tileId % 256 / 8) % 16 * h;
+            var source = this.bitmaps[setNumber];
+
+            if (source) {
+              bitmap.bltImage(source, sx, sy, w, h, dx, dy, w, h);
+            }
+
+            return;
+          }
+
+          $super._drawNormalTile.call(this, bitmap, tileId, dx, dy);
+        }
+      }]);
+
+      return _class3;
+    }();
+  });
+  CycloneExtraTilesets.patchClass(ShaderTilemap, function ($super) {
+    return /*#__PURE__*/function () {
+      function _class4() {
+        _classCallCheck(this, _class4);
+      }
+
+      _createClass(_class4, [{
+        key: "_drawNormalTile",
+        value: function _drawNormalTile(layer, tileId, dx, dy) {
+          if (tileId >= Tilemap.TILE_ID_A5 + 256 && tileId < Tilemap.TILE_ID_A1) {
+            var setNumber = 11;
+            var w = this._tileWidth;
+            var h = this._tileHeight;
+            var sx = (Math.floor(tileId / 128) % 2 * 8 + tileId % 8) * w;
+            var sy = Math.floor(tileId % 256 / 8) % 16 * h;
+            layer.addRect(setNumber, sx, sy, dx, dy, w, h);
+            return;
+          }
+
+          $super._drawNormalTile.call(this, layer, tileId, dx, dy);
+        }
+      }]);
+
+      return _class4;
+    }();
+  });
+  CycloneExtraTilesets.patchClass(Spriteset_Map, function ($super) {
+    return /*#__PURE__*/function () {
+      function _class5() {
+        _classCallCheck(this, _class5);
+      }
+
+      _createClass(_class5, [{
         key: "loadTileset",
         value: function loadTileset() {
           this._tileset = $gameMap.tileset();
@@ -827,7 +889,7 @@ function _createClass(Constructor, protoProps, staticProps) { if (protoProps) _d
         }
       }]);
 
-      return _class3;
+      return _class5;
     }();
   });
 })();
