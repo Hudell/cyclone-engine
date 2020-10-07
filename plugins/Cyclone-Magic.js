@@ -4,7 +4,7 @@
 
 /*:
  * @target MZ
- * @plugindesc Blend layers to create smooth paths on your map. v1.00 - Premium.
+ * @plugindesc Blend layers to create smooth paths on your map. v1.01 - Premium.
  * Integrates with Cyclone Map Editor.
  * <pluginName:CycloneMagic>
  * @author Hudell
@@ -321,6 +321,10 @@ function drawTile(target, tilesetBitmap, tileId, x, y, drawWidth, drawHeight) {
 }
 
 function getTilesetIndex(tileId) {
+  if (tileId >= (Tilemap.TILE_ID_A5 + 256) && tileId < Tilemap.TILE_ID_A1) {
+    return 11;
+  }
+
   if (Tilemap.isTileA1(tileId)) {
     return 0;
   }
@@ -381,6 +385,10 @@ function parseMapEditorData(note) {
 }
 
 function loadMapEditorData() {
+  if (!$dataMap) {
+    return false;
+  }
+
   for (const event of $dataMap.events) {
     if (!event) {
       continue;

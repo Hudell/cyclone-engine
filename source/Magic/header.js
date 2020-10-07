@@ -4,7 +4,7 @@
 
 /*:
  * @target MZ
- * @plugindesc Blend layers to create smooth paths on your map. v1.00 - Premium.
+ * @plugindesc Blend layers to create smooth paths on your map. v1.01 - Premium.
  * Integrates with Cyclone Map Editor.
  * <pluginName:CycloneMagic>
  * @author Hudell
