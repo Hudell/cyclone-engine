@@ -1510,7 +1510,7 @@ class CycloneMapEditor$1 extends CyclonePlugin {
     currentZoom = value;
     $gameScreen._zoomScale = value;
 
-    if (SceneManager._scene instanceof Scene_Map) {
+    if (this.isMapEditorScene()) {
       $gameMap.zoom = new Point(value, value);
       SceneManager._scene._mapEditorGrid.refresh();
       SceneManager._scene._spriteset.updatePosition();
@@ -1610,6 +1610,14 @@ class CycloneMapEditor$1 extends CyclonePlugin {
         }
       }
     }
+  }
+
+  static mapEditorScene() {
+    return Scene_Map;
+  }
+
+  static isMapEditorScene() {
+    return SceneManager._scene instanceof (this.mapEditorScene());
   }
 
   static makeMenuEvent(fn) {
@@ -2117,6 +2125,7 @@ class CycloneMapEditor$1 extends CyclonePlugin {
     const f = Tilemap.TILE_ID_E + 256;
     const g = Tilemap.TILE_ID_E + 512;
     const a5 = Tilemap.TILE_ID_A5;
+    const h = Tilemap.TILE_ID_A5 + 256;
 
     const jumpToTabMenu = new nw.Menu();
     jumpToTabMenu.append(new nw.MenuItem({
@@ -2165,6 +2174,12 @@ class CycloneMapEditor$1 extends CyclonePlugin {
       label: 'A5 Tiles',
       click: this.makeMenuEvent(() => {
         CycloneMapEditor$1.jumpToTile(a5);
+      }),
+    }));
+    jumpToTabMenu.append(new nw.MenuItem({
+      label: 'Extra D Tiles',
+      click: this.makeMenuEvent(() => {
+        CycloneMapEditor$1.jumpToOneTileOf([h, a5]);
       }),
     }));
 
@@ -2588,7 +2603,7 @@ class CycloneMapEditor$1 extends CyclonePlugin {
       return false;
     }
 
-    if (!(SceneManager._scene instanceof Scene_Map)) {
+    if (!this.isMapEditorScene()) {
       return false;
     }
 
@@ -2708,7 +2723,7 @@ class CycloneMapEditor$1 extends CyclonePlugin {
     }
 
     const scene = SceneManager._scene;
-    if (!(scene instanceof Scene_Map)) {
+    if (!this.isMapEditorScene()) {
       return;
     }
 
@@ -2812,6 +2827,10 @@ class CycloneMapEditor$1 extends CyclonePlugin {
     }
   }
 
+  static sceneToReload() {
+    return Scene_Map;
+  }
+
   static loadMapFile() {
     SceneManager._scene._mapEditorCommands.hide();
     delete mapCaches[$gameMap._mapId];
@@ -2830,7 +2849,7 @@ class CycloneMapEditor$1 extends CyclonePlugin {
         // eslint-disable-next-line no-global-assign
         $dataMap = data;
         SoundManager.playLoad();
-        SceneManager.goto(Scene_Map);
+        SceneManager.goto(this.sceneToReload());
       } catch (e) {
         alert('Failed to parse map data.');
         SceneManager._scene.refreshMapEditorWindows();
@@ -2953,7 +2972,7 @@ class CycloneMapEditor$1 extends CyclonePlugin {
   }
 
   static undoButton() {
-    if (!(SceneManager._scene instanceof Scene_Map)) {
+    if (!this.isMapEditorScene()) {
       return;
     }
 
@@ -2963,7 +2982,7 @@ class CycloneMapEditor$1 extends CyclonePlugin {
   }
 
   static redoButton() {
-    if (!(SceneManager._scene instanceof Scene_Map)) {
+    if (!this.isMapEditorScene()) {
       return;
     }
 
@@ -3060,13 +3079,13 @@ class CycloneMapEditor$1 extends CyclonePlugin {
       return;
     }
 
-    if (SceneManager._scene instanceof Scene_Map) {
+    if (this.isMapEditorScene()) {
       SceneManager._scene._mapEditorStatus.refresh();
     }
   }
 
   static showGridButton() {
-    if (!(SceneManager._scene instanceof Scene_Map)) {
+    if (!this.isMapEditorScene()) {
       return;
     }
 
@@ -3136,7 +3155,7 @@ class CycloneMapEditor$1 extends CyclonePlugin {
   }
 
   static toolButton(toolType) {
-    if (!(SceneManager._scene instanceof Scene_Map)) {
+    if (!this.isMapEditorScene()) {
       return;
     }
 
@@ -3188,6 +3207,10 @@ class CycloneMapEditor$1 extends CyclonePlugin {
         extraTiles[i] = map.data[i];
         map.data[i] = 0;
         anyExtraTile = true;
+      } else if (map.data[i] >= Tilemap.TILE_ID_A5 + 256 && map.data[i] < Tilemap.TILE_ID_A1) {
+        extraTiles[i] = map.data[i];
+        map.data[i] = 0;
+        anyExtraTile = true;
       } else {
         extraTiles[i] = 0;
       }
@@ -3225,7 +3248,7 @@ class CycloneMapEditor$1 extends CyclonePlugin {
   }
 
   static saveButton() {
-    if (!(SceneManager._scene instanceof Scene_Map)) {
+    if (!this.isMapEditorScene()) {
       return;
     }
 
@@ -3241,7 +3264,7 @@ class CycloneMapEditor$1 extends CyclonePlugin {
   }
 
   static reloadButton() {
-    if (!(SceneManager._scene instanceof Scene_Map)) {
+    if (!this.isMapEditorScene()) {
       return;
     }
 
@@ -3323,7 +3346,7 @@ class CycloneMapEditor$1 extends CyclonePlugin {
     }
 
     const scene = SceneManager._scene;
-    if (!(scene instanceof Scene_Map)) {
+    if (!this.isMapEditorScene()) {
       return;
     }
 
@@ -3332,7 +3355,7 @@ class CycloneMapEditor$1 extends CyclonePlugin {
 
   static refreshMapEditor() {
     const scene = SceneManager._scene;
-    if (!(scene instanceof Scene_Map)) {
+    if (!this.isMapEditorScene()) {
       return;
     }
 
@@ -3415,7 +3438,7 @@ class CycloneMapEditor$1 extends CyclonePlugin {
       this.blendButton.checked = newIndex === 10;
     }
 
-    if (SceneManager._scene instanceof Scene_Map) {
+    if (this.isMapEditorScene()) {
       SceneManager._scene._mapEditorLayerListWindow.refresh();
       SceneManager._scene._mapEditorWindow.refresh();
       SceneManager._scene._mapEditorStatus.refresh();
@@ -4888,7 +4911,7 @@ class CycloneMapEditor$1 extends CyclonePlugin {
     if (!layerVisibility[currentLayer]) {
       layerVisibility[currentLayer] = true;
 
-      if (SceneManager._scene instanceof Scene_Map) {
+      if (this.isMapEditorScene()) {
         SceneManager._scene._mapEditorLayerListWindow.refresh();
       }
     }
@@ -5202,7 +5225,7 @@ class CycloneMapEditor$1 extends CyclonePlugin {
       return;
     }
 
-    if (SceneManager._scene instanceof Scene_Map) {
+    if (this.isMapEditorScene()) {
       SceneManager._scene._mapEditorGrid.requestRefresh();
     }
   }
@@ -8122,9 +8145,17 @@ CycloneMapEditor.patchClass(Tilemap, $super => class {
     return $super._readMapData.call(this, x, y, z);
   }
 
+  canUpdateAnimationCount() {
+    if (CycloneMapEditor.active && CycloneMapEditor.isLayerVisible(Layers.blend) && TouchInput.isPressed()) {
+      return false;
+    }
+
+    return true;
+  }
+
   update() {
     // Prevent the water animation while modifying blending
-    if (CycloneMapEditor.active && CycloneMapEditor.isLayerVisible(Layers.blend) && TouchInput.isPressed()) {
+    if (!this.canUpdateAnimationCount()) {
       this.animationCount--;
     }
 

@@ -2315,6 +2315,16 @@ function _createClass(Constructor, protoProps, staticProps) { if (protoProps) _d
         }
       }
     }, {
+      key: "mapEditorScene",
+      value: function mapEditorScene() {
+        return Scene_Map;
+      }
+    }, {
+      key: "isMapEditorScene",
+      value: function isMapEditorScene() {
+        return SceneManager._scene instanceof this.mapEditorScene();
+      }
+    }, {
       key: "makeMenuEvent",
       value: function makeMenuEvent(fn) {
         return function () {
@@ -2838,6 +2848,7 @@ function _createClass(Constructor, protoProps, staticProps) { if (protoProps) _d
         var f = Tilemap.TILE_ID_E + 256;
         var g = Tilemap.TILE_ID_E + 512;
         var a5 = Tilemap.TILE_ID_A5;
+        var h = Tilemap.TILE_ID_A5 + 256;
         var jumpToTabMenu = new nw.Menu();
         jumpToTabMenu.append(new nw.MenuItem({
           label: 'AutoTiles',
@@ -2885,6 +2896,12 @@ function _createClass(Constructor, protoProps, staticProps) { if (protoProps) _d
           label: 'A5 Tiles',
           click: this.makeMenuEvent(function () {
             CycloneMapEditor$1.jumpToTile(a5);
+          })
+        }));
+        jumpToTabMenu.append(new nw.MenuItem({
+          label: 'Extra D Tiles',
+          click: this.makeMenuEvent(function () {
+            CycloneMapEditor$1.jumpToOneTileOf([h, a5]);
           })
         }));
         menu.append(new nw.MenuItem({
@@ -3361,7 +3378,7 @@ function _createClass(Constructor, protoProps, staticProps) { if (protoProps) _d
           return false;
         }
 
-        if (!(SceneManager._scene instanceof Scene_Map)) {
+        if (!this.isMapEditorScene()) {
           return false;
         }
 
@@ -3496,7 +3513,7 @@ function _createClass(Constructor, protoProps, staticProps) { if (protoProps) _d
 
         var scene = SceneManager._scene;
 
-        if (!(scene instanceof Scene_Map)) {
+        if (!this.isMapEditorScene()) {
           return;
         }
 
@@ -3623,8 +3640,15 @@ function _createClass(Constructor, protoProps, staticProps) { if (protoProps) _d
         }
       }
     }, {
+      key: "sceneToReload",
+      value: function sceneToReload() {
+        return Scene_Map;
+      }
+    }, {
       key: "loadMapFile",
       value: function loadMapFile() {
+        var _this13 = this;
+
         SceneManager._scene._mapEditorCommands.hide();
 
         delete mapCaches[$gameMap._mapId];
@@ -3640,7 +3664,7 @@ function _createClass(Constructor, protoProps, staticProps) { if (protoProps) _d
 
             $dataMap = data;
             SoundManager.playLoad();
-            SceneManager["goto"](Scene_Map);
+            SceneManager["goto"](_this13.sceneToReload());
           } catch (e) {
             alert('Failed to parse map data.');
 
@@ -3768,7 +3792,7 @@ function _createClass(Constructor, protoProps, staticProps) { if (protoProps) _d
     }, {
       key: "undoButton",
       value: function undoButton() {
-        if (!(SceneManager._scene instanceof Scene_Map)) {
+        if (!this.isMapEditorScene()) {
           return;
         }
 
@@ -3779,7 +3803,7 @@ function _createClass(Constructor, protoProps, staticProps) { if (protoProps) _d
     }, {
       key: "redoButton",
       value: function redoButton() {
-        if (!(SceneManager._scene instanceof Scene_Map)) {
+        if (!this.isMapEditorScene()) {
           return;
         }
 
@@ -3892,14 +3916,14 @@ function _createClass(Constructor, protoProps, staticProps) { if (protoProps) _d
           return;
         }
 
-        if (SceneManager._scene instanceof Scene_Map) {
+        if (this.isMapEditorScene()) {
           SceneManager._scene._mapEditorStatus.refresh();
         }
       }
     }, {
       key: "showGridButton",
       value: function showGridButton() {
-        if (!(SceneManager._scene instanceof Scene_Map)) {
+        if (!this.isMapEditorScene()) {
           return;
         }
 
@@ -3976,7 +4000,7 @@ function _createClass(Constructor, protoProps, staticProps) { if (protoProps) _d
     }, {
       key: "toolButton",
       value: function toolButton(toolType) {
-        if (!(SceneManager._scene instanceof Scene_Map)) {
+        if (!this.isMapEditorScene()) {
           return;
         }
 
@@ -4029,6 +4053,10 @@ function _createClass(Constructor, protoProps, staticProps) { if (protoProps) _d
             extraTiles[i] = map.data[i];
             map.data[i] = 0;
             anyExtraTile = true;
+          } else if (map.data[i] >= Tilemap.TILE_ID_A5 + 256 && map.data[i] < Tilemap.TILE_ID_A1) {
+            extraTiles[i] = map.data[i];
+            map.data[i] = 0;
+            anyExtraTile = true;
           } else {
             extraTiles[i] = 0;
           }
@@ -4070,7 +4098,7 @@ function _createClass(Constructor, protoProps, staticProps) { if (protoProps) _d
     }, {
       key: "saveButton",
       value: function saveButton() {
-        if (!(SceneManager._scene instanceof Scene_Map)) {
+        if (!this.isMapEditorScene()) {
           return;
         }
 
@@ -4089,7 +4117,7 @@ function _createClass(Constructor, protoProps, staticProps) { if (protoProps) _d
     }, {
       key: "reloadButton",
       value: function reloadButton() {
-        if (!(SceneManager._scene instanceof Scene_Map)) {
+        if (!this.isMapEditorScene()) {
           return;
         }
 
@@ -4185,7 +4213,7 @@ function _createClass(Constructor, protoProps, staticProps) { if (protoProps) _d
 
         var scene = SceneManager._scene;
 
-        if (!(scene instanceof Scene_Map)) {
+        if (!this.isMapEditorScene()) {
           return;
         }
 
@@ -4196,7 +4224,7 @@ function _createClass(Constructor, protoProps, staticProps) { if (protoProps) _d
       value: function refreshMapEditor() {
         var scene = SceneManager._scene;
 
-        if (!(scene instanceof Scene_Map)) {
+        if (!this.isMapEditorScene()) {
           return;
         }
 
@@ -4287,7 +4315,7 @@ function _createClass(Constructor, protoProps, staticProps) { if (protoProps) _d
           this.blendButton.checked = newIndex === 10;
         }
 
-        if (SceneManager._scene instanceof Scene_Map) {
+        if (this.isMapEditorScene()) {
           SceneManager._scene._mapEditorLayerListWindow.refresh();
 
           SceneManager._scene._mapEditorWindow.refresh();
@@ -4351,7 +4379,7 @@ function _createClass(Constructor, protoProps, staticProps) { if (protoProps) _d
     }, {
       key: "getWallColumnTypeForPosition",
       value: function getWallColumnTypeForPosition(x, y, z, tileId) {
-        var _this13 = this;
+        var _this14 = this;
 
         var skipPreview = arguments.length > 4 && arguments[4] !== undefined ? arguments[4] : true;
         // wall auto tiles need the left and right columns to have the same amount of rows for it to match
@@ -4359,9 +4387,9 @@ function _createClass(Constructor, protoProps, staticProps) { if (protoProps) _d
         var hasRightColumn = true;
 
         var compareWallAutoTileLine = function compareWallAutoTileLine(newY, sameCenter) {
-          var leftTileId = _this13.getCurrentTileAtPosition(x - 1, newY, z, skipPreview);
+          var leftTileId = _this14.getCurrentTileAtPosition(x - 1, newY, z, skipPreview);
 
-          var rightTileId = _this13.getCurrentTileAtPosition(x + 1, newY, z, skipPreview);
+          var rightTileId = _this14.getCurrentTileAtPosition(x + 1, newY, z, skipPreview);
 
           if (sameCenter) {
             if (!Tilemap.isSameKindTile(tileId, leftTileId)) {
@@ -5582,13 +5610,13 @@ function _createClass(Constructor, protoProps, staticProps) { if (protoProps) _d
     }, {
       key: "getHighestLayerOnArea",
       value: function getHighestLayerOnArea(startX, startY, width, height) {
-        var _this14 = this;
+        var _this15 = this;
 
         var highestLayer = function () {
           for (var z = 3; z >= 1; z--) {
             for (var tileY = startY; tileY < startY + height; tileY++) {
               for (var tileX = startX; tileX < startX + width; tileX++) {
-                var tileIndex = _this14.tileIndex(tileX, tileY, z);
+                var tileIndex = _this15.tileIndex(tileX, tileY, z);
 
                 var tileId = $dataMap.data[tileIndex];
 
@@ -5700,7 +5728,7 @@ function _createClass(Constructor, protoProps, staticProps) { if (protoProps) _d
     }, {
       key: "copyAutoRectangle",
       value: function copyAutoRectangle(startX, startY, width, height) {
-        var _this15 = this;
+        var _this16 = this;
 
         for (var z = 0; z <= 3; z++) {
           multiLayerSelection[z] = Array(width * height);
@@ -5708,7 +5736,7 @@ function _createClass(Constructor, protoProps, staticProps) { if (protoProps) _d
 
         this.iterateRectangle(startX, startY, width, height, function (tileX, tileY, index) {
           for (var _z2 = 0; _z2 <= 3; _z2++) {
-            var tileIndex = _this15.tileIndex(tileX, tileY, _z2);
+            var tileIndex = _this16.tileIndex(tileX, tileY, _z2);
 
             multiLayerSelection[_z2][index] = $dataMap.data[tileIndex] || 0;
             selectedTileList[index] = $dataMap.data[tileIndex] || selectedTileList[index] || 0;
@@ -5754,7 +5782,7 @@ function _createClass(Constructor, protoProps, staticProps) { if (protoProps) _d
     }, {
       key: "copyHigherAutoRectangle",
       value: function copyHigherAutoRectangle(startX, startY, width, height) {
-        var _this16 = this;
+        var _this17 = this;
 
         for (var z = 0; z <= 3; z++) {
           multiLayerSelection[z] = Array(width * height);
@@ -5763,24 +5791,24 @@ function _createClass(Constructor, protoProps, staticProps) { if (protoProps) _d
         var foundAny = false;
 
         var _loop2 = function _loop2(_z3) {
-          if (!_this16.isLayerVisible(_z3)) {
+          if (!_this17.isLayerVisible(_z3)) {
             return "continue";
           }
 
-          _this16.iterateRectangle(startX, startY, width, height, function (tileX, tileY, index) {
-            var tileIndex = _this16.tileIndex(tileX, tileY, _z3);
+          _this17.iterateRectangle(startX, startY, width, height, function (tileX, tileY, index) {
+            var tileIndex = _this17.tileIndex(tileX, tileY, _z3);
 
             multiLayerSelection[_z3][index] = $dataMap.data[tileIndex] || 0;
             selectedTileList[index] = $dataMap.data[tileIndex] || selectedTileList[index] || 0;
 
-            _this16._selectTileIfNoneSelectedYet(selectedTileList[index]);
+            _this17._selectTileIfNoneSelectedYet(selectedTileList[index]);
 
             if ($dataMap.data[tileIndex]) {
               foundAny = true;
             }
           });
 
-          if (_this16._shouldSkipRemainingLayersCopy(foundAny, _z3)) {
+          if (_this17._shouldSkipRemainingLayersCopy(foundAny, _z3)) {
             return {
               v: void 0
             };
@@ -5797,28 +5825,28 @@ function _createClass(Constructor, protoProps, staticProps) { if (protoProps) _d
     }, {
       key: "copyHigherRectangle",
       value: function copyHigherRectangle(startX, startY, width, height) {
-        var _this17 = this;
+        var _this18 = this;
 
         var foundAny = false;
 
         var _loop3 = function _loop3(z) {
-          if (!_this17.isLayerVisible(z)) {
+          if (!_this18.isLayerVisible(z)) {
             return "continue";
           }
 
-          _this17.iterateRectangle(startX, startY, width, height, function (tileX, tileY, index) {
-            var tileIndex = _this17.tileIndex(tileX, tileY, z);
+          _this18.iterateRectangle(startX, startY, width, height, function (tileX, tileY, index) {
+            var tileIndex = _this18.tileIndex(tileX, tileY, z);
 
             selectedTileList[index] = selectedTileList[index] || $dataMap.data[tileIndex] || 0;
 
-            _this17._selectTileIfNoneSelectedYet(selectedTileList[index]);
+            _this18._selectTileIfNoneSelectedYet(selectedTileList[index]);
 
             if ($dataMap.data[tileIndex]) {
               foundAny = true;
             }
           });
 
-          if (_this17._shouldSkipRemainingLayersCopy(foundAny, z)) {
+          if (_this18._shouldSkipRemainingLayersCopy(foundAny, z)) {
             return {
               v: void 0
             };
@@ -5835,14 +5863,14 @@ function _createClass(Constructor, protoProps, staticProps) { if (protoProps) _d
     }, {
       key: "copyManualRectangle",
       value: function copyManualRectangle(startX, startY, width, height) {
-        var _this18 = this;
+        var _this19 = this;
 
         this.iterateRectangle(startX, startY, width, height, function (tileX, tileY, index) {
-          var tileIndex = _this18.tileIndex(tileX, tileY, currentLayer);
+          var tileIndex = _this19.tileIndex(tileX, tileY, currentLayer);
 
           selectedTileList[index] = $dataMap.data[tileIndex] || 0;
 
-          _this18._selectTileIfNoneSelectedYet(selectedTileList[index]);
+          _this19._selectTileIfNoneSelectedYet(selectedTileList[index]);
         });
       }
     }, {
@@ -6020,7 +6048,7 @@ function _createClass(Constructor, protoProps, staticProps) { if (protoProps) _d
         if (!layerVisibility[currentLayer]) {
           layerVisibility[currentLayer] = true;
 
-          if (SceneManager._scene instanceof Scene_Map) {
+          if (this.isMapEditorScene()) {
             SceneManager._scene._mapEditorLayerListWindow.refresh();
           }
         }
@@ -6359,7 +6387,7 @@ function _createClass(Constructor, protoProps, staticProps) { if (protoProps) _d
           return;
         }
 
-        if (SceneManager._scene instanceof Scene_Map) {
+        if (this.isMapEditorScene()) {
           SceneManager._scene._mapEditorGrid.requestRefresh();
         }
       }
@@ -6766,7 +6794,7 @@ function _createClass(Constructor, protoProps, staticProps) { if (protoProps) _d
         currentZoom = value;
         $gameScreen._zoomScale = value;
 
-        if (SceneManager._scene instanceof Scene_Map) {
+        if (this.isMapEditorScene()) {
           $gameMap.zoom = new Point(value, value);
 
           SceneManager._scene._mapEditorGrid.refresh();
@@ -7857,47 +7885,47 @@ function _createClass(Constructor, protoProps, staticProps) { if (protoProps) _d
     }, {
       key: "configureHandlers",
       value: function configureHandlers() {
-        var _this19 = this;
+        var _this20 = this;
 
         this.setHandler('undo', function () {
           CycloneMapEditor.undoButton();
 
-          _this19.activate();
+          _this20.activate();
         });
         this.setHandler('redo', function () {
           CycloneMapEditor.redoButton();
 
-          _this19.activate();
+          _this20.activate();
         });
         this.setHandler('pencil', function () {
           CycloneMapEditor.pencilButton();
 
-          _this19.activate();
+          _this20.activate();
         });
         this.setHandler('rectangle', function () {
           CycloneMapEditor.rectangleButton();
 
-          _this19.activate();
+          _this20.activate();
         });
         this.setHandler('fill', function () {
           CycloneMapEditor.fillButton();
 
-          _this19.activate();
+          _this20.activate();
         });
         this.setHandler('eraser', function () {
           CycloneMapEditor.eraserButton();
 
-          _this19.activate();
+          _this20.activate();
         });
         this.setHandler('save', function () {
           CycloneMapEditor.saveButton();
 
-          _this19.activate();
+          _this20.activate();
         });
         this.setHandler('reload', function () {
           CycloneMapEditor.reloadButton();
 
-          _this19.activate();
+          _this20.activate();
         });
       }
     }, {
@@ -8647,7 +8675,7 @@ function _createClass(Constructor, protoProps, staticProps) { if (protoProps) _d
     }, {
       key: "drawItem",
       value: function drawItem(index) {
-        var _this20 = this;
+        var _this21 = this;
 
         this.resetTextColor();
         this.changePaintOpacity(this.isCommandEnabled(index));
@@ -8679,7 +8707,7 @@ function _createClass(Constructor, protoProps, staticProps) { if (protoProps) _d
 
         if (!bitmap.isReady() && bitmap._loadListeners.length < 2) {
           bitmap.addLoadListener(function () {
-            _this20._needsRedraw = true;
+            _this21._needsRedraw = true;
           });
         }
 
@@ -10126,10 +10154,19 @@ function _createClass(Constructor, protoProps, staticProps) { if (protoProps) _d
           return $super._readMapData.call(this, x, y, z);
         }
       }, {
+        key: "canUpdateAnimationCount",
+        value: function canUpdateAnimationCount() {
+          if (CycloneMapEditor.active && CycloneMapEditor.isLayerVisible(Layers.blend) && TouchInput.isPressed()) {
+            return false;
+          }
+
+          return true;
+        }
+      }, {
         key: "update",
         value: function update() {
           // Prevent the water animation while modifying blending
-          if (CycloneMapEditor.active && CycloneMapEditor.isLayerVisible(Layers.blend) && TouchInput.isPressed()) {
+          if (!this.canUpdateAnimationCount()) {
             this.animationCount--;
           }
 
