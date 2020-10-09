@@ -79,6 +79,11 @@ class WindowCycloneMapEditor extends Window_Command {
   }
 
   makeTileList() {
+    if (CycloneMapEditor.puzzleMode) {
+      this.makePuzzleList();
+      return;
+    }
+
     for (let tileId = Tilemap.TILE_ID_A1; tileId < Tilemap.TILE_ID_MAX; tileId += 48) {
       this.addTile(tileId);
     }
@@ -88,6 +93,40 @@ class WindowCycloneMapEditor extends Window_Command {
         continue;
       }
       this.addTile(tileId);
+    }
+  }
+
+  makePuzzleList() {
+    const min = CycloneMapEditor.getTilesetName(Tilemap.TILE_ID_A1) ? Tilemap.TILE_ID_A1 : Tilemap.TILE_ID_A2;
+    const max = CycloneMapEditor.getTilesetName(Tilemap.TILE_ID_A2) ? Tilemap.TILE_ID_A3 : Tilemap.TILE_ID_A2;
+
+    const tileList = [];
+
+    for (let tileId = min; tileId < max; tileId += 48) {
+      if (Tilemap.isWaterfallTile(tileId)) {
+        continue;
+      }
+      if (tileId === 2144 || tileId === 2192) {
+        continue;
+      }
+
+      tileList.push(tileId);
+    }
+
+    for (let i = 0; i < tileList.length; i += 4) {
+      for (let pieceY = 0; pieceY < 6; pieceY++) {
+        for (let idx = 0; idx <= 3; idx++) {
+          const tileId = tileList[i + idx];
+          if (!tileId) {
+            continue;
+          }
+
+          for (let pieceX = 0; pieceX < 4; pieceX++) {
+            const pieceId = tileId + pieceX + pieceY * 4;
+            this.addCommand(pieceId, 'puzzle', true, pieceId);
+          }
+        }
+      }
     }
   }
 
@@ -207,15 +246,29 @@ class WindowCycloneMapEditor extends Window_Command {
       return 3;
     }
 
+    if (CycloneMapEditor.puzzleMode) {
+      return 16;
+    }
+
     return 8;
   }
 
   itemWidth() {
-    return CycloneMapEditor.tileDrawWidth;
+    const w = CycloneMapEditor.tileDrawWidth;
+    if (CycloneMapEditor.puzzleMode) {
+      return w / 2;
+    }
+
+    return w;
   }
 
   itemHeight() {
-    return CycloneMapEditor.tileDrawHeight;
+    const h = CycloneMapEditor.tileDrawHeight;
+    if (CycloneMapEditor.puzzleMode) {
+      return h / 2;
+    }
+
+    return h;
   }
 
   drawRegion(index) {
@@ -235,6 +288,16 @@ class WindowCycloneMapEditor extends Window_Command {
 
     const rect = this.itemRect(index);
     this.contents.drawCollisionType(collision, rect.x, rect.y, rect.width, rect.height);
+  }
+
+  drawPuzzle(index) {
+    const pieceId = this._list[index].ext;
+    if (!pieceId) {
+      return;
+    }
+
+    const rect = this.itemRect(index);
+    this.contents.drawPuzzlePiece(pieceId, rect.x, rect.y, rect.width, rect.height);
   }
 
   drawShadow(index) {
@@ -304,6 +367,11 @@ class WindowCycloneMapEditor extends Window_Command {
 
     if (symbol === 'collision') {
       this.drawCollision(index);
+      return;
+    }
+
+    if (symbol === 'puzzle') {
+      this.drawPuzzle(index);
       return;
     }
 
@@ -613,7 +681,10 @@ class WindowCycloneMapEditor extends Window_Command {
     const rect = this.itemRect(topIndex);
     const { x, y } = rect;
 
-    if (!this._manualTileSelected && CycloneMapEditor.selectedTileList.length >= 2 && Tilemap.isSameKindTile(CycloneMapEditor.selectedTileList[0], CycloneMapEditor.selectedTileList[1])) {
+    if (CycloneMapEditor.puzzleMode) {
+      rowDrawCount = 0.5;
+      colDrawCount = 0.5;
+    } else if (!this._manualTileSelected && CycloneMapEditor.selectedTileList.length >= 2 && Tilemap.isSameKindTile(CycloneMapEditor.selectedTileList[0], CycloneMapEditor.selectedTileList[1])) {
       rowDrawCount = 1;
       colDrawCount = 1;
     }
@@ -641,8 +712,12 @@ class WindowCycloneMapEditor extends Window_Command {
       return false;
     }
 
-    if (this._manualTileSelected !== undefined) {
-      if (tileId !== CycloneMapEditor.currentTileId) {
+    if (tileId !== CycloneMapEditor.currentTileId) {
+      if (this._manualTileSelected !== undefined) {
+        return false;
+      }
+
+      if (CycloneMapEditor.puzzleMode) {
         return false;
       }
     }
@@ -780,7 +855,7 @@ class WindowCycloneMapEditor extends Window_Command {
     }
 
     if (this._mouseDown) {
-      if (!TouchInput.isPressed() || CycloneMapEditor.changingTileProps) {
+      if (!TouchInput.isPressed() || CycloneMapEditor.changingTileProps || CycloneMapEditor.puzzleMode) {
         this.finalizeTileSelection();
       } else if (TouchInput.isMoved()) {
         if (prevCols !== CycloneMapEditor.tileCols || prevRows !== CycloneMapEditor.tileRows) {

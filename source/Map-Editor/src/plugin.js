@@ -59,6 +59,7 @@ let statusCounter = false;
 let statusDamage = false;
 let statusLadder = false;
 let currentZoom = 1;
+let puzzleMode = false;
 
 let circleData = false;
 let smallCircleData = false;
@@ -321,6 +322,7 @@ class CycloneMapEditor extends CyclonePlugin {
   static get currentLayer() { return currentLayer; }
   static get showGrid() { return showGrid; }
   static get previewChanges() { return previewChanges; }
+  static get puzzleMode() { return puzzleMode; }
 
   static get currentTileId() { return currentTileId; }
   static set currentTileId(value) { currentTileId = value; }
@@ -664,6 +666,17 @@ class CycloneMapEditor extends CyclonePlugin {
     });
     modeMenu.append(this.fillMenu);
     modeMenu.append(new nw.MenuItem( {type: 'separator'}));
+    this.puzzleMenu = new nw.MenuItem( {
+      label: 'Magic Mode',
+      type: 'checkbox',
+      checked: puzzleMode,
+      click: this.makeMenuEvent(() => {
+        CycloneMapEditor.puzzleButton();
+      })
+    });
+    modeMenu.append(this.puzzleMenu);
+    modeMenu.append(new nw.MenuItem( {type: 'separator'}));
+
     this.eraserMenu = new nw.MenuItem( {
       label: 'Eraser',
       type: 'checkbox',
@@ -894,6 +907,7 @@ class CycloneMapEditor extends CyclonePlugin {
       key: 'B',
       click: this.makeMenuEvent(() => {
         CycloneMapEditor.changeCurrentLayer(10);
+        CycloneMapEditor.updateCurrentTool();
       })
     });
     blendMenu.append(this.blendButton);
@@ -952,10 +966,12 @@ class CycloneMapEditor extends CyclonePlugin {
       this._extraTilesetMenu.append(menuItem);
     }
 
-    tilesetMenu.append(new nw.MenuItem({
+    this._extraTilesetMenuItem = new nw.MenuItem({
       label: 'Extra Tileset',
       submenu: this._extraTilesetMenu,
-    }));
+    });
+
+    tilesetMenu.append(this._extraTilesetMenuItem);
 
     menu.append(new nw.MenuItem({
       label: 'Tilesets',
@@ -1009,29 +1025,32 @@ class CycloneMapEditor extends CyclonePlugin {
       }),
     }));
     jumpToTabMenu.append(new nw.MenuItem({
-      label: 'Extra B Tiles',
-      click: this.makeMenuEvent(() => {
-        CycloneMapEditor.jumpToOneTileOf([f, g, a5]);
-      }),
-    }));
-    jumpToTabMenu.append(new nw.MenuItem({
-      label: 'Extra C Tiles',
-      click: this.makeMenuEvent(() => {
-        CycloneMapEditor.jumpToOneTileOf([g, a5]);
-      }),
-    }));
-    jumpToTabMenu.append(new nw.MenuItem({
       label: 'A5 Tiles',
       click: this.makeMenuEvent(() => {
         CycloneMapEditor.jumpToTile(a5);
       }),
     }));
-    jumpToTabMenu.append(new nw.MenuItem({
+    this._jumpToExtraBMenu = new nw.MenuItem({
+      label: 'Extra B Tiles',
+      click: this.makeMenuEvent(() => {
+        CycloneMapEditor.jumpToOneTileOf([f, g, a5]);
+      }),
+    });
+    jumpToTabMenu.append(this._jumpToExtraBMenu);
+    this._jumpToExtraCMenu = new nw.MenuItem({
+      label: 'Extra C Tiles',
+      click: this.makeMenuEvent(() => {
+        CycloneMapEditor.jumpToOneTileOf([g, a5]);
+      }),
+    });
+    jumpToTabMenu.append(this._jumpToExtraCMenu);
+    this._jumpToExtraDMenu = new nw.MenuItem({
       label: 'Extra D Tiles',
       click: this.makeMenuEvent(() => {
         CycloneMapEditor.jumpToOneTileOf([h, a5]);
       }),
-    }));
+    });
+    jumpToTabMenu.append(this._jumpToExtraDMenu);
 
     menu.append(new nw.MenuItem({
       label: 'Jump To',
@@ -1401,10 +1420,13 @@ class CycloneMapEditor extends CyclonePlugin {
       magic[tileId] = line;
     }
 
+    const puzzle = CycloneMagic?.puzzleTiles || undefined;
+
     return {
       radix,
       collision: collision.join(''),
       magic,
+      puzzle,
       extraTilesetId: $gameMap._extraTilesetId,
     };
   }
@@ -1488,6 +1510,27 @@ class CycloneMapEditor extends CyclonePlugin {
     }, 20);
   }
 
+  static enablePluginOptions() {
+    if (this.blendButton) {
+      this.blendButton.enabled = Boolean(window.CycloneMagic);
+    }
+    if (this.puzzleMenu) {
+      this.puzzleMenu.enabled = Boolean(window.CycloneMagic);
+    }
+    if (this._extraTilesetMenuItem) {
+      this._extraTilesetMenuItem.enabled = Boolean(window.CycloneExtraTilesets);
+    }
+    if (this._jumpToExtraBMenu) {
+      this._jumpToExtraBMenu.enabled = Boolean(window.CycloneExtraTilesets);
+    }
+    if (this._jumpToExtraCMenu) {
+      this._jumpToExtraCMenu.enabled = Boolean(window.CycloneExtraTilesets);
+    }
+    if (this._jumpToExtraDMenu) {
+      this._jumpToExtraDMenu.enabled = Boolean(window.CycloneExtraTilesets);
+    }
+  }
+
   static refreshMenuVisibility() {
     if (!Utils.isNwjs()) {
       return;
@@ -1496,14 +1539,13 @@ class CycloneMapEditor extends CyclonePlugin {
     const display = this.shouldDisplayMenu();
     const win = nw.Window.get();
 
+    this.enablePluginOptions();
     if (display && win.menu === this.menu) {
       return;
     }
 
     if (display) {
       win.menu = this.menu;
-
-      // return;
     } else {
       win.menu = null;
     }
@@ -1974,6 +2016,7 @@ class CycloneMapEditor extends CyclonePlugin {
       this.pencilMenu.checked = currentTool === Tools.pencil;
       this.rectangleMenu.checked = currentTool === Tools.rectangle;
       this.fillMenu.checked = currentTool === Tools.fill;
+      this.puzzleMenu.checked = puzzleMode;
       this.eraserMenu.checked = currentTool === Tools.eraser;
 
       this.tilePassageMenu.checked = currentTool === Tools.passage;
@@ -2004,8 +2047,30 @@ class CycloneMapEditor extends CyclonePlugin {
     this.toolButton(Tools.eraser);
   }
 
+  static puzzleButton() {
+    if (!this.isMapEditorScene()) {
+      return;
+    }
+
+    puzzleMode = !puzzleMode;
+    if (puzzleMode) {
+      if (currentTool !== Tools.eraser) {
+        currentTool = Tools.pencil;
+      }
+      if (CycloneMapEditor.currentLayer !== 1) {
+        this.changeCurrentLayer(1);
+      }
+    }
+    this.clearSelection();
+    this.updateCurrentTool();
+  }
+
   static toolButton(toolType) {
     if (!this.isMapEditorScene()) {
+      return;
+    }
+
+    if (puzzleMode && ![Tools.pencil, Tools.eraser].includes(toolType)) {
       return;
     }
 
@@ -2269,6 +2334,11 @@ class CycloneMapEditor extends CyclonePlugin {
   static changeCurrentLayer(newIndex) {
     if (newIndex >= layerVisibility.length) {
       return;
+    }
+
+    if (newIndex !== 1 && puzzleMode) {
+      puzzleMode = false;
+      this.updateCurrentTool();
     }
 
     this.deselectShadowOrRegion(newIndex);
@@ -2566,6 +2636,7 @@ class CycloneMapEditor extends CyclonePlugin {
       tiles: {},
       collision: {},
       blend: {},
+      puzzle: {},
     };
   }
 
@@ -2587,6 +2658,11 @@ class CycloneMapEditor extends CyclonePlugin {
     for (const tileIndex in lastChange.tiles) {
       currentChange.tiles[tileIndex] = $dataMap.data[tileIndex];
       $dataMap.data[tileIndex] = lastChange.tiles[tileIndex];
+    }
+
+    for (const tileIndex in lastChange.puzzle) {
+      currentChange.puzzle[tileIndex] = CycloneMagic.puzzleTiles[tileIndex];
+      CycloneMagic.puzzleTiles[tileIndex] = lastChange.puzzle[tileIndex];
     }
 
     for (const tileIndex in lastChange.collision) {
@@ -2638,6 +2714,11 @@ class CycloneMapEditor extends CyclonePlugin {
       $dataMap.data[tileIndex] = lastChange.tiles[tileIndex];
     }
 
+    for (const tileIndex in lastChange.puzzle) {
+      currentChange.puzzle[tileIndex] = CycloneMagic.puzzleTiles[tileIndex];
+      CycloneMagic.puzzleTiles[tileIndex] = lastChange.puzzle[tileIndex];
+    }
+
     for (const tileIndex in lastChange.collision) {
       currentChange.collision[tileIndex] = customCollisionTable[tileIndex];
       customCollisionTable[tileIndex] = lastChange.collision[tileIndex];
@@ -2684,7 +2765,8 @@ class CycloneMapEditor extends CyclonePlugin {
     const hasTiles = Object.keys(currentChange.tiles).length > 0;
     const hasBlend = Object.keys(currentChange.blend).length > 0;
     const hasCollision = Object.keys(currentChange.collision).length > 0;
-    const hasChanges = hasTiles || hasBlend || hasCollision;
+    const hasPuzzle = Object.keys(currentChange.puzzle).length > 0;
+    const hasChanges = hasTiles || hasBlend || hasCollision || hasPuzzle;
 
     if (hasChanges) {
       changeHistory.push(currentChange);
@@ -2700,9 +2782,6 @@ class CycloneMapEditor extends CyclonePlugin {
 
     SceneManager._scene._mapEditorCommands.redraw();
     SceneManager._scene._mapEditorGrid.refresh();
-    // if (hasBlend) {
-    //   forceBlenderRefresh(true);
-    // }
 
     mapCaches[$gameMap._mapId] = $dataMap;
 
@@ -3284,9 +3363,37 @@ class CycloneMapEditor extends CyclonePlugin {
     this._changePositionBlend(x, y, 1);
   }
 
+  static _applyPuzzleTile(x, y, tileId, previewOnly) {
+    if (!window.CycloneMagic?.puzzleTiles) {
+      return;
+    }
+    if (previewOnly) {
+      return;
+    }
+
+    const width = $gameMap.width() * 2;
+    const index = (y * 2) * width + x * 2;
+
+    const oldTile = CycloneMagic.puzzleTiles[index] ?? 0;
+    if (currentChange.puzzle[index] === undefined && oldTile !== tileId) {
+      currentChange.puzzle[index] = oldTile;
+    }
+
+    if (tileId) {
+      CycloneMagic.puzzleTiles[index] = tileId;
+    } else if (CycloneMagic.puzzleTiles[index]) {
+      delete CycloneMagic.puzzleTiles[index];
+    }
+  }
+
   static _applySingleMapTile(x, y, z, tileId, updateNeighbors = true, previewOnly = false, forceErasure = false) {
     if (z === Layers.collisions) {
       return this._applySingleCollision(x, y, tileId, previewOnly);
+    }
+
+    if (z === 1 && puzzleMode) {
+      this._applyPuzzleTile(x, y, tileId, previewOnly);
+      return;
     }
 
     if (!tileId) {
@@ -3609,6 +3716,9 @@ class CycloneMapEditor extends CyclonePlugin {
   }
 
   static copyRectangle(startX, startY, width, height) {
+    if (puzzleMode) {
+      return;
+    }
     if (!wasRightButtonDown) {
       return;
     }
@@ -4032,6 +4142,10 @@ class CycloneMapEditor extends CyclonePlugin {
       if (currentLayer === Layers.blend) {
         return 16;
       }
+    }
+
+    if (puzzleMode) {
+      return 2;
     }
 
     if (currentLayer === Layers.collisions) {

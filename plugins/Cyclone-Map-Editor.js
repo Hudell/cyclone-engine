@@ -1,6 +1,6 @@
 /*:
  * @target MZ
- * @plugindesc Live Map Editor - v1.08.00
+ * @plugindesc Live Map Editor - v1.09.00
  *
  * <pluginName:CycloneMapEditor>
  * @author Hudell
@@ -62,6 +62,10 @@
  * ===========================================================================
  * Change Log
  * ===========================================================================
+ * 2020-10-09 - Version 1.09.00
+ *   * General bug fixes
+ *   * Added support to Cyclone Magic v1.1
+ *
  * 2020-10-07 - Version 1.08.00
  *   * Added support to Cyclone Extra Tilesets v1.1
  *
@@ -1216,6 +1220,7 @@ let statusCounter = false;
 let statusDamage = false;
 let statusLadder = false;
 let currentZoom = 1;
+let puzzleMode = false;
 
 let circleData = false;
 let smallCircleData = false;
@@ -1478,6 +1483,7 @@ class CycloneMapEditor$1 extends CyclonePlugin {
   static get currentLayer() { return currentLayer; }
   static get showGrid() { return showGrid; }
   static get previewChanges() { return previewChanges; }
+  static get puzzleMode() { return puzzleMode; }
 
   static get currentTileId() { return currentTileId; }
   static set currentTileId(value) { currentTileId = value; }
@@ -1821,6 +1827,17 @@ class CycloneMapEditor$1 extends CyclonePlugin {
     });
     modeMenu.append(this.fillMenu);
     modeMenu.append(new nw.MenuItem( {type: 'separator'}));
+    this.puzzleMenu = new nw.MenuItem( {
+      label: 'Magic Mode',
+      type: 'checkbox',
+      checked: puzzleMode,
+      click: this.makeMenuEvent(() => {
+        CycloneMapEditor$1.puzzleButton();
+      })
+    });
+    modeMenu.append(this.puzzleMenu);
+    modeMenu.append(new nw.MenuItem( {type: 'separator'}));
+
     this.eraserMenu = new nw.MenuItem( {
       label: 'Eraser',
       type: 'checkbox',
@@ -2051,6 +2068,7 @@ class CycloneMapEditor$1 extends CyclonePlugin {
       key: 'B',
       click: this.makeMenuEvent(() => {
         CycloneMapEditor$1.changeCurrentLayer(10);
+        CycloneMapEditor$1.updateCurrentTool();
       })
     });
     blendMenu.append(this.blendButton);
@@ -2109,10 +2127,12 @@ class CycloneMapEditor$1 extends CyclonePlugin {
       this._extraTilesetMenu.append(menuItem);
     }
 
-    tilesetMenu.append(new nw.MenuItem({
+    this._extraTilesetMenuItem = new nw.MenuItem({
       label: 'Extra Tileset',
       submenu: this._extraTilesetMenu,
-    }));
+    });
+
+    tilesetMenu.append(this._extraTilesetMenuItem);
 
     menu.append(new nw.MenuItem({
       label: 'Tilesets',
@@ -2166,29 +2186,32 @@ class CycloneMapEditor$1 extends CyclonePlugin {
       }),
     }));
     jumpToTabMenu.append(new nw.MenuItem({
-      label: 'Extra B Tiles',
-      click: this.makeMenuEvent(() => {
-        CycloneMapEditor$1.jumpToOneTileOf([f, g, a5]);
-      }),
-    }));
-    jumpToTabMenu.append(new nw.MenuItem({
-      label: 'Extra C Tiles',
-      click: this.makeMenuEvent(() => {
-        CycloneMapEditor$1.jumpToOneTileOf([g, a5]);
-      }),
-    }));
-    jumpToTabMenu.append(new nw.MenuItem({
       label: 'A5 Tiles',
       click: this.makeMenuEvent(() => {
         CycloneMapEditor$1.jumpToTile(a5);
       }),
     }));
-    jumpToTabMenu.append(new nw.MenuItem({
+    this._jumpToExtraBMenu = new nw.MenuItem({
+      label: 'Extra B Tiles',
+      click: this.makeMenuEvent(() => {
+        CycloneMapEditor$1.jumpToOneTileOf([f, g, a5]);
+      }),
+    });
+    jumpToTabMenu.append(this._jumpToExtraBMenu);
+    this._jumpToExtraCMenu = new nw.MenuItem({
+      label: 'Extra C Tiles',
+      click: this.makeMenuEvent(() => {
+        CycloneMapEditor$1.jumpToOneTileOf([g, a5]);
+      }),
+    });
+    jumpToTabMenu.append(this._jumpToExtraCMenu);
+    this._jumpToExtraDMenu = new nw.MenuItem({
       label: 'Extra D Tiles',
       click: this.makeMenuEvent(() => {
         CycloneMapEditor$1.jumpToOneTileOf([h, a5]);
       }),
-    }));
+    });
+    jumpToTabMenu.append(this._jumpToExtraDMenu);
 
     menu.append(new nw.MenuItem({
       label: 'Jump To',
@@ -2558,10 +2581,13 @@ class CycloneMapEditor$1 extends CyclonePlugin {
       magic[tileId] = line;
     }
 
+    const puzzle = CycloneMagic?.puzzleTiles || undefined;
+
     return {
       radix,
       collision: collision.join(''),
       magic,
+      puzzle,
       extraTilesetId: $gameMap._extraTilesetId,
     };
   }
@@ -2645,6 +2671,27 @@ class CycloneMapEditor$1 extends CyclonePlugin {
     }, 20);
   }
 
+  static enablePluginOptions() {
+    if (this.blendButton) {
+      this.blendButton.enabled = Boolean(window.CycloneMagic);
+    }
+    if (this.puzzleMenu) {
+      this.puzzleMenu.enabled = Boolean(window.CycloneMagic);
+    }
+    if (this._extraTilesetMenuItem) {
+      this._extraTilesetMenuItem.enabled = Boolean(window.CycloneExtraTilesets);
+    }
+    if (this._jumpToExtraBMenu) {
+      this._jumpToExtraBMenu.enabled = Boolean(window.CycloneExtraTilesets);
+    }
+    if (this._jumpToExtraCMenu) {
+      this._jumpToExtraCMenu.enabled = Boolean(window.CycloneExtraTilesets);
+    }
+    if (this._jumpToExtraDMenu) {
+      this._jumpToExtraDMenu.enabled = Boolean(window.CycloneExtraTilesets);
+    }
+  }
+
   static refreshMenuVisibility() {
     if (!Utils.isNwjs()) {
       return;
@@ -2653,14 +2700,13 @@ class CycloneMapEditor$1 extends CyclonePlugin {
     const display = this.shouldDisplayMenu();
     const win = nw.Window.get();
 
+    this.enablePluginOptions();
     if (display && win.menu === this.menu) {
       return;
     }
 
     if (display) {
       win.menu = this.menu;
-
-      // return;
     } else {
       win.menu = null;
     }
@@ -3131,6 +3177,7 @@ class CycloneMapEditor$1 extends CyclonePlugin {
       this.pencilMenu.checked = currentTool === Tools.pencil;
       this.rectangleMenu.checked = currentTool === Tools.rectangle;
       this.fillMenu.checked = currentTool === Tools.fill;
+      this.puzzleMenu.checked = puzzleMode;
       this.eraserMenu.checked = currentTool === Tools.eraser;
 
       this.tilePassageMenu.checked = currentTool === Tools.passage;
@@ -3161,8 +3208,30 @@ class CycloneMapEditor$1 extends CyclonePlugin {
     this.toolButton(Tools.eraser);
   }
 
+  static puzzleButton() {
+    if (!this.isMapEditorScene()) {
+      return;
+    }
+
+    puzzleMode = !puzzleMode;
+    if (puzzleMode) {
+      if (currentTool !== Tools.eraser) {
+        currentTool = Tools.pencil;
+      }
+      if (CycloneMapEditor$1.currentLayer !== 1) {
+        this.changeCurrentLayer(1);
+      }
+    }
+    this.clearSelection();
+    this.updateCurrentTool();
+  }
+
   static toolButton(toolType) {
     if (!this.isMapEditorScene()) {
+      return;
+    }
+
+    if (puzzleMode && ![Tools.pencil, Tools.eraser].includes(toolType)) {
       return;
     }
 
@@ -3426,6 +3495,11 @@ class CycloneMapEditor$1 extends CyclonePlugin {
   static changeCurrentLayer(newIndex) {
     if (newIndex >= layerVisibility.length) {
       return;
+    }
+
+    if (newIndex !== 1 && puzzleMode) {
+      puzzleMode = false;
+      this.updateCurrentTool();
     }
 
     this.deselectShadowOrRegion(newIndex);
@@ -3723,6 +3797,7 @@ class CycloneMapEditor$1 extends CyclonePlugin {
       tiles: {},
       collision: {},
       blend: {},
+      puzzle: {},
     };
   }
 
@@ -3744,6 +3819,11 @@ class CycloneMapEditor$1 extends CyclonePlugin {
     for (const tileIndex in lastChange.tiles) {
       currentChange.tiles[tileIndex] = $dataMap.data[tileIndex];
       $dataMap.data[tileIndex] = lastChange.tiles[tileIndex];
+    }
+
+    for (const tileIndex in lastChange.puzzle) {
+      currentChange.puzzle[tileIndex] = CycloneMagic.puzzleTiles[tileIndex];
+      CycloneMagic.puzzleTiles[tileIndex] = lastChange.puzzle[tileIndex];
     }
 
     for (const tileIndex in lastChange.collision) {
@@ -3795,6 +3875,11 @@ class CycloneMapEditor$1 extends CyclonePlugin {
       $dataMap.data[tileIndex] = lastChange.tiles[tileIndex];
     }
 
+    for (const tileIndex in lastChange.puzzle) {
+      currentChange.puzzle[tileIndex] = CycloneMagic.puzzleTiles[tileIndex];
+      CycloneMagic.puzzleTiles[tileIndex] = lastChange.puzzle[tileIndex];
+    }
+
     for (const tileIndex in lastChange.collision) {
       currentChange.collision[tileIndex] = customCollisionTable[tileIndex];
       customCollisionTable[tileIndex] = lastChange.collision[tileIndex];
@@ -3841,7 +3926,8 @@ class CycloneMapEditor$1 extends CyclonePlugin {
     const hasTiles = Object.keys(currentChange.tiles).length > 0;
     const hasBlend = Object.keys(currentChange.blend).length > 0;
     const hasCollision = Object.keys(currentChange.collision).length > 0;
-    const hasChanges = hasTiles || hasBlend || hasCollision;
+    const hasPuzzle = Object.keys(currentChange.puzzle).length > 0;
+    const hasChanges = hasTiles || hasBlend || hasCollision || hasPuzzle;
 
     if (hasChanges) {
       changeHistory.push(currentChange);
@@ -3857,9 +3943,6 @@ class CycloneMapEditor$1 extends CyclonePlugin {
 
     SceneManager._scene._mapEditorCommands.redraw();
     SceneManager._scene._mapEditorGrid.refresh();
-    // if (hasBlend) {
-    //   forceBlenderRefresh(true);
-    // }
 
     mapCaches[$gameMap._mapId] = $dataMap;
 
@@ -4441,9 +4524,37 @@ class CycloneMapEditor$1 extends CyclonePlugin {
     this._changePositionBlend(x, y, 1);
   }
 
+  static _applyPuzzleTile(x, y, tileId, previewOnly) {
+    if (!window.CycloneMagic?.puzzleTiles) {
+      return;
+    }
+    if (previewOnly) {
+      return;
+    }
+
+    const width = $gameMap.width() * 2;
+    const index = (y * 2) * width + x * 2;
+
+    const oldTile = CycloneMagic.puzzleTiles[index] ?? 0;
+    if (currentChange.puzzle[index] === undefined && oldTile !== tileId) {
+      currentChange.puzzle[index] = oldTile;
+    }
+
+    if (tileId) {
+      CycloneMagic.puzzleTiles[index] = tileId;
+    } else if (CycloneMagic.puzzleTiles[index]) {
+      delete CycloneMagic.puzzleTiles[index];
+    }
+  }
+
   static _applySingleMapTile(x, y, z, tileId, updateNeighbors = true, previewOnly = false, forceErasure = false) {
     if (z === Layers.collisions) {
       return this._applySingleCollision(x, y, tileId, previewOnly);
+    }
+
+    if (z === 1 && puzzleMode) {
+      this._applyPuzzleTile(x, y, tileId, previewOnly);
+      return;
     }
 
     if (!tileId) {
@@ -4766,6 +4877,9 @@ class CycloneMapEditor$1 extends CyclonePlugin {
   }
 
   static copyRectangle(startX, startY, width, height) {
+    if (puzzleMode) {
+      return;
+    }
     if (!wasRightButtonDown) {
       return;
     }
@@ -5191,6 +5305,10 @@ class CycloneMapEditor$1 extends CyclonePlugin {
       }
     }
 
+    if (puzzleMode) {
+      return 2;
+    }
+
     if (currentLayer === Layers.collisions) {
       if (window.CycloneMovement) {
         return window.CycloneMovement.collisionStepCount;
@@ -5418,6 +5536,94 @@ CycloneMapEditor.patchClass(Bitmap, $super => class {
     }
 
     return this.drawNormalTile(tileId, x, y, drawWidth, drawHeight);
+  }
+
+  drawAutoTilePieceTable(bitmap, tileX, tileY, x, y, drawWidth, drawHeight, pieceX, pieceY) {
+    const halfWidth = CycloneMapEditor.tileWidth / 2;
+    const halfHeight = CycloneMapEditor.tileHeight / 2;
+    const realDrawWidth = (drawWidth ?? CycloneMapEditor.tileWidth);
+    const realDrawHeight = (drawHeight ?? CycloneMapEditor.tileHeight);
+
+    const sourceX = (tileX * CycloneMapEditor.tileWidth) + (pieceX * halfWidth);
+    const sourceY = (tileY * CycloneMapEditor.tileHeight) + (pieceY * halfHeight);
+    const targetX = x;
+    const targetY = y;
+
+    this.blt(bitmap, sourceX, sourceY, halfWidth, halfHeight, targetX, targetY, realDrawWidth, realDrawHeight);
+
+    return bitmap;
+  }
+
+  drawTilePieceA1(bitmap, tileId, x, y, drawWidth, drawHeight, pieceX, pieceY) {
+    let tileX = 0;
+    let tileY = 0;
+    const kind = Tilemap.getAutotileKind(tileId);
+
+    switch(kind) {
+      case 0:
+        tileX = 0;
+        tileY = 0;
+        break;
+      case 1:
+        tileX = 0;
+        tileY = 3;
+        break;
+      case 2:
+        tileX = 6;
+        tileY = 0;
+        break;
+      case 3:
+        tileX = 6;
+        tileY = 3;
+        break;
+      default:
+        tileX = Math.floor((kind % 8) / 4) * 8;
+        tileY = Math.floor(kind / 8) * 6 + (Math.floor((kind % 8) / 2) % 2) * 3;
+
+        if (kind % 2 === 1) {
+          tileX += 6;
+        }
+        break;
+    }
+
+    return this.drawAutoTilePieceTable(bitmap, tileX, tileY, x, y, drawWidth, drawHeight, pieceX, pieceY);
+  }
+
+  drawTilePieceA2(bitmap, tileId, x, y, drawWidth, drawHeight, pieceX, pieceY) {
+    const kind = Tilemap.getAutotileKind(tileId);
+    const tileX = (kind % 8) * 2;
+    const tileY = (Math.floor(kind / 8) - 2) * 3;
+
+    return this.drawAutoTilePieceTable(bitmap, tileX, tileY, x, y, drawWidth, drawHeight, pieceX, pieceY);
+  }
+
+  drawPuzzlePiece(pieceId, x, y, drawWidth, drawHeight) {
+    if (pieceId <= 0) {
+      return;
+    }
+
+    if (!Tilemap.isAutotile(pieceId)) {
+      return;
+    }
+
+    const kind = Tilemap.getAutotileKind(pieceId);
+    const tileId = Tilemap.makeAutotileId(kind, 0);
+    const bitmap =  CycloneMapEditor.loadTilesetBitmap(tileId);
+    if (!bitmap) {
+      return;
+    }
+
+    const pieceShape = pieceId - tileId;
+    const pieceX = pieceShape % 4;
+    const pieceY = Math.floor(pieceShape / 4);
+
+    if (Tilemap.isTileA1(tileId)) {
+      return this.drawTilePieceA1(bitmap, tileId, x, y, drawWidth, drawHeight, pieceX, pieceY);
+    }
+
+    if (Tilemap.isTileA2(tileId)) {
+      return this.drawTilePieceA2(bitmap, tileId, x, y, drawWidth, drawHeight, pieceX, pieceY);
+    }
   }
 
   drawIcon(iconIndex, x, y, drawWidth, drawHeight) {
@@ -6203,7 +6409,6 @@ undoIcon.src = 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABgAAAAYCAYAAADgdz
 const redoIcon = new Image();
 redoIcon.src = 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABgAAAAYCAYAAADgdz34AAABhGlDQ1BJQ0MgcHJvZmlsZQAAKJF9kT1Iw0AcxV9bpUUqgmYo4pChdbIgKuIoVSyChdJWaNXB5NIvaGJIUlwcBdeCgx+LVQcXZ10dXAVB8APEydFJ0UVK/F9SaBHjwXE/3t173L0D/M0aU82ecUDVLCOTTIj5wooYfEUIEQgYRExipp7KLuTgOb7u4ePrXZxneZ/7c/QrRZMBPpF4lumGRbxOPL1p6Zz3iQVWkRTic+Ixgy5I/Mh12eU3zmWH/TxTMHKZOWKBWCx3sdzFrGKoxFPEUUXVKN+fd1nhvMVZrdVZ+578heGitpzlOs0RJLGIFNIQIaOOKmqwEKdVI8VEhvYTHv5hx58ml0yuKhg55rEBFZLjB/+D392apckJNymcAHpfbPsjBgR3gVbDtr+Pbbt1AgSegSut499oAjOfpDc6WvQIGNgGLq47mrwHXO4AkSddMiRHCtD0l0rA+xl9UwEYugX6Vt3e2vs4fQBy1NXSDXBwCIyWKXvN492h7t7+PdPu7weVs3K1THf6MgAAAAZiS0dEAP8A/wD/oL2nkwAAAAlwSFlzAAAuIwAALiMBeKU/dgAAAAd0SU1FB+QIGBQWJahvrbkAAAAZdEVYdENvbW1lbnQAQ3JlYXRlZCB3aXRoIEdJTVBXgQ4XAAABIklEQVRIx+1VqxaCQBC96yGAhYjFupHoBxDsZr/FxLeYyRQ/gEikWiRalIZBhzMsuzBosHDPIeze3TvPHYAF/4aSHHo2TWvbD3xfcZ7WHJ5EONFaxD+bpjWNeGPidPGY7wd8VpTgPK1NI6sx8XW6sYoDwGEXY51uemvCNgxbZwRcnC5lRYnH6dY7d8z3bz6PR+u3chGm+KWquo/2JfCmDpC4jiJUdY1Ea2faZkUwBpv3roi8OcKB7yuq0Rm3AU+Rfm2AG7FxJH6939Wkgawou1ZMtEZV1wDQCfPHxz3n4lYDPA3IYxx2MbJ0+Jp5G5MDs0cFRSHpd3pgZgRKMiq4t6YDvI1tKVK/DLup/IvG9TYM20+BIe2c2f8Dc4CZcIkvEOEFIdSyhtt+PqwAAAAASUVORK5CYII=';
 
-
 class WindowCycloneMapEditorCommands extends Window_Command {
   initialize() {
     const x = Graphics.width - CycloneMapEditor.windowWidth;
@@ -6306,13 +6511,13 @@ class WindowCycloneMapEditorCommands extends Window_Command {
         return undoIcon;
       case 'redo':
         return redoIcon;
-      case 'pencil':
+      case Tools.pencil:
         return pencilIcon;
-      case 'rectangle':
+      case Tools.rectangle:
         return rectangleIcon;
-      case 'fill':
+      case Tools.fill:
         return fillIcon;
-      case 'eraser':
+      case Tools.eraser:
         return eraseIcon;
       case 'save':
         return saveIcon;
@@ -6349,6 +6554,16 @@ class WindowCycloneMapEditorCommands extends Window_Command {
 
     if (CycloneMapEditor.changingTileProps && ['undo', 'redo'].includes(symbol)) {
       return;
+    }
+
+    if (CycloneMapEditor.currentLayer === Layers.blend) {
+      if (symbol === Tools.fill) {
+        return;
+      }
+    } else if (CycloneMapEditor.puzzleMode) {
+      if ([Tools.rectangle, Tools.fill].includes(symbol)) {
+        return;
+      }
     }
 
     if (symbol === CycloneMapEditor.currentTool) {
@@ -6677,6 +6892,11 @@ class WindowCycloneMapEditor extends Window_Command {
   }
 
   makeTileList() {
+    if (CycloneMapEditor.puzzleMode) {
+      this.makePuzzleList();
+      return;
+    }
+
     for (let tileId = Tilemap.TILE_ID_A1; tileId < Tilemap.TILE_ID_MAX; tileId += 48) {
       this.addTile(tileId);
     }
@@ -6686,6 +6906,40 @@ class WindowCycloneMapEditor extends Window_Command {
         continue;
       }
       this.addTile(tileId);
+    }
+  }
+
+  makePuzzleList() {
+    const min = CycloneMapEditor.getTilesetName(Tilemap.TILE_ID_A1) ? Tilemap.TILE_ID_A1 : Tilemap.TILE_ID_A2;
+    const max = CycloneMapEditor.getTilesetName(Tilemap.TILE_ID_A2) ? Tilemap.TILE_ID_A3 : Tilemap.TILE_ID_A2;
+
+    const tileList = [];
+
+    for (let tileId = min; tileId < max; tileId += 48) {
+      if (Tilemap.isWaterfallTile(tileId)) {
+        continue;
+      }
+      if (tileId === 2144 || tileId === 2192) {
+        continue;
+      }
+
+      tileList.push(tileId);
+    }
+
+    for (let i = 0; i < tileList.length; i += 4) {
+      for (let pieceY = 0; pieceY < 6; pieceY++) {
+        for (let idx = 0; idx <= 3; idx++) {
+          const tileId = tileList[i + idx];
+          if (!tileId) {
+            continue;
+          }
+
+          for (let pieceX = 0; pieceX < 4; pieceX++) {
+            const pieceId = tileId + pieceX + pieceY * 4;
+            this.addCommand(pieceId, 'puzzle', true, pieceId);
+          }
+        }
+      }
     }
   }
 
@@ -6805,15 +7059,29 @@ class WindowCycloneMapEditor extends Window_Command {
       return 3;
     }
 
+    if (CycloneMapEditor.puzzleMode) {
+      return 16;
+    }
+
     return 8;
   }
 
   itemWidth() {
-    return CycloneMapEditor.tileDrawWidth;
+    const w = CycloneMapEditor.tileDrawWidth;
+    if (CycloneMapEditor.puzzleMode) {
+      return w / 2;
+    }
+
+    return w;
   }
 
   itemHeight() {
-    return CycloneMapEditor.tileDrawHeight;
+    const h = CycloneMapEditor.tileDrawHeight;
+    if (CycloneMapEditor.puzzleMode) {
+      return h / 2;
+    }
+
+    return h;
   }
 
   drawRegion(index) {
@@ -6833,6 +7101,16 @@ class WindowCycloneMapEditor extends Window_Command {
 
     const rect = this.itemRect(index);
     this.contents.drawCollisionType(collision, rect.x, rect.y, rect.width, rect.height);
+  }
+
+  drawPuzzle(index) {
+    const pieceId = this._list[index].ext;
+    if (!pieceId) {
+      return;
+    }
+
+    const rect = this.itemRect(index);
+    this.contents.drawPuzzlePiece(pieceId, rect.x, rect.y, rect.width, rect.height);
   }
 
   drawShadow(index) {
@@ -6902,6 +7180,11 @@ class WindowCycloneMapEditor extends Window_Command {
 
     if (symbol === 'collision') {
       this.drawCollision(index);
+      return;
+    }
+
+    if (symbol === 'puzzle') {
+      this.drawPuzzle(index);
       return;
     }
 
@@ -7211,7 +7494,10 @@ class WindowCycloneMapEditor extends Window_Command {
     const rect = this.itemRect(topIndex);
     const { x, y } = rect;
 
-    if (!this._manualTileSelected && CycloneMapEditor.selectedTileList.length >= 2 && Tilemap.isSameKindTile(CycloneMapEditor.selectedTileList[0], CycloneMapEditor.selectedTileList[1])) {
+    if (CycloneMapEditor.puzzleMode) {
+      rowDrawCount = 0.5;
+      colDrawCount = 0.5;
+    } else if (!this._manualTileSelected && CycloneMapEditor.selectedTileList.length >= 2 && Tilemap.isSameKindTile(CycloneMapEditor.selectedTileList[0], CycloneMapEditor.selectedTileList[1])) {
       rowDrawCount = 1;
       colDrawCount = 1;
     }
@@ -7239,8 +7525,12 @@ class WindowCycloneMapEditor extends Window_Command {
       return false;
     }
 
-    if (this._manualTileSelected !== undefined) {
-      if (tileId !== CycloneMapEditor.currentTileId) {
+    if (tileId !== CycloneMapEditor.currentTileId) {
+      if (this._manualTileSelected !== undefined) {
+        return false;
+      }
+
+      if (CycloneMapEditor.puzzleMode) {
         return false;
       }
     }
@@ -7378,7 +7668,7 @@ class WindowCycloneMapEditor extends Window_Command {
     }
 
     if (this._mouseDown) {
-      if (!TouchInput.isPressed() || CycloneMapEditor.changingTileProps) {
+      if (!TouchInput.isPressed() || CycloneMapEditor.changingTileProps || CycloneMapEditor.puzzleMode) {
         this.finalizeTileSelection();
       } else if (TouchInput.isMoved()) {
         if (prevCols !== CycloneMapEditor.tileCols || prevRows !== CycloneMapEditor.tileRows) {
@@ -7957,6 +8247,8 @@ class SpriteMapEditorCursor extends Sprite {
         this.bitmap.drawShadow(tileId, x, y);
       } else if (CycloneMapEditor.currentLayer === 8) {
         this.drawCollision(tileId, x, y);
+      } else if (CycloneMapEditor.puzzleMode) {
+        this.bitmap.drawPuzzlePiece(tileId, x, y, CycloneMapEditor.tileWidth / 2, CycloneMapEditor.tileHeight / 2);
       } else {
         this.bitmap.drawTile(tileId, x, y);
       }
@@ -8143,6 +8435,10 @@ CycloneMapEditor.patchClass(Spriteset_Map, $super => class {
 
 CycloneMapEditor.patchClass(Tilemap, $super => class {
   _readMapData(x, y, z) {
+    if (!$gameMap.isValid(x, y)) {
+      return 0;
+    }
+
     if (z <= 4 && !CycloneMapEditor.layerVisibility[z]) {
       return 0;
     }
