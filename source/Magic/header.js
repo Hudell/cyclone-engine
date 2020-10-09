@@ -4,7 +4,7 @@
 
 /*:
  * @target MZ
- * @plugindesc Blend layers to create smooth paths on your map. v1.01 - Premium.
+ * @plugindesc Blend layers to create smooth paths on your map. v1.1 - Premium.
  * Integrates with Cyclone Map Editor.
  * <pluginName:CycloneMagic>
  * @author Hudell
@@ -72,4 +72,7 @@
  * When both plugins are in your project, you'll be able to use the "blend"
  * tool of the map editor to erase specific pixels from Layer 2, blending
  * it with the lower layer to create smoother paths.
+ *
+ * You can also use the Magic Mode of the map editor to configure sub-tiles
+ * on your map, to create better transitions between auto tiles.
  **/

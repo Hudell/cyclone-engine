@@ -4,7 +4,7 @@
 
 /*:
  * @target MZ
- * @plugindesc Blend layers to create smooth paths on your map. v1.01 - Premium.
+ * @plugindesc Blend layers to create smooth paths on your map. v1.1 - Premium.
  * Integrates with Cyclone Map Editor.
  * <pluginName:CycloneMagic>
  * @author Hudell
@@ -72,6 +72,9 @@
  * When both plugins are in your project, you'll be able to use the "blend"
  * tool of the map editor to erase specific pixels from Layer 2, blending
  * it with the lower layer to create smoother paths.
+ *
+ * You can also use the Magic Mode of the map editor to configure sub-tiles
+ * on your map, to create better transitions between auto tiles.
  **/
 
 (function () {
@@ -438,6 +441,7 @@ class SpriteBlenderTile extends Sprite {
 }
 
 let tileBlendingTable = {};
+let puzzleTiles = {};
 
 class CycloneMagic$1 extends CyclonePatcher {
   static get tileBlendingTable() {
@@ -445,6 +449,13 @@ class CycloneMagic$1 extends CyclonePatcher {
   }
   static set tileBlendingTable(value) {
     tileBlendingTable = value;
+  }
+
+  static get puzzleTiles() {
+    return puzzleTiles;
+  }
+  static set puzzleTiles(value) {
+    puzzleTiles = value;
   }
 
   static get SpriteBlenderTile() {
@@ -608,14 +619,16 @@ class CycloneMagic$1 extends CyclonePatcher {
 
   static loadMagic() {
     tileBlendingTable = {};
+    puzzleTiles = {};
     this.clearBitmapCache();
 
     const data = loadMapEditorData();
-    if (!data?.magic) {
-      return;
+    if (data?.magic) {
+      this.setupMagic(data.magic);
     }
-
-    this.setupMagic(data.magic);
+    if (data?.puzzle) {
+      this.setupPuzzle(data.puzzle);
+    }
   }
 
   static setupMagic(magic) {
@@ -635,6 +648,10 @@ class CycloneMagic$1 extends CyclonePatcher {
 
       tileBlendingTable[tileId] = list;
     }
+  }
+
+  static setupPuzzle(puzzle) {
+    puzzleTiles = puzzle;
   }
 }
 
@@ -656,6 +673,86 @@ CycloneMagic.patchClass(Tilemap, $super => class {
     }
 
     return $super._addSpotTile.call(this, tileId, dx, dy);
+  }
+
+  _maybeAddPuzzlePiece(dx, dy, px, py, mapX, mapY) {
+    const pieceId = $gameMap._readMapData(mapX + px, mapY + py, 'puzzle');
+    if (!pieceId) {
+      return;
+    }
+
+    const kind = Tilemap.getAutotileKind(pieceId);
+    const tileId = Tilemap.makeAutotileId(kind, 0);
+    const pieceShape = pieceId - tileId;
+    const pieceX = pieceShape % 4;
+    const pieceY = Math.floor(pieceShape / 4);
+    const tx = kind % 8;
+    const ty = Math.floor(kind / 8);
+    let setNumber = 0;
+    let bx = 0;
+    let by = 0;
+
+    if (Tilemap.isTileA1(tileId)) {
+      const waterSurfaceIndex = [0, 1, 2, 1][this.animationFrame % 4];
+      setNumber = 0;
+      if (kind === 0) {
+        bx = waterSurfaceIndex * 2;
+        by = 0;
+      } else if (kind === 1) {
+        bx = waterSurfaceIndex * 2;
+        by = 3;
+      } else if (kind === 2) {
+        bx = 6;
+        by = 0;
+      } else if (kind === 3) {
+        bx = 6;
+        by = 3;
+      } else {
+        bx = Math.floor(tx / 4) * 8;
+        by = ty * 6 + (Math.floor(tx / 2) % 2) * 3;
+        if (kind % 2 === 0) {
+          bx += waterSurfaceIndex * 2;
+        } else {
+          bx += 6;
+          by += this.animationFrame % 3;
+        }
+      }
+    } else if (Tilemap.isTileA2(tileId)) {
+      setNumber = 1;
+      bx = tx * 2;
+      by = (ty - 2) * 3;
+    } else {
+      return;
+    }
+
+    const w1 = this._tileWidth / 2;
+    const h1 = this._tileHeight / 2;
+    const qsx = pieceX;
+    const qsy = pieceY;
+
+    const sx1 = (bx * 2 + qsx) * w1;
+    const sy1 = (by * 2 + qsy) * h1;
+    const dx1 = dx;
+    const dy1 = dy;
+
+    this._lowerLayer.addRect(setNumber, sx1, sy1, dx1, dy1, w1, h1);
+  }
+
+  _maybeAddPuzzlePieces(dx, dy) {
+    const mapX = Math.round(dx / this._tileWidth) + this._lastStartX;
+    const mapY = Math.round(dy / this._tileHeight) + this._lastStartY;
+    const w1 = this._tileWidth / 2;
+    const h1 = this._tileHeight / 2;
+
+    this._maybeAddPuzzlePiece(dx, dy, 0, 0, mapX, mapY);
+    this._maybeAddPuzzlePiece(dx + w1, dy, 0.5, 0, mapX, mapY);
+    this._maybeAddPuzzlePiece(dx, dy + h1, 0, 0.5, mapX, mapY);
+    this._maybeAddPuzzlePiece(dx + w1, dy + h1, 0.5, 0.5, mapX, mapY);
+  }
+
+  _addShadow(layer, bits, dx, dy) {
+    this._maybeAddPuzzlePieces(dx, dy);
+    $super._addShadow.call(layer, bits, dx, dy);
   }
 });
 
@@ -800,6 +897,17 @@ CycloneMagic.patchClass(Game_Map, $super => class {
     return shortList;
   }
 
+  _readPuzzleMapData(x, y) {
+    if (!CycloneMagic.puzzleTiles) {
+      return 0;
+    }
+
+    const width = this.width() * 2;
+    const index = (y * 2) * width + x * 2;
+
+    return CycloneMagic.puzzleTiles[index] || 0;
+  }
+
   _readMapData(x, y, z) {
     if (!$dataMap?.data) {
       return 0;
@@ -816,6 +924,10 @@ CycloneMagic.patchClass(Game_Map, $super => class {
     }
 
     if (x >= 0 && x < width && y >= 0 && y < height) {
+      if (z === 'puzzle') {
+        return this._readPuzzleMapData(x, y);
+      }
+
       return $dataMap.data[(z * height + y) * width + x] || 0;
     } else {
       return 0;

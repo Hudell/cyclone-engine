@@ -5,6 +5,7 @@ import { loadMapEditorData } from '../../Utils/loadMapEditorData';
 import { SpriteBlenderTile } from './SpriteBlenderTile';
 
 let tileBlendingTable = {};
+let puzzleTiles = {};
 
 class CycloneMagic extends CyclonePatcher {
   static get tileBlendingTable() {
@@ -12,6 +13,13 @@ class CycloneMagic extends CyclonePatcher {
   }
   static set tileBlendingTable(value) {
     tileBlendingTable = value;
+  }
+
+  static get puzzleTiles() {
+    return puzzleTiles;
+  }
+  static set puzzleTiles(value) {
+    puzzleTiles = value;
   }
 
   static get SpriteBlenderTile() {
@@ -175,14 +183,16 @@ class CycloneMagic extends CyclonePatcher {
 
   static loadMagic() {
     tileBlendingTable = {};
+    puzzleTiles = {};
     this.clearBitmapCache();
 
     const data = loadMapEditorData();
-    if (!data?.magic) {
-      return;
+    if (data?.magic) {
+      this.setupMagic(data.magic);
     }
-
-    this.setupMagic(data.magic);
+    if (data?.puzzle) {
+      this.setupPuzzle(data.puzzle);
+    }
   }
 
   static setupMagic(magic) {
@@ -202,6 +212,10 @@ class CycloneMagic extends CyclonePatcher {
 
       tileBlendingTable[tileId] = list;
     }
+  }
+
+  static setupPuzzle(puzzle) {
+    puzzleTiles = puzzle;
   }
 }
 

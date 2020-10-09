@@ -119,6 +119,17 @@ CycloneMagic.patchClass(Game_Map, $super => class {
     return shortList;
   }
 
+  _readPuzzleMapData(x, y) {
+    if (!CycloneMagic.puzzleTiles) {
+      return 0;
+    }
+
+    const width = this.width() * 2;
+    const index = (y * 2) * width + x * 2;
+
+    return CycloneMagic.puzzleTiles[index] || 0;
+  }
+
   _readMapData(x, y, z) {
     if (!$dataMap?.data) {
       return 0;
@@ -135,6 +146,10 @@ CycloneMagic.patchClass(Game_Map, $super => class {
     }
 
     if (x >= 0 && x < width && y >= 0 && y < height) {
+      if (z === 'puzzle') {
+        return this._readPuzzleMapData(x, y);
+      }
+
       return $dataMap.data[(z * height + y) * width + x] || 0;
     } else {
       return 0;
