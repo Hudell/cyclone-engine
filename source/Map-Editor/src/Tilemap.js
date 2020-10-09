@@ -2,6 +2,10 @@ import { Layers } from './constants';
 
 CycloneMapEditor.patchClass(Tilemap, $super => class {
   _readMapData(x, y, z) {
+    if (!$gameMap.isValid(x, y)) {
+      return 0;
+    }
+
     if (z <= 4 && !CycloneMapEditor.layerVisibility[z]) {
       return 0;
     }

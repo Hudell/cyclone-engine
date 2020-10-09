@@ -159,6 +159,94 @@ CycloneMapEditor.patchClass(Bitmap, $super => class {
     return this.drawNormalTile(tileId, x, y, drawWidth, drawHeight);
   }
 
+  drawAutoTilePieceTable(bitmap, tileX, tileY, x, y, drawWidth, drawHeight, pieceX, pieceY) {
+    const halfWidth = CycloneMapEditor.tileWidth / 2;
+    const halfHeight = CycloneMapEditor.tileHeight / 2;
+    const realDrawWidth = (drawWidth ?? CycloneMapEditor.tileWidth);
+    const realDrawHeight = (drawHeight ?? CycloneMapEditor.tileHeight);
+
+    const sourceX = (tileX * CycloneMapEditor.tileWidth) + (pieceX * halfWidth);
+    const sourceY = (tileY * CycloneMapEditor.tileHeight) + (pieceY * halfHeight);
+    const targetX = x;
+    const targetY = y;
+
+    this.blt(bitmap, sourceX, sourceY, halfWidth, halfHeight, targetX, targetY, realDrawWidth, realDrawHeight);
+
+    return bitmap;
+  }
+
+  drawTilePieceA1(bitmap, tileId, x, y, drawWidth, drawHeight, pieceX, pieceY) {
+    let tileX = 0;
+    let tileY = 0;
+    const kind = Tilemap.getAutotileKind(tileId);
+
+    switch(kind) {
+      case 0:
+        tileX = 0;
+        tileY = 0;
+        break;
+      case 1:
+        tileX = 0;
+        tileY = 3;
+        break;
+      case 2:
+        tileX = 6;
+        tileY = 0;
+        break;
+      case 3:
+        tileX = 6;
+        tileY = 3;
+        break;
+      default:
+        tileX = Math.floor((kind % 8) / 4) * 8;
+        tileY = Math.floor(kind / 8) * 6 + (Math.floor((kind % 8) / 2) % 2) * 3;
+
+        if (kind % 2 === 1) {
+          tileX += 6;
+        }
+        break;
+    }
+
+    return this.drawAutoTilePieceTable(bitmap, tileX, tileY, x, y, drawWidth, drawHeight, pieceX, pieceY);
+  }
+
+  drawTilePieceA2(bitmap, tileId, x, y, drawWidth, drawHeight, pieceX, pieceY) {
+    const kind = Tilemap.getAutotileKind(tileId);
+    const tileX = (kind % 8) * 2;
+    const tileY = (Math.floor(kind / 8) - 2) * 3;
+
+    return this.drawAutoTilePieceTable(bitmap, tileX, tileY, x, y, drawWidth, drawHeight, pieceX, pieceY);
+  }
+
+  drawPuzzlePiece(pieceId, x, y, drawWidth, drawHeight) {
+    if (pieceId <= 0) {
+      return;
+    }
+
+    if (!Tilemap.isAutotile(pieceId)) {
+      return;
+    }
+
+    const kind = Tilemap.getAutotileKind(pieceId);
+    const tileId = Tilemap.makeAutotileId(kind, 0);
+    const bitmap =  CycloneMapEditor.loadTilesetBitmap(tileId);
+    if (!bitmap) {
+      return;
+    }
+
+    const pieceShape = pieceId - tileId;
+    const pieceX = pieceShape % 4;
+    const pieceY = Math.floor(pieceShape / 4);
+
+    if (Tilemap.isTileA1(tileId)) {
+      return this.drawTilePieceA1(bitmap, tileId, x, y, drawWidth, drawHeight, pieceX, pieceY);
+    }
+
+    if (Tilemap.isTileA2(tileId)) {
+      return this.drawTilePieceA2(bitmap, tileId, x, y, drawWidth, drawHeight, pieceX, pieceY);
+    }
+  }
+
   drawIcon(iconIndex, x, y, drawWidth, drawHeight) {
     const bitmap = ImageManager.loadSystem('IconSet');
     const pw = ImageManager.iconWidth;

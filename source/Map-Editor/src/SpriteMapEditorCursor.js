@@ -174,6 +174,8 @@ class SpriteMapEditorCursor extends Sprite {
         this.bitmap.drawShadow(tileId, x, y);
       } else if (CycloneMapEditor.currentLayer === 8) {
         this.drawCollision(tileId, x, y);
+      } else if (CycloneMapEditor.puzzleMode) {
+        this.bitmap.drawPuzzlePiece(tileId, x, y, CycloneMapEditor.tileWidth / 2, CycloneMapEditor.tileHeight / 2);
       } else {
         this.bitmap.drawTile(tileId, x, y);
       }

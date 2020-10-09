@@ -25,6 +25,7 @@ undoIcon.src = 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABgAAAAYCAYAAADgdz
 const redoIcon = new Image();
 redoIcon.src = 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABgAAAAYCAYAAADgdz34AAABhGlDQ1BJQ0MgcHJvZmlsZQAAKJF9kT1Iw0AcxV9bpUUqgmYo4pChdbIgKuIoVSyChdJWaNXB5NIvaGJIUlwcBdeCgx+LVQcXZ10dXAVB8APEydFJ0UVK/F9SaBHjwXE/3t173L0D/M0aU82ecUDVLCOTTIj5wooYfEUIEQgYRExipp7KLuTgOb7u4ePrXZxneZ/7c/QrRZMBPpF4lumGRbxOPL1p6Zz3iQVWkRTic+Ixgy5I/Mh12eU3zmWH/TxTMHKZOWKBWCx3sdzFrGKoxFPEUUXVKN+fd1nhvMVZrdVZ+578heGitpzlOs0RJLGIFNIQIaOOKmqwEKdVI8VEhvYTHv5hx58ml0yuKhg55rEBFZLjB/+D392apckJNymcAHpfbPsjBgR3gVbDtr+Pbbt1AgSegSut499oAjOfpDc6WvQIGNgGLq47mrwHXO4AkSddMiRHCtD0l0rA+xl9UwEYugX6Vt3e2vs4fQBy1NXSDXBwCIyWKXvN492h7t7+PdPu7weVs3K1THf6MgAAAAZiS0dEAP8A/wD/oL2nkwAAAAlwSFlzAAAuIwAALiMBeKU/dgAAAAd0SU1FB+QIGBQWJahvrbkAAAAZdEVYdENvbW1lbnQAQ3JlYXRlZCB3aXRoIEdJTVBXgQ4XAAABIklEQVRIx+1VqxaCQBC96yGAhYjFupHoBxDsZr/FxLeYyRQ/gEikWiRalIZBhzMsuzBosHDPIeze3TvPHYAF/4aSHHo2TWvbD3xfcZ7WHJ5EONFaxD+bpjWNeGPidPGY7wd8VpTgPK1NI6sx8XW6sYoDwGEXY51uemvCNgxbZwRcnC5lRYnH6dY7d8z3bz6PR+u3chGm+KWquo/2JfCmDpC4jiJUdY1Ea2faZkUwBpv3roi8OcKB7yuq0Rm3AU+Rfm2AG7FxJH6939Wkgawou1ZMtEZV1wDQCfPHxz3n4lYDPA3IYxx2MbJ0+Jp5G5MDs0cFRSHpd3pgZgRKMiq4t6YDvI1tKVK/DLup/IvG9TYM20+BIe2c2f8Dc4CZcIkvEOEFIdSyhtt+PqwAAAAASUVORK5CYII=';
 
+import { Layers, Tools } from './constants';
 
 class WindowCycloneMapEditorCommands extends Window_Command {
   initialize() {
@@ -128,13 +129,13 @@ class WindowCycloneMapEditorCommands extends Window_Command {
         return undoIcon;
       case 'redo':
         return redoIcon;
-      case 'pencil':
+      case Tools.pencil:
         return pencilIcon;
-      case 'rectangle':
+      case Tools.rectangle:
         return rectangleIcon;
-      case 'fill':
+      case Tools.fill:
         return fillIcon;
-      case 'eraser':
+      case Tools.eraser:
         return eraseIcon;
       case 'save':
         return saveIcon;
@@ -171,6 +172,16 @@ class WindowCycloneMapEditorCommands extends Window_Command {
 
     if (CycloneMapEditor.changingTileProps && ['undo', 'redo'].includes(symbol)) {
       return;
+    }
+
+    if (CycloneMapEditor.currentLayer === Layers.blend) {
+      if (symbol === Tools.fill) {
+        return;
+      }
+    } else if (CycloneMapEditor.puzzleMode) {
+      if ([Tools.rectangle, Tools.fill].includes(symbol)) {
+        return;
+      }
     }
 
     if (symbol === CycloneMapEditor.currentTool) {
