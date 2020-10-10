@@ -2,7 +2,7 @@ import { WindowCycloneMapEditor } from '../../Map-Editor/src/WindowCycloneMapEdi
 
 WindowCycloneMapEditor.prototype.initialize = function() {
   const x = Graphics.width - CycloneMapEditor.windowWidth;
-  const y = SceneManager._scene._mapEditorLayerListWindow.y + SceneManager._scene._mapEditorLayerListWindow.height;
+  const y = SceneManager._scene._mapEditorTabsWindow.y + SceneManager._scene._mapEditorTabsWindow.height;
 
   Window_Command.prototype.initialize.call(this, x, y);
   this.showBackgroundDimmer();
@@ -13,7 +13,7 @@ WindowCycloneMapEditor.prototype.windowWidth = function() {
 };
 
 WindowCycloneMapEditor.prototype.windowHeight = function() {
-  const y = SceneManager._scene._mapEditorLayerListWindow.y + SceneManager._scene._mapEditorLayerListWindow.height;
+  const y = SceneManager._scene._mapEditorTabsWindow.y + SceneManager._scene._mapEditorTabsWindow.height;
   return Graphics.height - y - SceneManager._scene._mapEditorStatus.height;
 };
 

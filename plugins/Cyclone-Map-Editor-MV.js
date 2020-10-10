@@ -45,7 +45,7 @@ function _defineProperties(target, props) { for (var i = 0; i < props.length; i+
 function _createClass(Constructor, protoProps, staticProps) { if (protoProps) _defineProperties(Constructor.prototype, protoProps); if (staticProps) _defineProperties(Constructor, staticProps); return Constructor; }
 
 /*:
- * @plugindesc Live Map Editor - 1.09.00
+ * @plugindesc Live Map Editor - 1.10.00
  *
  * <pluginName:CycloneMapEditor>
  * @author Hudell
@@ -107,6 +107,11 @@ function _createClass(Constructor, protoProps, staticProps) { if (protoProps) _d
  * ===========================================================================
  * Change Log
  * ===========================================================================
+ * 2020-10-10 - Version 1.10.00
+ *   * Added tileset tabs
+ *   * Moved layer list to left side of the screen
+ *   * General bug fixes
+ *
  * 2020-10-09 - Version 1.09.00
  *   * General bug fixes
  *   * Added support to Cyclone Magic v1.1
@@ -2883,6 +2888,12 @@ function _createClass(Constructor, protoProps, staticProps) { if (protoProps) _d
           })
         }));
         jumpToTabMenu.append(new nw.MenuItem({
+          label: 'A5 Tiles',
+          click: this.makeMenuEvent(function () {
+            CycloneMapEditor$1.jumpToTile(a5);
+          })
+        }));
+        jumpToTabMenu.append(new nw.MenuItem({
           label: 'B Tiles',
           click: this.makeMenuEvent(function () {
             CycloneMapEditor$1.jumpToOneTileOf([b, c, d, e, f, g, a5]);
@@ -2904,12 +2915,6 @@ function _createClass(Constructor, protoProps, staticProps) { if (protoProps) _d
           label: 'E Tiles',
           click: this.makeMenuEvent(function () {
             CycloneMapEditor$1.jumpToOneTileOf([e, f, g, a5]);
-          })
-        }));
-        jumpToTabMenu.append(new nw.MenuItem({
-          label: 'A5 Tiles',
-          click: this.makeMenuEvent(function () {
-            CycloneMapEditor$1.jumpToTile(a5);
           })
         }));
         this._jumpToExtraBMenu = new nw.MenuItem({
@@ -3309,7 +3314,7 @@ function _createClass(Constructor, protoProps, staticProps) { if (protoProps) _d
     }, {
       key: "getExtraData",
       value: function getExtraData() {
-        var _CycloneMagic;
+        var _window$CycloneMagic;
 
         var radix = 36;
         var collision = new Array($dataMap.width * $dataMap.height * 16);
@@ -3342,7 +3347,7 @@ function _createClass(Constructor, protoProps, staticProps) { if (protoProps) _d
           magic[tileId] = line;
         }
 
-        var puzzle = ((_CycloneMagic = CycloneMagic) === null || _CycloneMagic === void 0 ? void 0 : _CycloneMagic.puzzleTiles) || undefined;
+        var puzzle = ((_window$CycloneMagic = window.CycloneMagic) === null || _window$CycloneMagic === void 0 ? void 0 : _window$CycloneMagic.puzzleTiles) || undefined;
         return {
           radix: radix,
           collision: collision.join(''),
@@ -5550,9 +5555,9 @@ function _createClass(Constructor, protoProps, staticProps) { if (protoProps) _d
     }, {
       key: "_applyPuzzleTile",
       value: function _applyPuzzleTile(x, y, tileId, previewOnly) {
-        var _window$CycloneMagic, _CycloneMagic$puzzleT;
+        var _window$CycloneMagic2, _CycloneMagic$puzzleT;
 
-        if (!((_window$CycloneMagic = window.CycloneMagic) === null || _window$CycloneMagic === void 0 ? void 0 : _window$CycloneMagic.puzzleTiles)) {
+        if (!((_window$CycloneMagic2 = window.CycloneMagic) === null || _window$CycloneMagic2 === void 0 ? void 0 : _window$CycloneMagic2.puzzleTiles)) {
           return;
         }
 
@@ -8372,11 +8377,12 @@ function _createClass(Constructor, protoProps, staticProps) { if (protoProps) _d
     _createClass(WindowCycloneMapEditorLayerList, [{
       key: "initialize",
       value: function initialize() {
-        var x = Graphics.width - CycloneMapEditor.windowWidth;
-        var y = SceneManager._scene._mapEditorCommands.height;
-        var h = 150;
+        var x = 0;
+        var w = 180;
+        var y = 0;
+        var h = Graphics.height - 40;
 
-        _get(_getPrototypeOf(WindowCycloneMapEditorLayerList.prototype), "initialize", this).call(this, new Rectangle(x, y, CycloneMapEditor.windowWidth, h));
+        _get(_getPrototypeOf(WindowCycloneMapEditorLayerList.prototype), "initialize", this).call(this, new Rectangle(x, y, w, h));
 
         this.showBackgroundDimmer();
       }
@@ -8404,29 +8410,20 @@ function _createClass(Constructor, protoProps, staticProps) { if (protoProps) _d
 
         var ctx = this.contents._canvas.getContext('2d');
 
-        var names = ['Layer 1', 'Layer 2', 'Layer 3', 'Layer 4', 'Shadows', 'Regions', 'Events', 'Auto Layer'];
-        this.contents.fontSize = Graphics.width < 1280 ? 13 : 22;
+        var names = ['Auto Layer', 'Layer 1', 'Layer 2', 'Layer 3', 'Layer 4', 'Shadows', 'Regions', 'Events'];
+        this.contents.fontSize = 22;
         ctx.imageSmoothingEnabled = false;
 
-        for (var i = 0; i < 4; i++) {
-          ctx.drawImage(CycloneMapEditor.layerVisibility[i] ? visibleIcon : hiddenIcon, -4, 30 * i - 4, 48, 48);
-          this.contents.fontBold = CycloneMapEditor.currentLayer === i;
-          this.changeTextColor(CycloneMapEditor.currentLayer === i ? ColorManager.powerUpColor() : ColorManager.normalColor());
-          this.drawText(names[i], 40, i * 30, CycloneMapEditor.windowWidth / 2 - 40, 'left');
+        for (var i = 0; i < 8; i++) {
+          var layerIndex = i === 0 ? Layers.auto : i - 1;
+          this.contents.fontBold = CycloneMapEditor.currentLayer === layerIndex;
+          this.changeTextColor(CycloneMapEditor.currentLayer === layerIndex ? ColorManager.powerUpColor() : ColorManager.normalColor());
 
-          if (names[i + 4]) {
-            var _x14 = CycloneMapEditor.windowWidth / 2;
-
-            if (i !== 3) {
-              ctx.drawImage(CycloneMapEditor.layerVisibility[i + 4] ? visibleIcon : hiddenIcon, _x14 - 4, 30 * i - 4, 48, 48);
-              _x14 += 40;
-            } else {
-              _x14 += 10;
-            }
-
-            this.contents.fontBold = CycloneMapEditor.currentLayer === i + 4;
-            this.changeTextColor(CycloneMapEditor.currentLayer === i + 4 ? ColorManager.powerUpColor() : ColorManager.normalColor());
-            this.drawText(names[i + 4], _x14, i * 30, CycloneMapEditor.windowWidth / 2 - 40, 'left');
+          if (layerIndex !== Layers.auto) {
+            ctx.drawImage(CycloneMapEditor.layerVisibility[layerIndex] ? visibleIcon : hiddenIcon, -4, 30 * i - 4, 48, 48);
+            this.drawText(names[i], 40, i * 30, this.contents.width - 40, 'left');
+          } else {
+            this.drawText(names[i], 10, i * 30, this.contents.width - 10, 'left');
           }
         }
       }
@@ -8457,7 +8454,11 @@ function _createClass(Constructor, protoProps, staticProps) { if (protoProps) _d
           return -1;
         }
 
-        return layerIndex;
+        if (layerIndex === 0) {
+          return Layers.auto;
+        }
+
+        return layerIndex - 1;
       }
     }, {
       key: "onMapTouch",
@@ -8599,24 +8600,183 @@ function _createClass(Constructor, protoProps, staticProps) { if (protoProps) _d
     }]);
 
     return WindowCycloneMapEditorStatus;
-  }(Window_Base);
+  }(Window_Base); // import { Layers, Tools } from './constants';
 
-  var WindowCycloneMapEditor = /*#__PURE__*/function (_Window_Command2) {
-    _inherits(WindowCycloneMapEditor, _Window_Command2);
 
-    var _super8 = _createSuper(WindowCycloneMapEditor);
+  var WindowCycloneMapEditorTabs = /*#__PURE__*/function (_Window_Command2) {
+    _inherits(WindowCycloneMapEditorTabs, _Window_Command2);
+
+    var _super8 = _createSuper(WindowCycloneMapEditorTabs);
+
+    function WindowCycloneMapEditorTabs() {
+      _classCallCheck(this, WindowCycloneMapEditorTabs);
+
+      return _super8.apply(this, arguments);
+    }
+
+    _createClass(WindowCycloneMapEditorTabs, [{
+      key: "initialize",
+      value: function initialize() {
+        var x = Graphics.width - CycloneMapEditor.windowWidth;
+        var y = SceneManager._scene._mapEditorCommands.y + SceneManager._scene._mapEditorCommands.height;
+        var w = CycloneMapEditor.windowWidth;
+        var h = 74;
+
+        _get(_getPrototypeOf(WindowCycloneMapEditorTabs.prototype), "initialize", this).call(this, new Rectangle(x, y, w, h));
+
+        this.showBackgroundDimmer();
+        this.configureHandlers();
+      }
+    }, {
+      key: "configureHandlers",
+      value: function configureHandlers() {
+        var _this21 = this;
+
+        this.setHandler('a', function () {
+          CycloneMapEditor.jumpToOneTileOf([Tilemap.TILE_ID_A1, Tilemap.TILE_ID_A2, Tilemap.TILE_ID_A3, Tilemap.TILE_ID_A4, Tilemap.TILE_ID_A5]);
+
+          _this21.activate();
+        });
+        this.setHandler('b', function () {
+          CycloneMapEditor.jumpToTile(Tilemap.TILE_ID_B);
+
+          _this21.activate();
+        });
+        this.setHandler('c', function () {
+          CycloneMapEditor.jumpToTile(Tilemap.TILE_ID_C);
+
+          _this21.activate();
+        });
+        this.setHandler('d', function () {
+          CycloneMapEditor.jumpToTile(Tilemap.TILE_ID_D);
+
+          _this21.activate();
+        });
+        this.setHandler('e', function () {
+          CycloneMapEditor.jumpToTile(Tilemap.TILE_ID_E);
+
+          _this21.activate();
+        });
+        this.setHandler('f', function () {
+          CycloneMapEditor.jumpToTile(Tilemap.TILE_ID_E + 256);
+
+          _this21.activate();
+        });
+        this.setHandler('g', function () {
+          CycloneMapEditor.jumpToTile(Tilemap.TILE_ID_E + 512);
+
+          _this21.activate();
+        });
+        this.setHandler('h', function () {
+          CycloneMapEditor.jumpToTile(Tilemap.TILE_ID_A5 + 256);
+
+          _this21.activate();
+        });
+      }
+    }, {
+      key: "maxScrollY",
+      value: function maxScrollY() {
+        return 0;
+      }
+    }, {
+      key: "maxScrollX",
+      value: function maxScrollX() {
+        return 0;
+      }
+    }, {
+      key: "processCursorMove",
+      value: function processCursorMove() {}
+    }, {
+      key: "processHandling",
+      value: function processHandling() {}
+    }, {
+      key: "updateBackOpacity",
+      value: function updateBackOpacity() {
+        this.backOpacity = 255;
+      }
+    }, {
+      key: "_updateCursor",
+      value: function _updateCursor() {
+        this._cursorSprite.visible = false;
+      }
+    }, {
+      key: "makeCommandList",
+      value: function makeCommandList() {
+        this.addCommand('A', 'a');
+        this.addCommand('B', 'b');
+        this.addCommand('C', 'c');
+        this.addCommand('D', 'd');
+        this.addCommand('E', 'e');
+        this.addCommand('F', 'f', Boolean(window.CycloneExtraTilesets));
+        this.addCommand('G', 'g', Boolean(window.CycloneExtraTilesets));
+        this.addCommand('H', 'h', Boolean(window.CycloneExtraTilesets));
+      }
+    }, {
+      key: "colSpacing",
+      value: function colSpacing() {
+        return 6;
+      }
+    }, {
+      key: "rowSpacing",
+      value: function rowSpacing() {
+        return 0;
+      }
+    }, {
+      key: "maxCols",
+      value: function maxCols() {
+        return 8;
+      }
+    }, {
+      key: "redraw",
+      value: function redraw() {
+        Window_Selectable.prototype.refresh.call(this);
+      } // itemRect(index) {
+      //   const rect = super.itemRect(index);
+      //   if (Graphics.width < 1280) {
+      //     rect.width += 3;
+      //   }
+      //   return rect;
+      // }
+      // lineHeight() {
+      //   if (Graphics.width >= 1280) {
+      //     if (CycloneMapEditor.tileDrawWidth < 48) {
+      //       return 14;
+      //     }
+      //     return 36;
+      //   }
+      //   return 14;
+      // }
+
+    }, {
+      key: "playCursorSound",
+      value: function playCursorSound() {}
+    }, {
+      key: "playOkSound",
+      value: function playOkSound() {}
+    }, {
+      key: "playBuzzerSound",
+      value: function playBuzzerSound() {}
+    }]);
+
+    return WindowCycloneMapEditorTabs;
+  }(Window_Command);
+
+  var WindowCycloneMapEditor = /*#__PURE__*/function (_Window_Command3) {
+    _inherits(WindowCycloneMapEditor, _Window_Command3);
+
+    var _super9 = _createSuper(WindowCycloneMapEditor);
 
     function WindowCycloneMapEditor() {
       _classCallCheck(this, WindowCycloneMapEditor);
 
-      return _super8.apply(this, arguments);
+      return _super9.apply(this, arguments);
     }
 
     _createClass(WindowCycloneMapEditor, [{
       key: "initialize",
       value: function initialize() {
         var x = Graphics.width - CycloneMapEditor.windowWidth;
-        var y = SceneManager._scene._mapEditorLayerListWindow.y + SceneManager._scene._mapEditorLayerListWindow.height;
+        var y = SceneManager._scene._mapEditorTabsWindow.y + SceneManager._scene._mapEditorTabsWindow.height;
         var w = CycloneMapEditor.windowWidth;
         var h = Graphics.height - y - SceneManager._scene._mapEditorStatus.height;
 
@@ -8711,12 +8871,16 @@ function _createClass(Constructor, protoProps, staticProps) { if (protoProps) _d
           this.addTile(tileId);
         }
 
-        for (var _tileId4 = Tilemap.TILE_ID_B; _tileId4 < Tilemap.TILE_ID_A1; _tileId4++) {
-          if (_tileId4 >= Tilemap.TILE_ID_A5 + 128 && _tileId4 < Tilemap.TILE_ID_A5 + 256) {
-            continue;
-          }
-
+        for (var _tileId4 = Tilemap.TILE_ID_A5; _tileId4 < Tilemap.TILE_ID_A5 + 128; _tileId4++) {
           this.addTile(_tileId4);
+        }
+
+        for (var _tileId5 = Tilemap.TILE_ID_B; _tileId5 < Tilemap.TILE_ID_A5; _tileId5++) {
+          this.addTile(_tileId5);
+        }
+
+        for (var _tileId6 = Tilemap.TILE_ID_A5 + 256; _tileId6 < Tilemap.TILE_ID_A5 + 512; _tileId6++) {
+          this.addTile(_tileId6);
         }
       }
     }, {
@@ -8741,14 +8905,14 @@ function _createClass(Constructor, protoProps, staticProps) { if (protoProps) _d
         for (var i = 0; i < tileList.length; i += 4) {
           for (var pieceY = 0; pieceY < 6; pieceY++) {
             for (var idx = 0; idx <= 3; idx++) {
-              var _tileId5 = tileList[i + idx];
+              var _tileId7 = tileList[i + idx];
 
-              if (!_tileId5) {
+              if (!_tileId7) {
                 continue;
               }
 
               for (var pieceX = 0; pieceX < 4; pieceX++) {
-                var pieceId = _tileId5 + pieceX + pieceY * 4;
+                var pieceId = _tileId7 + pieceX + pieceY * 4;
                 this.addCommand(pieceId, 'puzzle', true, pieceId);
               }
             }
@@ -9000,7 +9164,7 @@ function _createClass(Constructor, protoProps, staticProps) { if (protoProps) _d
     }, {
       key: "drawItem",
       value: function drawItem(index) {
-        var _this21 = this;
+        var _this22 = this;
 
         this.resetTextColor();
         this.changePaintOpacity(this.isCommandEnabled(index));
@@ -9037,7 +9201,7 @@ function _createClass(Constructor, protoProps, staticProps) { if (protoProps) _d
 
         if (!bitmap.isReady() && bitmap._loadListeners.length < 2) {
           bitmap.addLoadListener(function () {
-            _this21._needsRedraw = true;
+            _this22._needsRedraw = true;
           });
         }
 
@@ -9123,10 +9287,10 @@ function _createClass(Constructor, protoProps, staticProps) { if (protoProps) _d
           context.moveTo(baseX, baseY - outerRadius);
 
           for (var i = 0; i < 5; i++) {
-            var _x15 = baseX + Math.cos(rot) * outerRadius;
+            var _x14 = baseX + Math.cos(rot) * outerRadius;
 
             var y = baseY + Math.sin(rot) * outerRadius;
-            context.lineTo(_x15, y);
+            context.lineTo(_x14, y);
             rot += step;
             var inX = baseX + Math.cos(rot) * innerRadius;
             var inY = baseY + Math.sin(rot) * innerRadius;
@@ -9481,8 +9645,8 @@ function _createClass(Constructor, protoProps, staticProps) { if (protoProps) _d
         var selectionIndex = 0;
 
         for (var y = topRow; y < topRow + CycloneMapEditor.tileRows; y++) {
-          for (var _x16 = leftCol; _x16 < leftCol + CycloneMapEditor.tileCols; _x16++) {
-            var newIndex = y * maxCols + _x16;
+          for (var _x15 = leftCol; _x15 < leftCol + CycloneMapEditor.tileCols; _x15++) {
+            var newIndex = y * maxCols + _x15;
             var newTileId = this.commandName(newIndex);
             CycloneMapEditor.selectedTileList[selectionIndex] = newTileId;
             selectionIndex++;
@@ -9728,6 +9892,13 @@ function _createClass(Constructor, protoProps, staticProps) { if (protoProps) _d
 
           this._mapEditorLayerListWindow.deactivate();
 
+          this._mapEditorTabsWindow = new WindowCycloneMapEditorTabs();
+          this.addChild(this._mapEditorTabsWindow);
+
+          this._mapEditorTabsWindow.hide();
+
+          this._mapEditorTabsWindow.deactivate();
+
           this._mapEditorStatus = new WindowCycloneMapEditorStatus();
           this.addChild(this._mapEditorStatus);
 
@@ -9752,13 +9923,17 @@ function _createClass(Constructor, protoProps, staticProps) { if (protoProps) _d
           this._mapEditorLayerListWindow.visible = active;
           this._mapEditorWindow.visible = active;
           this._mapEditorStatus.visible = active;
+          this._mapEditorTabsWindow.visible = active;
           this._mapEditorCommands.active = active;
           this._mapEditorLayerListWindow.active = active;
           this._mapEditorWindow.active = active;
+          this._mapEditorTabsWindow.active = active;
 
           this._mapEditorCommands.refresh();
 
           this._mapEditorLayerListWindow.refresh();
+
+          this._mapEditorTabsWindow.refresh();
 
           this._mapEditorWindow.refresh();
 
@@ -10013,12 +10188,12 @@ function _createClass(Constructor, protoProps, staticProps) { if (protoProps) _d
   var SpriteMapEditorCursor = /*#__PURE__*/function (_Sprite) {
     _inherits(SpriteMapEditorCursor, _Sprite);
 
-    var _super9 = _createSuper(SpriteMapEditorCursor);
+    var _super10 = _createSuper(SpriteMapEditorCursor);
 
     function SpriteMapEditorCursor() {
       _classCallCheck(this, SpriteMapEditorCursor);
 
-      return _super9.apply(this, arguments);
+      return _super10.apply(this, arguments);
     }
 
     _createClass(SpriteMapEditorCursor, [{
@@ -10179,10 +10354,10 @@ function _createClass(Constructor, protoProps, staticProps) { if (protoProps) _d
                 row++;
               }
 
-              var _x17 = column * CycloneMapEditor.tileWidth;
+              var _x16 = column * CycloneMapEditor.tileWidth;
 
               var y = row * CycloneMapEditor.tileHeight;
-              this.bitmap.drawTile(tileId, _x17, y);
+              this.bitmap.drawTile(tileId, _x16, y);
               column++;
             }
           } catch (err) {
@@ -10215,20 +10390,20 @@ function _createClass(Constructor, protoProps, staticProps) { if (protoProps) _d
               row++;
             }
 
-            var _x18 = column * CycloneMapEditor.tileWidth;
+            var _x17 = column * CycloneMapEditor.tileWidth;
 
             var y = row * CycloneMapEditor.tileHeight;
 
             if (CycloneMapEditor.currentLayer === 5) {
-              this.bitmap.drawRegion(tileId, _x18, y);
+              this.bitmap.drawRegion(tileId, _x17, y);
             } else if (CycloneMapEditor.currentLayer === 4) {
-              this.bitmap.drawShadow(tileId, _x18, y);
+              this.bitmap.drawShadow(tileId, _x17, y);
             } else if (CycloneMapEditor.currentLayer === 8) {
-              this.drawCollision(tileId, _x18, y);
+              this.drawCollision(tileId, _x17, y);
             } else if (CycloneMapEditor.puzzleMode) {
-              this.bitmap.drawPuzzlePiece(tileId, _x18, y, CycloneMapEditor.tileWidth / 2, CycloneMapEditor.tileHeight / 2);
+              this.bitmap.drawPuzzlePiece(tileId, _x17, y, CycloneMapEditor.tileWidth / 2, CycloneMapEditor.tileHeight / 2);
             } else {
-              this.bitmap.drawTile(tileId, _x18, y);
+              this.bitmap.drawTile(tileId, _x17, y);
             }
 
             column++;
@@ -10625,7 +10800,7 @@ function _createClass(Constructor, protoProps, staticProps) { if (protoProps) _d
 
   WindowCycloneMapEditor.prototype.initialize = function () {
     var x = Graphics.width - CycloneMapEditor.windowWidth;
-    var y = SceneManager._scene._mapEditorLayerListWindow.y + SceneManager._scene._mapEditorLayerListWindow.height;
+    var y = SceneManager._scene._mapEditorTabsWindow.y + SceneManager._scene._mapEditorTabsWindow.height;
     Window_Command.prototype.initialize.call(this, x, y);
     this.showBackgroundDimmer();
   };
@@ -10635,7 +10810,7 @@ function _createClass(Constructor, protoProps, staticProps) { if (protoProps) _d
   };
 
   WindowCycloneMapEditor.prototype.windowHeight = function () {
-    var y = SceneManager._scene._mapEditorLayerListWindow.y + SceneManager._scene._mapEditorLayerListWindow.height;
+    var y = SceneManager._scene._mapEditorTabsWindow.y + SceneManager._scene._mapEditorTabsWindow.height;
     return Graphics.height - y - SceneManager._scene._mapEditorStatus.height;
   };
 
@@ -10702,10 +10877,11 @@ function _createClass(Constructor, protoProps, staticProps) { if (protoProps) _d
   };
 
   WindowCycloneMapEditorLayerList.prototype.initialize = function () {
-    var x = Graphics.width - CycloneMapEditor.windowWidth;
-    var y = SceneManager._scene._mapEditorCommands.height;
-    var h = 150;
-    Window_Base.prototype.initialize.call(this, x, y, CycloneMapEditor.windowWidth, h);
+    var x = 0;
+    var y = 0;
+    var h = Graphics.height - 40;
+    var w = 180;
+    Window_Base.prototype.initialize.call(this, x, y, w, h);
     this.showBackgroundDimmer();
   };
 
@@ -10729,6 +10905,52 @@ function _createClass(Constructor, protoProps, staticProps) { if (protoProps) _d
 
   WindowCycloneMapEditorStatus.prototype.drawRightLine = function () {
     this.drawText("TileId: ".concat(CycloneMapEditor.statusTileId), 0, this.textY(), this.width - 16, 'right');
+  };
+
+  WindowCycloneMapEditorTabs.prototype.initialize = function () {
+    var x = Graphics.width - CycloneMapEditor.windowWidth;
+    var y = SceneManager._scene._mapEditorCommands.y + SceneManager._scene._mapEditorCommands.height;
+    Window_Command.prototype.initialize.call(this, x, y);
+    this.showBackgroundDimmer();
+    this.configureHandlers();
+  };
+
+  WindowCycloneMapEditorTabs.prototype.windowWidth = function () {
+    return CycloneMapEditor.windowWidth;
+  };
+
+  WindowCycloneMapEditorTabs.prototype.windowHeight = function () {
+    return 65;
+  };
+
+  WindowCycloneMapEditorTabs.prototype.standardPadding = function () {
+    return 8;
+  };
+
+  WindowCycloneMapEditorTabs.prototype.spacing = function () {
+    return 6;
+  };
+
+  WindowCycloneMapEditorTabs.prototype._updateCursor = function () {
+    this._windowCursorSprite.visible = false;
+  };
+
+  WindowCycloneMapEditorTabs.prototype.itemHeight = function () {
+    return this.lineHeight() + 8;
+  };
+
+  WindowCycloneMapEditorTabs.prototype.onTouch = function (triggered) {
+    var x = this.canvasToLocalX(TouchInput.x);
+    var y = this.canvasToLocalY(TouchInput.y);
+    var hitIndex = this.hitTest(x, y);
+
+    if (hitIndex >= 0) {
+      this.select(hitIndex);
+
+      if (triggered) {
+        this.processOk();
+      }
+    }
   };
 
   CycloneMapEditor.patchClass(Scene_Boot, function ($super) {

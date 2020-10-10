@@ -1,6 +1,6 @@
 /*:
  * @target MZ
- * @plugindesc Live Map Editor - v1.09.00
+ * @plugindesc Live Map Editor - v1.10.00
  *
  * <pluginName:CycloneMapEditor>
  * @author Hudell
@@ -62,6 +62,11 @@
  * ===========================================================================
  * Change Log
  * ===========================================================================
+ * 2020-10-10 - Version 1.10.00
+ *   * Added tileset tabs
+ *   * Moved layer list to left side of the screen
+ *   * General bug fixes
+ *
  * 2020-10-09 - Version 1.09.00
  *   * General bug fixes
  *   * Added support to Cyclone Magic v1.1
@@ -2162,6 +2167,12 @@ class CycloneMapEditor$1 extends CyclonePlugin {
       }),
     }));
     jumpToTabMenu.append(new nw.MenuItem({
+      label: 'A5 Tiles',
+      click: this.makeMenuEvent(() => {
+        CycloneMapEditor$1.jumpToTile(a5);
+      }),
+    }));
+    jumpToTabMenu.append(new nw.MenuItem({
       label: 'B Tiles',
       click: this.makeMenuEvent(() => {
         CycloneMapEditor$1.jumpToOneTileOf([b, c, d, e, f, g, a5]);
@@ -2183,12 +2194,6 @@ class CycloneMapEditor$1 extends CyclonePlugin {
       label: 'E Tiles',
       click: this.makeMenuEvent(() => {
         CycloneMapEditor$1.jumpToOneTileOf([e, f, g, a5]);
-      }),
-    }));
-    jumpToTabMenu.append(new nw.MenuItem({
-      label: 'A5 Tiles',
-      click: this.makeMenuEvent(() => {
-        CycloneMapEditor$1.jumpToTile(a5);
       }),
     }));
     this._jumpToExtraBMenu = new nw.MenuItem({
@@ -2581,7 +2586,7 @@ class CycloneMapEditor$1 extends CyclonePlugin {
       magic[tileId] = line;
     }
 
-    const puzzle = CycloneMagic?.puzzleTiles || undefined;
+    const puzzle = window.CycloneMagic?.puzzleTiles || undefined;
 
     return {
       radix,
@@ -6623,10 +6628,11 @@ visibleIcon.src = 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABgAAAAYCAYAAAD
 
 class WindowCycloneMapEditorLayerList extends Window_Base {
   initialize() {
-    const x = Graphics.width - CycloneMapEditor.windowWidth;
-    const y = SceneManager._scene._mapEditorCommands.height;
-    const h = 150;
-    super.initialize(new Rectangle(x, y, CycloneMapEditor.windowWidth, h));
+    const x = 0;
+    const w = 180;
+    const y = 0;
+    const h = Graphics.height - 40;
+    super.initialize(new Rectangle(x, y, w, h));
     this.showBackgroundDimmer();
   }
 
@@ -6648,6 +6654,7 @@ class WindowCycloneMapEditorLayerList extends Window_Base {
     const ctx = this.contents._canvas.getContext('2d');
 
     const names = [
+      'Auto Layer',
       'Layer 1',
       'Layer 2',
       'Layer 3',
@@ -6655,31 +6662,22 @@ class WindowCycloneMapEditorLayerList extends Window_Base {
       'Shadows',
       'Regions',
       'Events',
-      'Auto Layer',
     ];
-    this.contents.fontSize = Graphics.width < 1280 ? 13 : 22;
+    this.contents.fontSize = 22;
 
     ctx.imageSmoothingEnabled = false;
-    for (let i = 0; i < 4; i++) {
-      ctx.drawImage(CycloneMapEditor.layerVisibility[i] ? visibleIcon : hiddenIcon, -4, 30 * i - 4, 48, 48);
-      this.contents.fontBold = CycloneMapEditor.currentLayer === i;
-      this.changeTextColor(CycloneMapEditor.currentLayer === i ? ColorManager.powerUpColor() : ColorManager.normalColor());
+    for (let i = 0; i < 8; i++) {
+      const layerIndex = i === 0 ? Layers.auto : i - 1;
+      this.contents.fontBold = CycloneMapEditor.currentLayer === layerIndex;
+      this.changeTextColor(CycloneMapEditor.currentLayer === layerIndex ? ColorManager.powerUpColor() : ColorManager.normalColor());
 
-      this.drawText(names[i], 40, i * 30, CycloneMapEditor.windowWidth / 2 - 40, 'left');
-
-      if (names[i + 4]) {
-        let x = CycloneMapEditor.windowWidth / 2;
-
-        if (i !== 3) {
-          ctx.drawImage(CycloneMapEditor.layerVisibility[i + 4] ? visibleIcon : hiddenIcon, x - 4, 30 * i - 4, 48, 48);
-          x += 40;
-        } else {
-          x += 10;
-        }
-        this.contents.fontBold = CycloneMapEditor.currentLayer === (i + 4);
-        this.changeTextColor(CycloneMapEditor.currentLayer === (i + 4) ? ColorManager.powerUpColor() : ColorManager.normalColor());
-        this.drawText(names[i + 4], x, i * 30, CycloneMapEditor.windowWidth / 2 - 40, 'left');
+      if (layerIndex !== Layers.auto) {
+        ctx.drawImage(CycloneMapEditor.layerVisibility[layerIndex] ? visibleIcon : hiddenIcon, -4, 30 * i - 4, 48, 48);
+        this.drawText(names[i], 40, i * 30, this.contents.width - 40, 'left');
+      } else {
+        this.drawText(names[i], 10, i * 30, this.contents.width - 10, 'left');
       }
+
     }
   }
 
@@ -6705,7 +6703,11 @@ class WindowCycloneMapEditorLayerList extends Window_Base {
       return -1;
     }
 
-    return layerIndex;
+    if (layerIndex === 0) {
+      return Layers.auto;
+    }
+
+    return layerIndex - 1;
   }
 
   onMapTouch(x, y) {
@@ -6813,10 +6815,138 @@ class WindowCycloneMapEditorStatus extends Window_Base {
   }
 }
 
+// import { Layers, Tools } from './constants';
+
+class WindowCycloneMapEditorTabs extends Window_Command {
+  initialize() {
+    const x = Graphics.width - CycloneMapEditor.windowWidth;
+    const y = SceneManager._scene._mapEditorCommands.y + SceneManager._scene._mapEditorCommands.height;
+    const w = CycloneMapEditor.windowWidth;
+    const h = 74;
+    super.initialize(new Rectangle(x, y, w, h));
+    this.showBackgroundDimmer();
+    this.configureHandlers();
+  }
+
+  configureHandlers() {
+    this.setHandler('a', () => {
+      CycloneMapEditor.jumpToOneTileOf([Tilemap.TILE_ID_A1, Tilemap.TILE_ID_A2, Tilemap.TILE_ID_A3, Tilemap.TILE_ID_A4, Tilemap.TILE_ID_A5]);
+      this.activate();
+    });
+    this.setHandler('b', () => {
+      CycloneMapEditor.jumpToTile(Tilemap.TILE_ID_B);
+      this.activate();
+    });
+    this.setHandler('c', () => {
+      CycloneMapEditor.jumpToTile(Tilemap.TILE_ID_C);
+      this.activate();
+    });
+    this.setHandler('d', () => {
+      CycloneMapEditor.jumpToTile(Tilemap.TILE_ID_D);
+      this.activate();
+    });
+    this.setHandler('e', () => {
+      CycloneMapEditor.jumpToTile(Tilemap.TILE_ID_E);
+      this.activate();
+    });
+    this.setHandler('f', () => {
+      CycloneMapEditor.jumpToTile(Tilemap.TILE_ID_E + 256);
+      this.activate();
+    });
+    this.setHandler('g', () => {
+      CycloneMapEditor.jumpToTile(Tilemap.TILE_ID_E + 512);
+      this.activate();
+    });
+    this.setHandler('h', () => {
+      CycloneMapEditor.jumpToTile(Tilemap.TILE_ID_A5 + 256);
+      this.activate();
+    });
+  }
+  maxScrollY() {
+    return 0;
+  }
+
+  maxScrollX() {
+    return 0;
+  }
+
+  processCursorMove() {
+  }
+
+  processHandling() {
+  }
+
+  updateBackOpacity() {
+    this.backOpacity = 255;
+  }
+
+  _updateCursor() {
+    this._cursorSprite.visible = false;
+  }
+
+  makeCommandList() {
+    this.addCommand('A', 'a');
+    this.addCommand('B', 'b');
+    this.addCommand('C', 'c');
+    this.addCommand('D', 'd');
+    this.addCommand('E', 'e');
+    this.addCommand('F', 'f', Boolean(window.CycloneExtraTilesets));
+    this.addCommand('G', 'g', Boolean(window.CycloneExtraTilesets));
+    this.addCommand('H', 'h', Boolean(window.CycloneExtraTilesets));
+  }
+
+  colSpacing() {
+    return 6;
+  }
+
+  rowSpacing() {
+    return 0;
+  }
+
+  maxCols() {
+    return 8;
+  }
+
+  redraw() {
+    Window_Selectable.prototype.refresh.call(this);
+  }
+
+  // itemRect(index) {
+  //   const rect = super.itemRect(index);
+
+  //   if (Graphics.width < 1280) {
+  //     rect.width += 3;
+  //   }
+
+  //   return rect;
+  // }
+
+  // lineHeight() {
+  //   if (Graphics.width >= 1280) {
+  //     if (CycloneMapEditor.tileDrawWidth < 48) {
+  //       return 14;
+  //     }
+
+  //     return 36;
+  //   }
+
+  //   return 14;
+  // }
+
+  playCursorSound() {
+  }
+
+  playOkSound() {
+  }
+
+  playBuzzerSound() {
+  }
+}
+
 class WindowCycloneMapEditor extends Window_Command {
   initialize() {
     const x = Graphics.width - CycloneMapEditor.windowWidth;
-    const y = SceneManager._scene._mapEditorLayerListWindow.y + SceneManager._scene._mapEditorLayerListWindow.height;
+    const y = SceneManager._scene._mapEditorTabsWindow.y + SceneManager._scene._mapEditorTabsWindow.height;
     const w = CycloneMapEditor.windowWidth;
     const h = Graphics.height - y - SceneManager._scene._mapEditorStatus.height;
     super.initialize(new Rectangle(x, y, w, h));
@@ -6901,10 +7031,15 @@ class WindowCycloneMapEditor extends Window_Command {
       this.addTile(tileId);
     }
 
-    for (let tileId = Tilemap.TILE_ID_B; tileId < Tilemap.TILE_ID_A1; tileId++) {
-      if (tileId >= Tilemap.TILE_ID_A5 + 128 && tileId < Tilemap.TILE_ID_A5 + 256) {
-        continue;
-      }
+    for (let tileId = Tilemap.TILE_ID_A5; tileId < Tilemap.TILE_ID_A5 + 128; tileId++) {
+      this.addTile(tileId);
+    }
+
+    for (let tileId = Tilemap.TILE_ID_B; tileId < Tilemap.TILE_ID_A5; tileId++) {
+      this.addTile(tileId);
+    }
+
+    for (let tileId = Tilemap.TILE_ID_A5 + 256; tileId < Tilemap.TILE_ID_A5 + 512; tileId++) {
       this.addTile(tileId);
     }
   }
@@ -7833,6 +7968,11 @@ CycloneMapEditor.patchClass(Scene_Map, $super => class {
     this._mapEditorLayerListWindow.hide();
     this._mapEditorLayerListWindow.deactivate();
 
+    this._mapEditorTabsWindow = new WindowCycloneMapEditorTabs();
+    this.addChild(this._mapEditorTabsWindow);
+    this._mapEditorTabsWindow.hide();
+    this._mapEditorTabsWindow.deactivate();
+
     this._mapEditorStatus = new WindowCycloneMapEditorStatus();
     this.addChild(this._mapEditorStatus);
     this._mapEditorStatus.hide();
@@ -7852,13 +7992,16 @@ CycloneMapEditor.patchClass(Scene_Map, $super => class {
     this._mapEditorLayerListWindow.visible = active;
     this._mapEditorWindow.visible = active;
     this._mapEditorStatus.visible = active;
+    this._mapEditorTabsWindow.visible = active;
 
     this._mapEditorCommands.active = active;
     this._mapEditorLayerListWindow.active = active;
     this._mapEditorWindow.active = active;
+    this._mapEditorTabsWindow.active = active;
 
     this._mapEditorCommands.refresh();
     this._mapEditorLayerListWindow.refresh();
+    this._mapEditorTabsWindow.refresh();
     this._mapEditorWindow.refresh();
     this._mapEditorGrid.refresh();
     this._mapEditorStatus.refresh();
