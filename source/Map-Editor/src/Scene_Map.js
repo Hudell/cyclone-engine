@@ -2,6 +2,7 @@ import { WindowCycloneGrid } from './WindowCycloneGrid';
 import { WindowCycloneMapEditorCommands } from './WindowCycloneMapEditorCommands';
 import { WindowCycloneMapEditorLayerList } from './WindowCycloneMapEditorLayerList';
 import { WindowCycloneMapEditorStatus } from './WindowCycloneMapEditorStatus';
+import { WindowCycloneMapEditorTabs } from './WindowCycloneMapEditorTabs';
 import { WindowCycloneMapEditor } from './WindowCycloneMapEditor';
 import { Layers, Tools } from './constants';
 
@@ -60,6 +61,11 @@ CycloneMapEditor.patchClass(Scene_Map, $super => class {
     this._mapEditorLayerListWindow.hide();
     this._mapEditorLayerListWindow.deactivate();
 
+    this._mapEditorTabsWindow = new WindowCycloneMapEditorTabs();
+    this.addChild(this._mapEditorTabsWindow);
+    this._mapEditorTabsWindow.hide();
+    this._mapEditorTabsWindow.deactivate();
+
     this._mapEditorStatus = new WindowCycloneMapEditorStatus();
     this.addChild(this._mapEditorStatus);
     this._mapEditorStatus.hide();
@@ -79,13 +85,16 @@ CycloneMapEditor.patchClass(Scene_Map, $super => class {
     this._mapEditorLayerListWindow.visible = active;
     this._mapEditorWindow.visible = active;
     this._mapEditorStatus.visible = active;
+    this._mapEditorTabsWindow.visible = active;
 
     this._mapEditorCommands.active = active;
     this._mapEditorLayerListWindow.active = active;
     this._mapEditorWindow.active = active;
+    this._mapEditorTabsWindow.active = active;
 
     this._mapEditorCommands.refresh();
     this._mapEditorLayerListWindow.refresh();
+    this._mapEditorTabsWindow.refresh();
     this._mapEditorWindow.refresh();
     this._mapEditorGrid.refresh();
     this._mapEditorStatus.refresh();

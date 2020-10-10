@@ -1001,6 +1001,12 @@ class CycloneMapEditor extends CyclonePlugin {
       }),
     }));
     jumpToTabMenu.append(new nw.MenuItem({
+      label: 'A5 Tiles',
+      click: this.makeMenuEvent(() => {
+        CycloneMapEditor.jumpToTile(a5);
+      }),
+    }));
+    jumpToTabMenu.append(new nw.MenuItem({
       label: 'B Tiles',
       click: this.makeMenuEvent(() => {
         CycloneMapEditor.jumpToOneTileOf([b, c, d, e, f, g, a5]);
@@ -1022,12 +1028,6 @@ class CycloneMapEditor extends CyclonePlugin {
       label: 'E Tiles',
       click: this.makeMenuEvent(() => {
         CycloneMapEditor.jumpToOneTileOf([e, f, g, a5]);
-      }),
-    }));
-    jumpToTabMenu.append(new nw.MenuItem({
-      label: 'A5 Tiles',
-      click: this.makeMenuEvent(() => {
-        CycloneMapEditor.jumpToTile(a5);
       }),
     }));
     this._jumpToExtraBMenu = new nw.MenuItem({

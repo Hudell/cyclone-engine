@@ -3,7 +3,7 @@ import { Layers, Tools, TilePassageType } from './constants';
 class WindowCycloneMapEditor extends Window_Command {
   initialize() {
     const x = Graphics.width - CycloneMapEditor.windowWidth;
-    const y = SceneManager._scene._mapEditorLayerListWindow.y + SceneManager._scene._mapEditorLayerListWindow.height;
+    const y = SceneManager._scene._mapEditorTabsWindow.y + SceneManager._scene._mapEditorTabsWindow.height;
     const w = CycloneMapEditor.windowWidth;
     const h = Graphics.height - y - SceneManager._scene._mapEditorStatus.height;
     super.initialize(new Rectangle(x, y, w, h));
@@ -88,10 +88,15 @@ class WindowCycloneMapEditor extends Window_Command {
       this.addTile(tileId);
     }
 
-    for (let tileId = Tilemap.TILE_ID_B; tileId < Tilemap.TILE_ID_A1; tileId++) {
-      if (tileId >= Tilemap.TILE_ID_A5 + 128 && tileId < Tilemap.TILE_ID_A5 + 256) {
-        continue;
-      }
+    for (let tileId = Tilemap.TILE_ID_A5; tileId < Tilemap.TILE_ID_A5 + 128; tileId++) {
+      this.addTile(tileId);
+    }
+
+    for (let tileId = Tilemap.TILE_ID_B; tileId < Tilemap.TILE_ID_A5; tileId++) {
+      this.addTile(tileId);
+    }
+
+    for (let tileId = Tilemap.TILE_ID_A5 + 256; tileId < Tilemap.TILE_ID_A5 + 512; tileId++) {
       this.addTile(tileId);
     }
   }
