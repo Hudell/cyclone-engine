@@ -1420,7 +1420,7 @@ class CycloneMapEditor extends CyclonePlugin {
       magic[tileId] = line;
     }
 
-    const puzzle = CycloneMagic?.puzzleTiles || undefined;
+    const puzzle = window.CycloneMagic?.puzzleTiles || undefined;
 
     return {
       radix,

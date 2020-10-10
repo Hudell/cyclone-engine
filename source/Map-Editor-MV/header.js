@@ -1,5 +1,5 @@
 /*:
- * @plugindesc Live Map Editor - 1.09.00
+ * @plugindesc Live Map Editor - 1.10.00
  *
  * <pluginName:CycloneMapEditor>
  * @author Hudell
@@ -61,6 +61,11 @@
  * ===========================================================================
  * Change Log
  * ===========================================================================
+ * 2020-10-10 - Version 1.10.00
+ *   * Added tileset tabs
+ *   * Moved layer list to left side of the screen
+ *   * General bug fixes
+ *
  * 2020-10-09 - Version 1.09.00
  *   * General bug fixes
  *   * Added support to Cyclone Magic v1.1

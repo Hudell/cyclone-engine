@@ -3,7 +3,7 @@
 class WindowCycloneMapEditorTabs extends Window_Command {
   initialize() {
     const x = Graphics.width - CycloneMapEditor.windowWidth;
-    const y = SceneManager._scene._mapEditorLayerListWindow.y + SceneManager._scene._mapEditorLayerListWindow.height;
+    const y = SceneManager._scene._mapEditorCommands.y + SceneManager._scene._mapEditorCommands.height;
     const w = CycloneMapEditor.windowWidth;
     const h = 74;
     super.initialize(new Rectangle(x, y, w, h));

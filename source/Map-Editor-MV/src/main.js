@@ -22,6 +22,7 @@ import './WindowCycloneMapEditor';
 import './WindowCycloneMapEditorCommands';
 import './WindowCycloneMapEditorLayerList';
 import './WindowCycloneMapEditorStatus';
+import './WindowCycloneMapEditorTabs';
 import './Scene_Boot';
 import './plugin';
 

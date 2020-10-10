@@ -1,6 +1,6 @@
 /*:
  * @target MZ
- * @plugindesc Live Map Editor - v1.09.00
+ * @plugindesc Live Map Editor - v1.10.00
  *
  * <pluginName:CycloneMapEditor>
  * @author Hudell
@@ -62,6 +62,11 @@
  * ===========================================================================
  * Change Log
  * ===========================================================================
+ * 2020-10-10 - Version 1.10.00
+ *   * Added tileset tabs
+ *   * Moved layer list to left side of the screen
+ *   * General bug fixes
+ *
  * 2020-10-09 - Version 1.09.00
  *   * General bug fixes
  *   * Added support to Cyclone Magic v1.1
@@ -2581,7 +2586,7 @@ class CycloneMapEditor$1 extends CyclonePlugin {
       magic[tileId] = line;
     }
 
-    const puzzle = CycloneMagic?.puzzleTiles || undefined;
+    const puzzle = window.CycloneMagic?.puzzleTiles || undefined;
 
     return {
       radix,
@@ -6623,10 +6628,11 @@ visibleIcon.src = 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABgAAAAYCAYAAAD
 
 class WindowCycloneMapEditorLayerList extends Window_Base {
   initialize() {
-    const x = Graphics.width - CycloneMapEditor.windowWidth;
-    const y = SceneManager._scene._mapEditorCommands.height;
-    const h = 150;
-    super.initialize(new Rectangle(x, y, CycloneMapEditor.windowWidth, h));
+    const x = 0;
+    const w = 180;
+    const y = 0;
+    const h = Graphics.height - 40;
+    super.initialize(new Rectangle(x, y, w, h));
     this.showBackgroundDimmer();
   }
 
@@ -6648,6 +6654,7 @@ class WindowCycloneMapEditorLayerList extends Window_Base {
     const ctx = this.contents._canvas.getContext('2d');
 
     const names = [
+      'Auto Layer',
       'Layer 1',
       'Layer 2',
       'Layer 3',
@@ -6655,31 +6662,22 @@ class WindowCycloneMapEditorLayerList extends Window_Base {
       'Shadows',
       'Regions',
       'Events',
-      'Auto Layer',
     ];
-    this.contents.fontSize = Graphics.width < 1280 ? 13 : 22;
+    this.contents.fontSize = 22;
 
     ctx.imageSmoothingEnabled = false;
-    for (let i = 0; i < 4; i++) {
-      ctx.drawImage(CycloneMapEditor.layerVisibility[i] ? visibleIcon : hiddenIcon, -4, 30 * i - 4, 48, 48);
-      this.contents.fontBold = CycloneMapEditor.currentLayer === i;
-      this.changeTextColor(CycloneMapEditor.currentLayer === i ? ColorManager.powerUpColor() : ColorManager.normalColor());
+    for (let i = 0; i < 8; i++) {
+      const layerIndex = i === 0 ? Layers.auto : i - 1;
+      this.contents.fontBold = CycloneMapEditor.currentLayer === layerIndex;
+      this.changeTextColor(CycloneMapEditor.currentLayer === layerIndex ? ColorManager.powerUpColor() : ColorManager.normalColor());
 
-      this.drawText(names[i], 40, i * 30, CycloneMapEditor.windowWidth / 2 - 40, 'left');
-
-      if (names[i + 4]) {
-        let x = CycloneMapEditor.windowWidth / 2;
-
-        if (i !== 3) {
-          ctx.drawImage(CycloneMapEditor.layerVisibility[i + 4] ? visibleIcon : hiddenIcon, x - 4, 30 * i - 4, 48, 48);
-          x += 40;
-        } else {
-          x += 10;
-        }
-        this.contents.fontBold = CycloneMapEditor.currentLayer === (i + 4);
-        this.changeTextColor(CycloneMapEditor.currentLayer === (i + 4) ? ColorManager.powerUpColor() : ColorManager.normalColor());
-        this.drawText(names[i + 4], x, i * 30, CycloneMapEditor.windowWidth / 2 - 40, 'left');
+      if (layerIndex !== Layers.auto) {
+        ctx.drawImage(CycloneMapEditor.layerVisibility[layerIndex] ? visibleIcon : hiddenIcon, -4, 30 * i - 4, 48, 48);
+        this.drawText(names[i], 40, i * 30, this.contents.width - 40, 'left');
+      } else {
+        this.drawText(names[i], 10, i * 30, this.contents.width - 10, 'left');
       }
+
     }
   }
 
@@ -6705,7 +6703,11 @@ class WindowCycloneMapEditorLayerList extends Window_Base {
       return -1;
     }
 
-    return layerIndex;
+    if (layerIndex === 0) {
+      return Layers.auto;
+    }
+
+    return layerIndex - 1;
   }
 
   onMapTouch(x, y) {
@@ -6818,7 +6820,7 @@ class WindowCycloneMapEditorStatus extends Window_Base {
 class WindowCycloneMapEditorTabs extends Window_Command {
   initialize() {
     const x = Graphics.width - CycloneMapEditor.windowWidth;
-    const y = SceneManager._scene._mapEditorLayerListWindow.y + SceneManager._scene._mapEditorLayerListWindow.height;
+    const y = SceneManager._scene._mapEditorCommands.y + SceneManager._scene._mapEditorCommands.height;
     const w = CycloneMapEditor.windowWidth;
     const h = 74;
     super.initialize(new Rectangle(x, y, w, h));
