@@ -39,6 +39,12 @@ class WindowCycloneMapEditorLayerList extends Window_Base {
       'Layer 2',
       'Layer 3',
       'Layer 4',
+      'Layer 5',
+      'Layer 6',
+      'Layer 7',
+      'Layer 8',
+      'Layer 9',
+      'Layer 10',
       'Shadows',
       'Regions',
       'Events',
@@ -46,18 +52,30 @@ class WindowCycloneMapEditorLayerList extends Window_Base {
     this.contents.fontSize = 22;
 
     ctx.imageSmoothingEnabled = false;
-    for (let i = 0; i < 8; i++) {
-      const layerIndex = i === 0 ? Layers.auto : i - 1;
+
+    const noEye = [Layers.auto, Layers.collisions, Layers.tags, Layers.blend];
+
+    for (let i = 0; i < names.length; i++) {
+      let layerIndex = i;
+      if (i === 0) {
+        layerIndex = Layers.auto;
+      } else if (i < 5) {
+        layerIndex = i - 1;
+      } else if (i <= 10) {
+        layerIndex = i + 6;
+      } else {
+        layerIndex = i - 7;
+      }
+
       this.contents.fontBold = CycloneMapEditor.currentLayer === layerIndex;
       this.changeTextColor(CycloneMapEditor.currentLayer === layerIndex ? ColorManager.powerUpColor() : ColorManager.normalColor());
 
-      if (layerIndex !== Layers.auto) {
+      if (noEye.includes(layerIndex)) {
+        this.drawText(names[i], 10, i * 30, this.contents.width - 10, 'left');
+      } else {
         ctx.drawImage(CycloneMapEditor.layerVisibility[layerIndex] ? visibleIcon : hiddenIcon, -4, 30 * i - 4, 48, 48);
         this.drawText(names[i], 40, i * 30, this.contents.width - 40, 'left');
-      } else {
-        this.drawText(names[i], 10, i * 30, this.contents.width - 10, 'left');
       }
-
     }
   }
 
@@ -87,7 +105,15 @@ class WindowCycloneMapEditorLayerList extends Window_Base {
       return Layers.auto;
     }
 
-    return layerIndex - 1;
+    if (layerIndex < 5) {
+      return layerIndex - 1;
+    }
+
+    if (layerIndex <= 10) {
+      return layerIndex + 6;
+    }
+
+    return layerIndex - 7;
   }
 
   onMapTouch(x, y) {
@@ -101,7 +127,7 @@ class WindowCycloneMapEditorLayerList extends Window_Base {
       layerIndex += 4;
     }
 
-    if (x < 50 && layerIndex < 7) {
+    if (x < 50 && (layerIndex < 7 || layerIndex > 10)) {
       this.toggleLayerVisibility(layerIndex);
       return;
     }

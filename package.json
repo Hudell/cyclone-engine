@@ -15,6 +15,7 @@
     "magic-mv": "cd source/Magic-MV & rollup -cw",
     "extra": "cd source/ExtraTilesets & rollup -cw",
     "extra-mv": "cd source/ExtraTilesets-MV & rollup -cw",
+    "layers": "cd source/ExtraLayers & rollup -cw",
     "window": "cd source/WindowResizer & rollup -cw",
     "window-mv": "cd source/WindowResizer-MV & rollup -cw"
   },

@@ -75,7 +75,7 @@ class WindowCycloneMapEditor extends Window_Command {
   }
 
   isTileLayer() {
-    return CycloneMapEditor.currentLayer === 7 || CycloneMapEditor.currentLayer < 4;
+    return CycloneMapEditor.currentLayer === 7 || CycloneMapEditor.currentLayer < 4 || CycloneMapEditor.currentLayer > 10;
   }
 
   makeTileList() {

@@ -8,7 +8,7 @@ import { DirectionHelper } from '../../Utils/DirectionHelper';
 import { logImage } from '../../Utils/logImage';
 import { getTilesetIndex } from '../../Utils/getTilesetIndex';
 
-const layerVisibility = [true, true, true, true, true, false, true, false, false, false, false];
+const layerVisibility = [true, true, true, true, true, false, true, false, false, false, false, true, true, true, true, true, true];
 let editorActive = true;
 let windowWidth = 216;
 const mapCaches = {};
@@ -1993,7 +1993,7 @@ class CycloneMapEditor extends CyclonePlugin {
 
     for (let z = 3; z >= 0; z--) {
       const tileIndex = this.tileIndex(x, y, z);
-      const tileId = $dataMap.data[tileIndex];
+      const tileId = this.getMapData(tileIndex);
 
       if (tileId) {
         this.changeCurrentLayer(z);
@@ -2397,7 +2397,7 @@ class CycloneMapEditor extends CyclonePlugin {
       }
     }
 
-    return $dataMap.data[tileIndex] ?? 0;
+    return this.getMapData(tileIndex) ?? 0;
   }
 
   static isSameKindTile(tileId, x, y, z, skipPreview = true) {
@@ -2656,8 +2656,8 @@ class CycloneMapEditor extends CyclonePlugin {
     const size = $gameMap.tileWidth() * $gameMap.tileHeight();
 
     for (const tileIndex in lastChange.tiles) {
-      currentChange.tiles[tileIndex] = $dataMap.data[tileIndex];
-      $dataMap.data[tileIndex] = lastChange.tiles[tileIndex];
+      currentChange.tiles[tileIndex] = this.getMapData(tileIndex);
+      this.setMapData(tileIndex, lastChange.tiles[tileIndex]);
     }
 
     for (const tileIndex in lastChange.puzzle) {
@@ -2710,8 +2710,8 @@ class CycloneMapEditor extends CyclonePlugin {
     let needsSaving = false;
 
     for (const tileIndex in lastChange.tiles) {
-      currentChange.tiles[tileIndex] = $dataMap.data[tileIndex];
-      $dataMap.data[tileIndex] = lastChange.tiles[tileIndex];
+      currentChange.tiles[tileIndex] = this.getMapData(tileIndex);
+      this.setMapData(tileIndex, lastChange.tiles[tileIndex]);
     }
 
     for (const tileIndex in lastChange.puzzle) {
@@ -2918,12 +2918,12 @@ class CycloneMapEditor extends CyclonePlugin {
     if (previewOnly) {
       previewChanges[tileIndex] = 0;
     } else {
-      const oldTile = $dataMap.data[tileIndex];
+      const oldTile = this.getMapData(tileIndex);
       if (currentChange.tiles[tileIndex] === undefined && oldTile !== 0) {
         currentChange.tiles[tileIndex] = oldTile;
       }
 
-      $dataMap.data[tileIndex] = 0;
+      this.setMapData(tileIndex, 0);
     }
   }
 
@@ -3403,7 +3403,7 @@ class CycloneMapEditor extends CyclonePlugin {
 
     const itemsToChange = this.getItemsToChange(x, y, z, tileId, !previewOnly, updateNeighbors);
     for (const {x, y, z, tileId} of itemsToChange) {
-      if (z > 5) {
+      if (z > 5 && z <= 10) {
         continue;
       }
       const tileIndex = this.tileIndex(x, y, z);
@@ -3419,12 +3419,12 @@ class CycloneMapEditor extends CyclonePlugin {
       if (previewOnly) {
         previewChanges[tileIndex] = effectiveTileId;
       } else {
-        const oldTile = $dataMap.data[tileIndex];
+        const oldTile = this.getMapData(tileIndex);
         if (currentChange.tiles[tileIndex] === undefined && oldTile !== effectiveTileId) {
           currentChange.tiles[tileIndex] = oldTile;
         }
 
-        $dataMap.data[tileIndex] = effectiveTileId;
+        this.setMapData(tileIndex, effectiveTileId);
       }
 
       this.maybeUpdateTileNeighbors(x, y, z, updateNeighbors, previewOnly);
@@ -3508,13 +3508,42 @@ class CycloneMapEditor extends CyclonePlugin {
     return currentLayer === Layers.auto && currentTool === 'eraser' && !Input.isPressed('shift');
   }
 
+  static getMapData(index) {
+    const width = $gameMap.width();
+    const height = $gameMap.height();
+    const size = width * height;
+
+    if (index >= size * 11) {
+      return $gameMap.extraLayers?.[index - size * 11];
+    }
+
+    return $dataMap.data[index];
+  }
+
+  static setMapData(index, value) {
+    const width = $gameMap.width();
+    const height = $gameMap.height();
+    const size = width * height;
+
+    if (index >= size * 11) {
+      if (!$gameMap.extraLayers) {
+        $gameMap.extraLayers = [];
+      }
+
+      $gameMap.extraLayers[index - size * 11] = value;
+      return;
+    }
+
+    $dataMap.data[index] = value;
+  }
+
   static getHighestLayerOnArea(startX, startY, width, height) {
     const highestLayer = (() => {
       for (let z = 3; z >= 1; z--) {
         for (let tileY = startY; tileY < startY + height; tileY++) {
           for (let tileX = startX; tileX < startX + width; tileX++) {
             const tileIndex = this.tileIndex(tileX, tileY, z);
-            const tileId = $dataMap.data[tileIndex];
+            const tileId = this.getMapData(tileIndex);
 
             if (tileId > 0) {
               return z;
@@ -3619,8 +3648,8 @@ class CycloneMapEditor extends CyclonePlugin {
     this.iterateRectangle(startX, startY, width, height, (tileX, tileY, index) => {
       for (let z = 0; z <= 3; z++) {
         const tileIndex = this.tileIndex(tileX, tileY, z);
-        multiLayerSelection[z][index] = $dataMap.data[tileIndex] || 0;
-        selectedTileList[index] = $dataMap.data[tileIndex] || selectedTileList[index] || 0;
+        multiLayerSelection[z][index] = this.getMapData(tileIndex) || 0;
+        selectedTileList[index] = this.getMapData(tileIndex) || selectedTileList[index] || 0;
         if (currentTileId === undefined) {
           currentTileId = selectedTileList[index];
         }
@@ -3669,11 +3698,11 @@ class CycloneMapEditor extends CyclonePlugin {
 
       this.iterateRectangle(startX, startY, width, height, (tileX, tileY, index) => {
         const tileIndex = this.tileIndex(tileX, tileY, z);
-        multiLayerSelection[z][index] = $dataMap.data[tileIndex] || 0;
-        selectedTileList[index] = $dataMap.data[tileIndex] || selectedTileList[index] || 0;
+        multiLayerSelection[z][index] = this.getMapData(tileIndex) || 0;
+        selectedTileList[index] = this.getMapData(tileIndex) || selectedTileList[index] || 0;
         this._selectTileIfNoneSelectedYet(selectedTileList[index]);
 
-        if ($dataMap.data[tileIndex]) {
+        if (this.getMapData(tileIndex)) {
           foundAny = true;
         }
       });
@@ -3694,9 +3723,9 @@ class CycloneMapEditor extends CyclonePlugin {
 
       this.iterateRectangle(startX, startY, width, height, (tileX, tileY, index) => {
         const tileIndex = this.tileIndex(tileX, tileY, z);
-        selectedTileList[index] = selectedTileList[index] || $dataMap.data[tileIndex] || 0;
+        selectedTileList[index] = selectedTileList[index] || this.getMapData(tileIndex) || 0;
         this._selectTileIfNoneSelectedYet(selectedTileList[index]);
-        if ($dataMap.data[tileIndex]) {
+        if (this.getMapData(tileIndex)) {
           foundAny = true;
         }
       });
@@ -3710,7 +3739,7 @@ class CycloneMapEditor extends CyclonePlugin {
   static copyManualRectangle(startX, startY, width, height) {
     this.iterateRectangle(startX, startY, width, height, (tileX, tileY, index) => {
       const tileIndex = this.tileIndex(tileX, tileY, currentLayer);
-      selectedTileList[index] = $dataMap.data[tileIndex] || 0;
+      selectedTileList[index] = this.getMapData(tileIndex) || 0;
       this._selectTileIfNoneSelectedYet(selectedTileList[index]);
     });
   }
@@ -3770,7 +3799,7 @@ class CycloneMapEditor extends CyclonePlugin {
 
     if (currentLayer > 3) {
       for (let z = 0; z <= 3; z++) {
-        const tileId = $dataMap.data[index + z * size];
+        const tileId = this.getMapData(index + z * size);
         if (!Tilemap.isSameKindTile(tileId, layers[z])) {
           return false;
         }
@@ -3779,7 +3808,7 @@ class CycloneMapEditor extends CyclonePlugin {
       return true;
     }
 
-    const tileId = $dataMap.data[index];
+    const tileId = this.getMapData(index);
     return Tilemap.isSameKindTile(layers[currentLayer], tileId);
   }
 
@@ -3827,7 +3856,7 @@ class CycloneMapEditor extends CyclonePlugin {
     for (let z = 0; z <= 3; z++) {
       const tileIndex = this.tileIndex(mapX, mapY, z);
 
-      initialTileIds[z] = $dataMap.data[tileIndex];
+      initialTileIds[z] = this.getMapData(tileIndex);
       if (z === currentLayer || (currentLayer === 7 && z === 0)) {
         list.push(tileIndex);
       }
