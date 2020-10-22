@@ -3,7 +3,7 @@ CycloneExtraTilesets.patchClass(Game_Map, $super => class {
     $super.setup.call(this, mapId);
     this._extraTilesetId = 0;
 
-    CycloneExtraTilesets.loadExtraTilesets();
+    CycloneExtraTilesets.loadExtraTilesets(window.$dataMap);
     this.buildTilesetFlags();
   }
 
