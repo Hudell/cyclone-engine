@@ -3824,18 +3824,21 @@ class CycloneMapEditor extends CyclonePlugin {
     const initialTileIds = [];
 
     const area = {};
-    for (let z = 0; z <= 3; z++) {
-      const tileIndex = this.tileIndex(mapX, mapY, z);
 
-      initialTileIds[z] = $dataMap.data[tileIndex];
-      if (z === currentLayer || (currentLayer === 7 && z === 0)) {
-        list.push(tileIndex);
+    if (currentLayer === Layers.auto || currentLayer < 4) {
+      for (let z = 0; z <= 3; z++) {
+        const tileIndex = this.tileIndex(mapX, mapY, z);
+
+        initialTileIds[z] = $dataMap.data[tileIndex];
+        if (z === currentLayer || (currentLayer === 7 && z === 0)) {
+          list.push(tileIndex);
+        }
       }
-    }
 
-    for (let i = 0; i < list.length; i++) {
-      const index = list[i];
-      this._maybeValidateTileIndexForCollectionList(list, index, area, initialTileIds);
+      for (let i = 0; i < list.length; i++) {
+        const index = list[i];
+        this._maybeValidateTileIndexForCollectionList(list, index, area, initialTileIds);
+      }
     }
 
     return Object.keys(area).filter(key => area[key]);

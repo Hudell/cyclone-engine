@@ -45,7 +45,7 @@ function _defineProperties(target, props) { for (var i = 0; i < props.length; i+
 function _createClass(Constructor, protoProps, staticProps) { if (protoProps) _defineProperties(Constructor.prototype, protoProps); if (staticProps) _defineProperties(Constructor, staticProps); return Constructor; }
 
 /*:
- * @plugindesc Live Map Editor - 1.10.00
+ * @plugindesc Live Map Editor - 1.11.00
  *
  * <pluginName:CycloneMapEditor>
  * @author Hudell
@@ -107,6 +107,8 @@ function _createClass(Constructor, protoProps, staticProps) { if (protoProps) _d
  * ===========================================================================
  * Change Log
  * ===========================================================================
+ * 2020-11-05 - Version 1.11.00
+ *   * General bug fixes
  * 2020-10-10 - Version 1.10.00
  *   * Added tileset tabs
  *   * Moved layer list to left side of the screen
@@ -6130,19 +6132,21 @@ function _createClass(Constructor, protoProps, staticProps) { if (protoProps) _d
         var initialTileIds = [];
         var area = {};
 
-        for (var z = 0; z <= 3; z++) {
-          var tileIndex = this.tileIndex(mapX, mapY, z);
-          initialTileIds[z] = $dataMap.data[tileIndex];
+        if (currentLayer === Layers.auto || currentLayer < 4) {
+          for (var z = 0; z <= 3; z++) {
+            var tileIndex = this.tileIndex(mapX, mapY, z);
+            initialTileIds[z] = $dataMap.data[tileIndex];
 
-          if (z === currentLayer || currentLayer === 7 && z === 0) {
-            list.push(tileIndex);
+            if (z === currentLayer || currentLayer === 7 && z === 0) {
+              list.push(tileIndex);
+            }
           }
-        }
 
-        for (var i = 0; i < list.length; i++) {
-          var index = list[i];
+          for (var i = 0; i < list.length; i++) {
+            var index = list[i];
 
-          this._maybeValidateTileIndexForCollectionList(list, index, area, initialTileIds);
+            this._maybeValidateTileIndexForCollectionList(list, index, area, initialTileIds);
+          }
         }
 
         return Object.keys(area).filter(function (key) {
@@ -10001,7 +10005,9 @@ function _createClass(Constructor, protoProps, staticProps) { if (protoProps) _d
 
               return true;
             }
+          }
 
+          if (x > this._mapEditorWindow.x && x < this._mapEditorWindow.x + this._mapEditorWindow.width) {
             this._mapEditorWindow.onMapTouch(x - this._mapEditorWindow.x, y - this._mapEditorWindow.y);
 
             return true;
