@@ -31,7 +31,7 @@ function _defineProperties(target, props) { for (var i = 0; i < props.length; i+
 function _createClass(Constructor, protoProps, staticProps) { if (protoProps) _defineProperties(Constructor.prototype, protoProps); if (staticProps) _defineProperties(Constructor, staticProps); return Constructor; }
 
 /*:
- * @plugindesc Adds new movement features to the game v1.01.00
+ * @plugindesc Adds new movement features to the game v1.01.01
  *
  * <pluginName:CycloneMovement>
  * @author Hudell
@@ -90,6 +90,9 @@ function _createClass(Constructor, protoProps, staticProps) { if (protoProps) _d
  * ===========================================================================
  * Change Log
  * ===========================================================================
+ * 2020-09-18 - Version 1.01.01
+ *   * Added .terrainTag method to character class.
+ *
  * 2020-09-18 - Version 1.01.00
  *   * Fixed directional passability tests when Pixel Movement is disabled.
  *   * New settings to control the sidestep feature.
@@ -3212,6 +3215,11 @@ function _createClass(Constructor, protoProps, staticProps) { if (protoProps) _d
             this.updateIsMoving();
           }
         }, {
+          key: "terrainTag",
+          value: function terrainTag() {
+            return $gameMap.terrainTag(this.centerX, this.centerY);
+          }
+        }, {
           key: "left",
           get: function get() {
             return this._x + this.hitboxX;
@@ -3250,6 +3258,16 @@ function _createClass(Constructor, protoProps, staticProps) { if (protoProps) _d
           key: "lastX",
           get: function get() {
             return this.lastXAt(this._x);
+          }
+        }, {
+          key: "centerX",
+          get: function get() {
+            return Math.round(this.left + this.getWidth() / 2);
+          }
+        }, {
+          key: "centerY",
+          get: function get() {
+            return Math.round(this.top + this.getHeight() / 2);
           }
         }]);
 

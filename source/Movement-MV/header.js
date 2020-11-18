@@ -1,5 +1,5 @@
 /*:
- * @plugindesc Adds new movement features to the game v1.01.00
+ * @plugindesc Adds new movement features to the game v1.01.01
  *
  * <pluginName:CycloneMovement>
  * @author Hudell
@@ -58,6 +58,9 @@
  * ===========================================================================
  * Change Log
  * ===========================================================================
+ * 2020-09-18 - Version 1.01.01
+ *   * Added .terrainTag method to character class.
+ *
  * 2020-09-18 - Version 1.01.00
  *   * Fixed directional passability tests when Pixel Movement is disabled.
  *   * New settings to control the sidestep feature.

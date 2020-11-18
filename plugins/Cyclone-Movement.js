@@ -4,7 +4,7 @@
 
 /*:
  * @target MZ
- * @plugindesc Adds new movement features to the game v1.01.00
+ * @plugindesc Adds new movement features to the game v1.01.01
  *
  * <pluginName:CycloneMovement>
  * @author Hudell
@@ -62,6 +62,9 @@
  * ===========================================================================
  * Change Log
  * ===========================================================================
+ * 2020-09-18 - Version 1.01.01
+ *   * Added .terrainTag method to character class.
+ *
  * 2020-09-18 - Version 1.01.00
  *   * Fixed some incompatibilities with VisuMZ's EventMove Core.
  *   * Fixed directional passability tests when Pixel Movement is disabled.
@@ -1375,6 +1378,12 @@ const addPixelMovementToClass = (classRef) => {
     get lastX() {
       return this.lastXAt(this._x);
     }
+    get centerX() {
+      return Math.round(this.left + (this.getWidth() / 2));
+    }
+    get centerY() {
+      return Math.round(this.top + (this.getHeight() / 2));
+    }
 
     getWidth() {
       return 1;
@@ -2430,6 +2439,10 @@ const addPixelMovementToClass = (classRef) => {
     jump(...args) {
       $super.jump.call(this, ...args);
       this.updateIsMoving();
+    }
+
+    terrainTag() {
+      return $gameMap.terrainTag(this.centerX, this.centerY);
     }
   });
 };
