@@ -1348,6 +1348,21 @@ CycloneMovement.patchClass(Game_Map, $super => class {
   regionId(x, y) {
     return $super.regionId.call(this, Math.floor(x), Math.floor(y));
   }
+  terrainTag(x, y) {
+	if (this.isValid(x, y)) {
+        x = Math.round(x);
+        y = Math.round(y);
+        const flags = this.tilesetFlags();
+        const tiles = this.layeredTiles(x, y);
+        for (const tile of tiles) {
+            const tag = flags[tile] >> 12;
+            if (tag > 0) {
+                return tag;
+            }
+        }
+    }
+    return 0;
+  }
 });
 
 const addPixelMovementToClass = (classRef) => {
