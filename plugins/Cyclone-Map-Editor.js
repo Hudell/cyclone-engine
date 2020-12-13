@@ -1,6 +1,6 @@
 /*:
  * @target MZ
- * @plugindesc Live Map Editor - v1.10.00
+ * @plugindesc Live Map Editor - v1.11.00
  *
  * <pluginName:CycloneMapEditor>
  * @author Hudell
@@ -62,6 +62,8 @@
  * ===========================================================================
  * Change Log
  * ===========================================================================
+ * 2020-11-05 - Version 1.11.00
+ *   * General bug fixes
  * 2020-10-10 - Version 1.10.00
  *   * Added tileset tabs
  *   * Moved layer list to left side of the screen
@@ -4990,18 +4992,21 @@ class CycloneMapEditor$1 extends CyclonePlugin {
     const initialTileIds = [];
 
     const area = {};
-    for (let z = 0; z <= 3; z++) {
-      const tileIndex = this.tileIndex(mapX, mapY, z);
 
-      initialTileIds[z] = $dataMap.data[tileIndex];
-      if (z === currentLayer || (currentLayer === 7 && z === 0)) {
-        list.push(tileIndex);
+    if (currentLayer === Layers.auto || currentLayer < 4) {
+      for (let z = 0; z <= 3; z++) {
+        const tileIndex = this.tileIndex(mapX, mapY, z);
+
+        initialTileIds[z] = $dataMap.data[tileIndex];
+        if (z === currentLayer || (currentLayer === 7 && z === 0)) {
+          list.push(tileIndex);
+        }
       }
-    }
 
-    for (let i = 0; i < list.length; i++) {
-      const index = list[i];
-      this._maybeValidateTileIndexForCollectionList(list, index, area, initialTileIds);
+      for (let i = 0; i < list.length; i++) {
+        const index = list[i];
+        this._maybeValidateTileIndexForCollectionList(list, index, area, initialTileIds);
+      }
     }
 
     return Object.keys(area).filter(key => area[key]);
@@ -8057,7 +8062,9 @@ CycloneMapEditor.patchClass(Scene_Map, $super => class {
 
         return true;
       }
+    }
 
+    if (x > this._mapEditorWindow.x && x < this._mapEditorWindow.x + this._mapEditorWindow.width) {
       this._mapEditorWindow.onMapTouch(x - this._mapEditorWindow.x, y - this._mapEditorWindow.y);
       return true;
     }

@@ -1,12 +1,11 @@
 /*:
- * @plugindesc Adds new movement features to the game v1.01.01
- *
- * <pluginName:CycloneMovement>
+ * @target MZ
+ * @plugindesc Integrate your game with the Steamworks SDK
+ * <pluginName:CycloneSteam>
  * @author Hudell
- * @url https://makerdevs.com/plugin/cyclone-movement
+ * @url https://makerdevs.com/plugin/cyclone-steam
  *
  * @help
-
  * ===========================================================================
  *                                    88
  *                                    88
@@ -17,8 +16,8 @@
  *  "8a,   ,aa   `8b,d8'   "8a,   ,aa 88 "8a,   ,a8" 88       88 "8b,   ,aa
  *   `"Ybbd8"'     Y88'     `"Ybbd8"' 88  `"YbbdP"'  88       88  `"Ybbd8"'
  *                 d8'
- *                d8'                                                       MV
- * Movement                                                          by Hudell
+ *                d8'
+ * Steamworks Integration                                            by Hudell
  * ===========================================================================
  * Terms of Use
  * ===========================================================================
@@ -56,80 +55,4 @@
  *
  * 8. I'm not responsible for anything created with this plugin.
  * ===========================================================================
- * Change Log
- * ===========================================================================
- * 2020-09-18 - Version 1.01.01
- *   * Added .terrainTag method to character class.
- *
- * 2020-09-18 - Version 1.01.00
- *   * Fixed directional passability tests when Pixel Movement is disabled.
- *   * New settings to control the sidestep feature.
- * 2020-09-14 - Version 1.00.00
- * ===========================================================================
- * @param stepCount
- * @text Steps per Tile
- * @desc How many steps the player will need to take to move an entire tile?
- * @type select
- * @default 1
- * @option 4
- * @option 2
- * @option 1
- *
- * @param collisionStepCount
- * @text Collision Blocks per Tile
- * @desc You can customize the map collision with the Cyclone Map Editor plugin
- * @type select
- * @default 1
- * @option 4
- * @option 2
- * @option 1
- *
- * @param followerStepsBehind
- * @text Follower Distance
- * @desc How many steps behind should the followers be? Min = 1 step, Max = 1 tile
- * @type number
- * @min 1
- * @max 4
- * @default 3
- *
- * @param triggerAllEvents
- * @text Trigger All Events
- * @desc If true, the player may trigger multiple events when you press a button if there are more than one event in front of you
- * @type boolean
- * @on Trigger
- * @off Skip
- * @default false
- *
- * @param ignoreEmptyEvents
- * @text Ignore Empty Events
- * @desc if true, the game won't try to trigger events that have no commands
- * @type boolean
- * @on Ignore
- * @off Don't Ignore
- * @default true
- *
- * @param autoLeaveVehicles
- * @text Leave Vehicles Automatically
- * @desc If true, the player will leave boats and ships automatically when they reach land
- * @type boolean
- * @on Leave
- * @off Don't Leave
- * @default false
- *
- * @param diagonalPathfinding
- * @text Diagonal Pathfinding
- * @type boolean
- * @on Enable
- * @off Disable
- * @desc
- * @default true
- *
- * @param disableMouseMovement
- * @text Disable Mouse Movement
- * @type boolean
- * @on Disable
- * @off Don't Disable
- * @desc
- * @default false
- *
- **/
+*/

@@ -16,7 +16,8 @@
     "extra": "cd source/ExtraTilesets & rollup -cw",
     "extra-mv": "cd source/ExtraTilesets-MV & rollup -cw",
     "window": "cd source/WindowResizer & rollup -cw",
-    "window-mv": "cd source/WindowResizer-MV & rollup -cw"
+    "window-mv": "cd source/WindowResizer-MV & rollup -cw",
+    "steam": "cd source/Steam & rollup -cw"
   },
   "author": "Hudell",
   "license": "Apache2",

@@ -150,7 +150,9 @@ CycloneMapEditor.patchClass(Scene_Map, $super => class {
 
         return true;
       }
+    }
 
+    if (x > this._mapEditorWindow.x && x < this._mapEditorWindow.x + this._mapEditorWindow.width) {
       this._mapEditorWindow.onMapTouch(x - this._mapEditorWindow.x, y - this._mapEditorWindow.y);
       return true;
     }
