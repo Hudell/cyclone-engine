@@ -3217,7 +3217,7 @@ function _createClass(Constructor, protoProps, staticProps) { if (protoProps) _d
         }, {
           key: "terrainTag",
           value: function terrainTag() {
-            return $gameMap.terrainTag(this.centerX, this.centerY);
+            return $gameMap.terrainTag(this.middleX, this.middleY);
           }
         }, {
           key: "left",
@@ -3260,12 +3260,12 @@ function _createClass(Constructor, protoProps, staticProps) { if (protoProps) _d
             return this.lastXAt(this._x);
           }
         }, {
-          key: "centerX",
+          key: "middleX",
           get: function get() {
             return Math.round(this.left + this.getWidth() / 2);
           }
         }, {
-          key: "centerY",
+          key: "middleY",
           get: function get() {
             return Math.round(this.top + this.getHeight() / 2);
           }
