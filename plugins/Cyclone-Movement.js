@@ -1378,10 +1378,10 @@ const addPixelMovementToClass = (classRef) => {
     get lastX() {
       return this.lastXAt(this._x);
     }
-    get centerX() {
+    get middleX() {
       return Math.round(this.left + (this.getWidth() / 2));
     }
-    get centerY() {
+    get middleY() {
       return Math.round(this.top + (this.getHeight() / 2));
     }
 
@@ -2442,7 +2442,7 @@ const addPixelMovementToClass = (classRef) => {
     }
 
     terrainTag() {
-      return $gameMap.terrainTag(this.centerX, this.centerY);
+      return $gameMap.terrainTag(this.middleX, this.middleY);
     }
   });
 };
