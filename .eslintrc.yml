@@ -86,6 +86,7 @@ globals:
   CycloneMagic: true
   CycloneExtraTilesets: true
   CycloneExtraLayers: true
+  CycloneOnline: true
 
   WindowResizer: true
 rules:
