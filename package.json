@@ -7,6 +7,7 @@
     "editor-mv": "cd source/Map-Editor-MV & rollup -cw",
     "maps": "cd source/Maps & rollup -cw",
     "time": "cd source/Time & rollup -cw",
+    "events": "cd source/Events & rollup -cw",
     "movement": "cd source/Movement & rollup -cw",
     "movement-mv": "cd source/Movement-MV & rollup -cw",
     "priority": "cd source/TilePriority & rollup -cw",
