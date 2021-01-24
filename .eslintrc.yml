@@ -53,6 +53,7 @@ globals:
   Game_Follower: false
   Game_Vehicle: false
   Game_Temp: false
+  Game_System: false
 
   Window_Base: false
   Window_Selectable: false
@@ -67,6 +68,7 @@ globals:
   $gameMessage: false
   $gameVariables: false
   $gameSwitches: false
+  $gameSelfSwitches: false
   $gameScreen: false
   $gameParty: false
   $gameSystem: false
@@ -86,6 +88,7 @@ globals:
   CycloneMagic: true
   CycloneExtraTilesets: true
   CycloneExtraLayers: true
+  CycloneEvents: true
 
   WindowResizer: true
 rules:
