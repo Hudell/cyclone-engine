@@ -1,0 +1,9 @@
+import './plugin';
+import './ImageManager';
+import './Game_Map';
+import './Game_CharacterBase';
+import './Scene_Map';
+import './Spriteset_Map';
+import './Graphics';
+import './Game_Player';
+import './Game_Event';
