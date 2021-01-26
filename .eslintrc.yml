@@ -54,6 +54,7 @@ globals:
   Game_Vehicle: false
   Game_Temp: false
   Game_System: false
+  Game_CharacterBase: false
 
   Window_Base: false
   Window_Selectable: false
@@ -88,7 +89,9 @@ globals:
   CycloneMagic: true
   CycloneExtraTilesets: true
   CycloneExtraLayers: true
+  CycloneOnline: true
   CycloneEvents: true
+  CycloneAurora: true
 
   WindowResizer: true
 rules:
