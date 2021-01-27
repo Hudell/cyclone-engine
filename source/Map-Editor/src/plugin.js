@@ -1079,6 +1079,37 @@ class CycloneMapEditor extends CyclonePlugin {
     }
   }
 
+  static addToolsMenu(menu) {
+    const toolsMenu = new nw.Menu();
+
+    const resizeTilesets = new nw.MenuItem({
+      label: 'Generate 48x48 Tilesets',
+      enabled: $gameMap.tileWidth() !== 48 || $gameMap.tileHeight() !== 48,
+      click: this.makeMenuEvent(() => {
+        const width = $gameMap.tileWidth();
+        const height = $gameMap.tileHeight();
+
+        let message;
+
+        if (globalThis.CycloneMaps && CycloneMaps.params.tilesetPath) {
+          const realPath = CycloneMaps.params.tilesetPath;
+          const fakePath = 'img/tilesets/';
+          message = `This option will replace the 48x48 files on ${ fakePath } with resized copies of the ${ width }x${ height } files on ${ realPath }. Are you SURE you want to do this?`;
+        } else {
+          message = `This option will replace the files on /img/tilesets with resized copies of your ${ width }x${ height } tilesets. Are you SURE you want to do this?`;
+        }
+
+        CycloneMapEditor.resizeTilesets(message);
+      }),
+    });
+
+    toolsMenu.append(resizeTilesets);
+    menu.append(new nw.MenuItem({
+      label: 'Tools',
+      submenu: toolsMenu,
+    }));
+  }
+
   static addExportMenu(menu) {
     const exportMenu = new nw.Menu();
     const exportLayersMenu = new nw.Menu();
@@ -1252,6 +1283,7 @@ class CycloneMapEditor extends CyclonePlugin {
     this.addBlendMenu(menu);
     this.addTilesetMenu(menu);
     this.addJumpMenu(menu);
+    this.addToolsMenu(menu);
     this.addExportMenu(menu);
     this.addHelpMenu(menu);
 
@@ -1614,7 +1646,7 @@ class CycloneMapEditor extends CyclonePlugin {
       return;
     }
 
-    const scene = SceneManager._scene;
+    // const scene = SceneManager._scene;
     if (!this.isMapEditorScene()) {
       return;
     }
@@ -1789,6 +1821,72 @@ class CycloneMapEditor extends CyclonePlugin {
     element.click();
 
     document.body.removeChild(element);
+  }
+
+  static resizeTilesets(message) {
+    const tileset = $dataTilesets[$dataMap.tilesetId];
+    if (!tileset) {
+      return alert('Tileset data not found.');
+    }
+
+    if (!Utils.isNwjs()) {
+      return alert('This feature can only be used on a computer with a non web-version.');
+    }
+
+    const fileNames = tileset.tilesetNames;
+    const newFiles = [];
+    const existingFiles = [];
+    const fs = require('fs');
+
+    for (const fileName of fileNames) {
+      if (!fileName) {
+        continue;
+      }
+
+      if (fs.existsSync(`img/tilesets/${ fileName }.png`)) {
+        existingFiles.push(fileName);
+      } else {
+        newFiles.push(fileName);
+      }
+    }
+
+    if (existingFiles.length) {
+      const overwrittenFilesMessage = `Files that will be replaced: ${ existingFiles.join(', ') }`;
+      const newMessage = `${ message }\n${ overwrittenFilesMessage}`;
+      if (!confirm(newMessage)) {
+        return;
+      }
+    }
+
+    this.doResizeTiles(fileNames);
+  }
+
+  static doResizeTiles(fileNames) {
+    const width = $gameMap.tileWidth();
+    const height = $gameMap.tileHeight();
+    const fs = require('fs');
+
+    for (const fileName of fileNames) {
+      if (!fileName) {
+        continue;
+      }
+
+      const bitmap = ImageManager.loadTileset(fileName);
+      if (!bitmap) {
+        continue;
+      }
+
+      const newWidth = Math.floor(bitmap.width / width * 48);
+      const newHeight = Math.floor(bitmap.height / height * 48);
+
+      const newBitmap = new Bitmap(newWidth, newHeight);
+      newBitmap.blt(bitmap, 0, 0, bitmap.width, bitmap.height, 0, 0, newWidth, newHeight);
+
+      const urlData = newBitmap.canvas.toDataURL('image/png', 70);
+      const base64Data = urlData.replace(/^data:image\/png;base64,/, '');
+
+      fs.writeFileSync(`img/tilesets/${ fileName }.png`, base64Data, 'base64');
+    }
   }
 
   static exportSingleLayer(layerIndex) {

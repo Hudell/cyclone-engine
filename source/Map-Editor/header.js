@@ -1,6 +1,6 @@
 /*:
  * @target MZ
- * @plugindesc Live Map Editor - v1.11.00
+ * @plugindesc Live Map Editor - v1.12.00
  *
  * <pluginName:CycloneMapEditor>
  * @author Hudell
@@ -62,6 +62,8 @@
  * ===========================================================================
  * Change Log
  * ===========================================================================
+ * 2021-01-27 - Version 1.12.00
+ *   * Added option to generate 48x48 tilesets when using other sizes.
  * 2020-11-05 - Version 1.11.00
  *   * General bug fixes
  * 2020-10-10 - Version 1.10.00

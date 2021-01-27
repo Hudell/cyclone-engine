@@ -45,7 +45,7 @@ function _defineProperties(target, props) { for (var i = 0; i < props.length; i+
 function _createClass(Constructor, protoProps, staticProps) { if (protoProps) _defineProperties(Constructor.prototype, protoProps); if (staticProps) _defineProperties(Constructor, staticProps); return Constructor; }
 
 /*:
- * @plugindesc Live Map Editor - 1.11.00
+ * @plugindesc Live Map Editor - 1.12.00
  *
  * <pluginName:CycloneMapEditor>
  * @author Hudell
@@ -107,6 +107,8 @@ function _createClass(Constructor, protoProps, staticProps) { if (protoProps) _d
  * ===========================================================================
  * Change Log
  * ===========================================================================
+ * 2021-01-27 - Version 1.12.00
+ *   * Added option to generate 48x48 tilesets when using other sizes.
  * 2020-11-05 - Version 1.11.00
  *   * General bug fixes
  * 2020-10-10 - Version 1.10.00
@@ -614,7 +616,9 @@ function _createClass(Constructor, protoProps, staticProps) { if (protoProps) _d
     }, {
       key: "patchClass",
       value: function patchClass(baseClass, patchFn) {
-        var $super = this.superClasses[baseClass.name] || {};
+        var _this$superClasses;
+
+        var $super = ((_this$superClasses = this.superClasses) === null || _this$superClasses === void 0 ? void 0 : _this$superClasses[baseClass.name]) || {};
         var $prototype = {};
         var $dynamicSuper = {};
         var patchClass = patchFn($dynamicSuper, $prototype);
@@ -648,7 +652,9 @@ function _createClass(Constructor, protoProps, staticProps) { if (protoProps) _d
           Object.assign($dynamicSuper, $prototype);
         }
 
-        this.superClasses[baseClass.name] = $dynamicSuper;
+        if (this.superClasses) {
+          this.superClasses[baseClass.name] = $dynamicSuper;
+        }
       }
     }]);
 
@@ -2979,6 +2985,35 @@ function _createClass(Constructor, protoProps, staticProps) { if (protoProps) _d
         }
       }
     }, {
+      key: "addToolsMenu",
+      value: function addToolsMenu(menu) {
+        var toolsMenu = new nw.Menu();
+        var resizeTilesets = new nw.MenuItem({
+          label: 'Generate 48x48 Tilesets',
+          enabled: $gameMap.tileWidth() !== 48 || $gameMap.tileHeight() !== 48,
+          click: this.makeMenuEvent(function () {
+            var width = $gameMap.tileWidth();
+            var height = $gameMap.tileHeight();
+            var message;
+
+            if (globalThis.CycloneMaps && CycloneMaps.params.tilesetPath) {
+              var realPath = CycloneMaps.params.tilesetPath;
+              var fakePath = 'img/tilesets/';
+              message = "This option will replace the 48x48 files on ".concat(fakePath, " with resized copies of the ").concat(width, "x").concat(height, " files on ").concat(realPath, ". Are you SURE you want to do this?");
+            } else {
+              message = "This option will replace the files on /img/tilesets with resized copies of your ".concat(width, "x").concat(height, " tilesets. Are you SURE you want to do this?");
+            }
+
+            CycloneMapEditor$1.resizeTilesets(message);
+          })
+        });
+        toolsMenu.append(resizeTilesets);
+        menu.append(new nw.MenuItem({
+          label: 'Tools',
+          submenu: toolsMenu
+        }));
+      }
+    }, {
       key: "addExportMenu",
       value: function addExportMenu(menu) {
         var exportMenu = new nw.Menu();
@@ -3153,6 +3188,7 @@ function _createClass(Constructor, protoProps, staticProps) { if (protoProps) _d
         this.addBlendMenu(menu);
         this.addTilesetMenu(menu);
         this.addJumpMenu(menu);
+        this.addToolsMenu(menu);
         this.addExportMenu(menu);
         this.addHelpMenu(menu);
         this.menu = menu;
@@ -3577,9 +3613,8 @@ function _createClass(Constructor, protoProps, staticProps) { if (protoProps) _d
       value: function onKeyDown(event) {
         if (!editorActive) {
           return;
-        }
+        } // const scene = SceneManager._scene;
 
-        var scene = SceneManager._scene;
 
         if (!this.isMapEditorScene()) {
           return;
@@ -3784,6 +3819,95 @@ function _createClass(Constructor, protoProps, staticProps) { if (protoProps) _d
         document.body.appendChild(element);
         element.click();
         document.body.removeChild(element);
+      }
+    }, {
+      key: "resizeTilesets",
+      value: function resizeTilesets(message) {
+        var tileset = $dataTilesets[$dataMap.tilesetId];
+
+        if (!tileset) {
+          return alert('Tileset data not found.');
+        }
+
+        if (!Utils.isNwjs()) {
+          return alert('This feature can only be used on a computer with a non web-version.');
+        }
+
+        var fileNames = tileset.tilesetNames;
+        var existingFiles = [];
+
+        var fs = require('fs');
+
+        var _iterator12 = _createForOfIteratorHelper(fileNames),
+            _step12;
+
+        try {
+          for (_iterator12.s(); !(_step12 = _iterator12.n()).done;) {
+            var fileName = _step12.value;
+
+            if (!fileName) {
+              continue;
+            }
+
+            if (fs.existsSync("img/tilesets/".concat(fileName, ".png"))) {
+              existingFiles.push(fileName);
+            }
+          }
+        } catch (err) {
+          _iterator12.e(err);
+        } finally {
+          _iterator12.f();
+        }
+
+        if (existingFiles.length) {
+          var overwrittenFilesMessage = "Files that will be replaced: ".concat(existingFiles.join(', '));
+          var newMessage = "".concat(message, "\n").concat(overwrittenFilesMessage);
+
+          if (!confirm(newMessage)) {
+            return;
+          }
+        }
+
+        this.doResizeTiles(fileNames);
+      }
+    }, {
+      key: "doResizeTiles",
+      value: function doResizeTiles(fileNames) {
+        var width = $gameMap.tileWidth();
+        var height = $gameMap.tileHeight();
+
+        var fs = require('fs');
+
+        var _iterator13 = _createForOfIteratorHelper(fileNames),
+            _step13;
+
+        try {
+          for (_iterator13.s(); !(_step13 = _iterator13.n()).done;) {
+            var fileName = _step13.value;
+
+            if (!fileName) {
+              continue;
+            }
+
+            var bitmap = ImageManager.loadTileset(fileName);
+
+            if (!bitmap) {
+              continue;
+            }
+
+            var newWidth = Math.floor(bitmap.width / width * 48);
+            var newHeight = Math.floor(bitmap.height / height * 48);
+            var newBitmap = new Bitmap(newWidth, newHeight);
+            newBitmap.blt(bitmap, 0, 0, bitmap.width, bitmap.height, 0, 0, newWidth, newHeight);
+            var urlData = newBitmap.canvas.toDataURL('image/png', 70);
+            var base64Data = urlData.replace(/^data:image\/png;base64,/, '');
+            fs.writeFileSync("img/tilesets/".concat(fileName, ".png"), base64Data, 'base64');
+          }
+        } catch (err) {
+          _iterator13.e(err);
+        } finally {
+          _iterator13.f();
+        }
       }
     }, {
       key: "exportSingleLayer",
@@ -5321,21 +5445,21 @@ function _createClass(Constructor, protoProps, staticProps) { if (protoProps) _d
           return false;
         }
 
-        var _iterator12 = _createForOfIteratorHelper(SceneManager._scene._spriteset._blenderTileSprites),
-            _step12;
+        var _iterator14 = _createForOfIteratorHelper(SceneManager._scene._spriteset._blenderTileSprites),
+            _step14;
 
         try {
-          for (_iterator12.s(); !(_step12 = _iterator12.n()).done;) {
-            var sprite = _step12.value;
+          for (_iterator14.s(); !(_step14 = _iterator14.n()).done;) {
+            var sprite = _step14.value;
 
             if (sprite._mapX === x && sprite._mapY === y) {
               return true;
             }
           }
         } catch (err) {
-          _iterator12.e(err);
+          _iterator14.e(err);
         } finally {
-          _iterator12.f();
+          _iterator14.f();
         }
 
         return false;
@@ -5606,16 +5730,16 @@ function _createClass(Constructor, protoProps, staticProps) { if (protoProps) _d
 
         var itemsToChange = this.getItemsToChange(x, y, z, tileId, !previewOnly, updateNeighbors);
 
-        var _iterator13 = _createForOfIteratorHelper(itemsToChange),
-            _step13;
+        var _iterator15 = _createForOfIteratorHelper(itemsToChange),
+            _step15;
 
         try {
-          for (_iterator13.s(); !(_step13 = _iterator13.n()).done;) {
-            var _step13$value = _step13.value,
-                _x9 = _step13$value.x,
-                _y = _step13$value.y,
-                _z = _step13$value.z,
-                _tileId = _step13$value.tileId;
+          for (_iterator15.s(); !(_step15 = _iterator15.n()).done;) {
+            var _step15$value = _step15.value,
+                _x9 = _step15$value.x,
+                _y = _step15$value.y,
+                _z = _step15$value.z,
+                _tileId = _step15$value.tileId;
 
             if (_z > 5) {
               continue;
@@ -5647,9 +5771,9 @@ function _createClass(Constructor, protoProps, staticProps) { if (protoProps) _d
             this.maybeUpdateTileNeighbors(_x9, _y, _z, updateNeighbors, previewOnly);
           }
         } catch (err) {
-          _iterator13.e(err);
+          _iterator15.e(err);
         } finally {
-          _iterator13.f();
+          _iterator15.f();
         }
       }
     }, {
@@ -6167,12 +6291,12 @@ function _createClass(Constructor, protoProps, staticProps) { if (protoProps) _d
         var workLayer = currentLayer <= 3 ? currentLayer : 0;
         this.resetCurrentChange();
 
-        var _iterator14 = _createForOfIteratorHelper(affectedArea),
-            _step14;
+        var _iterator16 = _createForOfIteratorHelper(affectedArea),
+            _step16;
 
         try {
-          for (_iterator14.s(); !(_step14 = _iterator14.n()).done;) {
-            var tileIndex = _step14.value;
+          for (_iterator16.s(); !(_step16 = _iterator16.n()).done;) {
+            var tileIndex = _step16.value;
             var y = this.indexPositionY(tileIndex, workLayer);
 
             var _x10 = tileIndex - this.tileIndex(0, y, workLayer);
@@ -6182,9 +6306,9 @@ function _createClass(Constructor, protoProps, staticProps) { if (protoProps) _d
             this.setSelectionTileMaybeMultiLayer(_x10, y, xDiff, yDiff, false);
           }
         } catch (err) {
-          _iterator14.e(err);
+          _iterator16.e(err);
         } finally {
-          _iterator14.f();
+          _iterator16.f();
         }
 
         this.logChange();
@@ -6560,21 +6684,21 @@ function _createClass(Constructor, protoProps, staticProps) { if (protoProps) _d
     }, {
       key: "jumpToOneTileOf",
       value: function jumpToOneTileOf(tileList) {
-        var _iterator15 = _createForOfIteratorHelper(tileList),
-            _step15;
+        var _iterator17 = _createForOfIteratorHelper(tileList),
+            _step17;
 
         try {
-          for (_iterator15.s(); !(_step15 = _iterator15.n()).done;) {
-            var tileId = _step15.value;
+          for (_iterator17.s(); !(_step17 = _iterator17.n()).done;) {
+            var tileId = _step17.value;
 
             if (this.jumpToTile(tileId)) {
               return;
             }
           }
         } catch (err) {
-          _iterator15.e(err);
+          _iterator17.e(err);
         } finally {
-          _iterator15.f();
+          _iterator17.f();
         }
       }
     }, {
@@ -7993,12 +8117,12 @@ function _createClass(Constructor, protoProps, staticProps) { if (protoProps) _d
         var drawWidth = $gameMap.tileWidth();
         var drawHeight = $gameMap.tileHeight();
 
-        var _iterator16 = _createForOfIteratorHelper($gameMap._events),
-            _step16;
+        var _iterator18 = _createForOfIteratorHelper($gameMap._events),
+            _step18;
 
         try {
-          for (_iterator16.s(); !(_step16 = _iterator16.n()).done;) {
-            var event = _step16.value;
+          for (_iterator18.s(); !(_step18 = _iterator18.n()).done;) {
+            var event = _step18.value;
 
             if (!event) {
               continue;
@@ -8023,9 +8147,9 @@ function _createClass(Constructor, protoProps, staticProps) { if (protoProps) _d
             this.contents.fillRect(drawX, drawY, drawWidth, drawHeight, '#FF00FF66');
           }
         } catch (err) {
-          _iterator16.e(err);
+          _iterator18.e(err);
         } finally {
-          _iterator16.f();
+          _iterator18.f();
         }
       }
     }, {
@@ -9485,21 +9609,21 @@ function _createClass(Constructor, protoProps, staticProps) { if (protoProps) _d
           if (isSelected) {
             this._selectionIndex = index;
           } else {
-            var _iterator17 = _createForOfIteratorHelper(CycloneMapEditor.selectedTileList),
-                _step17;
+            var _iterator19 = _createForOfIteratorHelper(CycloneMapEditor.selectedTileList),
+                _step19;
 
             try {
-              for (_iterator17.s(); !(_step17 = _iterator17.n()).done;) {
-                var tileId = _step17.value;
+              for (_iterator19.s(); !(_step19 = _iterator19.n()).done;) {
+                var tileId = _step19.value;
 
                 if (Tilemap.isSameKindTile(tileId, item.name)) {
                   isSelected = true;
                 }
               }
             } catch (err) {
-              _iterator17.e(err);
+              _iterator19.e(err);
             } finally {
-              _iterator17.f();
+              _iterator19.f();
             }
           }
 
@@ -10348,12 +10472,12 @@ function _createClass(Constructor, protoProps, staticProps) { if (protoProps) _d
           var column = 0;
           var row = 0;
 
-          var _iterator18 = _createForOfIteratorHelper(CycloneMapEditor.multiLayerSelection[z]),
-              _step18;
+          var _iterator20 = _createForOfIteratorHelper(CycloneMapEditor.multiLayerSelection[z]),
+              _step20;
 
           try {
-            for (_iterator18.s(); !(_step18 = _iterator18.n()).done;) {
-              var tileId = _step18.value;
+            for (_iterator20.s(); !(_step20 = _iterator20.n()).done;) {
+              var tileId = _step20.value;
 
               if (column >= CycloneMapEditor.tileCols) {
                 column = 0;
@@ -10367,9 +10491,9 @@ function _createClass(Constructor, protoProps, staticProps) { if (protoProps) _d
               column++;
             }
           } catch (err) {
-            _iterator18.e(err);
+            _iterator20.e(err);
           } finally {
-            _iterator18.f();
+            _iterator20.f();
           }
         }
       }
@@ -10384,12 +10508,12 @@ function _createClass(Constructor, protoProps, staticProps) { if (protoProps) _d
         var column = 0;
         var row = 0;
 
-        var _iterator19 = _createForOfIteratorHelper(CycloneMapEditor.selectedTileList),
-            _step19;
+        var _iterator21 = _createForOfIteratorHelper(CycloneMapEditor.selectedTileList),
+            _step21;
 
         try {
-          for (_iterator19.s(); !(_step19 = _iterator19.n()).done;) {
-            var tileId = _step19.value;
+          for (_iterator21.s(); !(_step21 = _iterator21.n()).done;) {
+            var tileId = _step21.value;
 
             if (column >= CycloneMapEditor.tileCols) {
               column = 0;
@@ -10415,9 +10539,9 @@ function _createClass(Constructor, protoProps, staticProps) { if (protoProps) _d
             column++;
           }
         } catch (err) {
-          _iterator19.e(err);
+          _iterator21.e(err);
         } finally {
-          _iterator19.f();
+          _iterator21.f();
         }
       }
     }, {
@@ -10552,19 +10676,19 @@ function _createClass(Constructor, protoProps, staticProps) { if (protoProps) _d
           }
 
           if (hardRefresh) {
-            var _iterator20 = _createForOfIteratorHelper(this._blenderTileSprites),
-                _step20;
+            var _iterator22 = _createForOfIteratorHelper(this._blenderTileSprites),
+                _step22;
 
             try {
-              for (_iterator20.s(); !(_step20 = _iterator20.n()).done;) {
-                var sprite = _step20.value;
+              for (_iterator22.s(); !(_step22 = _iterator22.n()).done;) {
+                var sprite = _step22.value;
                 sprite.parent.removeChild(sprite);
                 sprite.destroy();
               }
             } catch (err) {
-              _iterator20.e(err);
+              _iterator22.e(err);
             } finally {
-              _iterator20.f();
+              _iterator22.f();
             }
 
             this._blenderTileSprites = [];
@@ -10574,20 +10698,20 @@ function _createClass(Constructor, protoProps, staticProps) { if (protoProps) _d
 
           var magicTiles = $gameMap.magicTiles();
 
-          var _iterator21 = _createForOfIteratorHelper(magicTiles),
-              _step21;
+          var _iterator23 = _createForOfIteratorHelper(magicTiles),
+              _step23;
 
           try {
-            for (_iterator21.s(); !(_step21 = _iterator21.n()).done;) {
-              var tile = _step21.value;
+            for (_iterator23.s(); !(_step23 = _iterator23.n()).done;) {
+              var tile = _step23.value;
               var found = false;
 
-              var _iterator22 = _createForOfIteratorHelper(this._blenderTileSprites),
-                  _step22;
+              var _iterator24 = _createForOfIteratorHelper(this._blenderTileSprites),
+                  _step24;
 
               try {
-                for (_iterator22.s(); !(_step22 = _iterator22.n()).done;) {
-                  var _sprite = _step22.value;
+                for (_iterator24.s(); !(_step24 = _iterator24.n()).done;) {
+                  var _sprite = _step24.value;
 
                   if (_sprite._mapX !== tile.x || _sprite._mapY !== tile.y) {
                     continue;
@@ -10602,9 +10726,9 @@ function _createClass(Constructor, protoProps, staticProps) { if (protoProps) _d
                   break;
                 }
               } catch (err) {
-                _iterator22.e(err);
+                _iterator24.e(err);
               } finally {
-                _iterator22.f();
+                _iterator24.f();
               }
 
               if (!found) {
@@ -10616,9 +10740,9 @@ function _createClass(Constructor, protoProps, staticProps) { if (protoProps) _d
               }
             }
           } catch (err) {
-            _iterator21.e(err);
+            _iterator23.e(err);
           } finally {
-            _iterator21.f();
+            _iterator23.f();
           }
 
           this._tilemap.refresh();
