@@ -11,6 +11,11 @@ CycloneEvents.patchClass(Game_Map, $super => class {
   }
 
   addEvent(eventData, temporary = false, index = undefined) {
+    // If it's a custom event data, make sure to add an end command to all pages.
+    if (eventData.endAllPages) {
+      eventData.endAllPages();
+    }
+
     if (!index) {
       index = this.getIndexForNewEvent();
     }
@@ -168,5 +173,25 @@ CycloneEvents.patchClass(Game_Map, $super => class {
         $gameMap.spawnEvent(eventData, tileList, temporary);
       });
     }
+  }
+
+  createActorAt(...args) {
+    return CycloneEvents.createActorAt(...args);
+  }
+
+  createNormalEventAt(...args) {
+    return CycloneEvents.createNormalEventAt(...args);
+  }
+
+  createTriggerEventAt(...args) {
+    return CycloneEvents.createTriggerEventAt(...args);
+  }
+
+  createTeleportEventAt(...args) {
+    return CycloneEvents.createTeleportEventAt(...args);
+  }
+
+  createParallelProcess(...args) {
+    return CycloneEvents.createParallelProcess(...args);
   }
 });

@@ -73,6 +73,7 @@ globals:
   $gameScreen: false
   $gameParty: false
   $gameSystem: false
+  $gameActors: false
 
   $dataCommonEvents: false
   $dataMap: false
