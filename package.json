@@ -8,6 +8,7 @@
     "maps": "cd source/Maps & rollup -cw",
     "time": "cd source/Time & rollup -cw",
     "events": "cd source/Events & rollup -cw",
+    "events-movement": "cd source/EventsMovement & rollup -cw",
     "movement": "cd source/Movement & rollup -cw",
     "movement-mv": "cd source/Movement-MV & rollup -cw",
     "priority": "cd source/TilePriority & rollup -cw",
@@ -22,7 +23,8 @@
     "stamps": "cd source/Stamps & rollup -cw",
     "online": "cd source/Online & rollup -cw",
     "aurora": "cd source/Aurora & rollup -cw",
-    "colyseus": "cd source/Colyseus & rollup -cw"
+    "colyseus": "cd source/Colyseus & rollup -cw",
+    "ggj": "cd source/GGJ01 & rollup -cw"
   },
   "author": "Hudell",
   "license": "Apache2",

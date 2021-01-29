@@ -1,5 +1,5 @@
 //=============================================================================
-// Cyclone Engine - Maps
+// Cyclone Engine - Movement
 //=============================================================================
 
 /*:
@@ -236,7 +236,7 @@ class CyclonePatcher {
   }
 
   static patchClass(baseClass, patchFn) {
-    const $super = this.superClasses[baseClass.name] || {};
+    const $super = this.superClasses?.[baseClass.name] || {};
     const $prototype = {};
     const $dynamicSuper = {};
     const patchClass = patchFn($dynamicSuper, $prototype);
@@ -263,7 +263,9 @@ class CyclonePatcher {
       Object.assign($dynamicSuper, $prototype);
     }
 
-    this.superClasses[baseClass.name] = $dynamicSuper;
+    if (this.superClasses) {
+      this.superClasses[baseClass.name] = $dynamicSuper;
+    }
   }
 }
 
@@ -2449,6 +2451,8 @@ const addPixelMovementToClass = (classRef) => {
 
 addPixelMovementToClass(Game_Player);
 addPixelMovementToClass(Game_Follower);
+
+window.addPixelMovementToClass = addPixelMovementToClass;
 
 let tryToLeaveVehicleDelay = 0;
 

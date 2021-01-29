@@ -1097,3 +1097,5 @@ const addPixelMovementToClass = (classRef) => {
 
 addPixelMovementToClass(Game_Player);
 addPixelMovementToClass(Game_Follower);
+
+window.addPixelMovementToClass = addPixelMovementToClass;

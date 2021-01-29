@@ -93,7 +93,9 @@ globals:
   CycloneOnline: true
   CycloneEvents: true
   CycloneAurora: true
+  CycloneColyseus: true
 
+  GGJ: true
   WindowResizer: true
 rules:
   indent:

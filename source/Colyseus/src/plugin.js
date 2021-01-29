@@ -1,8 +1,14 @@
-import {
-  CyclonePlugin
-} from '../../Core/main';
+import { CyclonePlugin } from '../../Core/main';
+import { throttle } from '../../Utils/throttle';
 
 let client;
+
+const sendPosition = throttle((room) => {
+  // room.send('move', {
+  //   x: $gamePlayer._x,
+  //   y: $gamePlayer._y,
+  // });
+}, 300);
 
 class CycloneColyseus extends CyclonePlugin {
   static register() {
@@ -32,6 +38,8 @@ class CycloneColyseus extends CyclonePlugin {
     this.client.joinOrCreate('battle_room', {
       name: 'Player',
     }).then(room => {
+      this._room = room;
+
       room.onStateChange((state) => {
         console.log(room.name, 'has new state:', state);
       });
@@ -48,6 +56,14 @@ class CycloneColyseus extends CyclonePlugin {
         console.log(client.id, 'left', room.name);
       });
     });
+  }
+
+  static sendPlayerPosition() {
+    if (!this._room) {
+      return;
+    }
+
+    sendPosition(this._room);
   }
 }
 
