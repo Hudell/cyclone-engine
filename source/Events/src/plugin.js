@@ -9,6 +9,77 @@ class CycloneEvents extends CyclonePlugin {
 
     super.register({
     });
+
+    this.registerCommand('copyEvent', {
+      eventId: 'int',
+      x: 'int',
+      y: 'int',
+      temporary: 'boolean',
+      newIndex: 'int',
+    }, (eventIdOrigin, x, y, temporary, newIndex) => {
+      return $gameMap.copyEvent(eventIdOrigin, x, y, temporary, newIndex);
+    });
+
+    this.registerCommand('copyEventFrom', {
+      mapId: 'int',
+      eventId: 'int',
+      x: 'int',
+      y: 'int',
+      temporary: 'boolean',
+      newIndex: 'int',
+      wait: 'boolean',
+    }, (mapId, eventId, x, y, temporary, newIndex, wait) => {
+      if (!wait) {
+        return $gameMap.copyEventFrom(mapId, eventId, x, y, temporary, newIndex);
+      }
+
+      // #ToDo: make the interpreter wait for copying to be complete
+    });
+
+    this.registerCommand('createActorAt', {
+      actorId: 'int',
+      x: 'int',
+      y: 'int',
+      d: 'int',
+      commonEventId: 'int',
+      temporary: 'boolean',
+    }, (actorId, x, y, d, commonEventId, temporary) => {
+      return this.createActorAt(actorId, x, y, d, commonEventId, temporary);
+    });
+
+    this.registerCommand('createNormalEventAt', {
+      characterName: 'string',
+      characterIndex: 'int',
+      x: 'int',
+      y: 'int',
+      d: 'int',
+      commonEventId: 'int',
+      temporary: 'boolean',
+    }, (characterName, characterIndex, x, y, d, commonEventId, temporary) => {
+      return this.createNormalEventAt(characterName, x, y, d, commonEventId, temporary);
+    });
+
+    this.registerCommand('createTriggerEventAt', {
+      x: 'int',
+      y: 'int',
+      commonEventId: 'int',
+      temporary: 'boolean',
+    }, (x, y, commonEventId, temporary) => {
+      return this.createTriggerEventAt(x, y, commonEventId, temporary);
+    });
+
+    this.registerCommand('createTeleportEventAt', {
+      x: 'int',
+      y: 'int',
+      newMapId: 'int',
+      newX: 'int',
+      newY: 'int',
+      newDirection: 'int',
+      fadeType: 'int',
+      temporary: 'boolean',
+    }, (x, y, newMapId, newX, newY, newDirection, fadeType, temporary) => {
+      return this.createTeleportEventAt(x, y, newMapId, newX, newY, newDirection, fadeType, temporary);
+    });
   }
 
   static getAnotherMapData(mapId, callback) {

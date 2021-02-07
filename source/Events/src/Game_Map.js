@@ -26,7 +26,7 @@ CycloneEvents.patchClass(Game_Map, $super => class {
 
     this._events[index] = gameEvent;
 
-    if (SceneManager._scene instanceof Scene_Map) {
+    if (SceneManager._scene instanceof Scene_Map && SceneManager._scene._spriteset && SceneManager._scene._spriteset._characterSprites) {
       const sprite = new Sprite_Character(gameEvent);
       SceneManager._scene._spriteset._characterSprites.push(sprite);
       SceneManager._scene._spriteset._tilemap.addChild(sprite);

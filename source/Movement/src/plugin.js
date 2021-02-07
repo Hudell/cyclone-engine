@@ -1,6 +1,7 @@
 import { CyclonePlugin } from '../../Core/main';
 import { LZString } from '../../Libs/lz-string.min';
 import { DirectionHelper } from '../../Utils/DirectionHelper';
+import { addPixelMovementToClass } from './CharacterOverride';
 
 let currentMapCollisionTable = false;
 
@@ -49,6 +50,9 @@ class CycloneMovement extends CyclonePlugin {
     this.ignoreEmptyEvents = this.params.ignoreEmptyEvents !== false;
     this.diagonalPathfinding = this.params.diagonalPathfinding !== false;
     this.disableMouseMovement = this.params.disableMouseMovement === true;
+
+    addPixelMovementToClass(Game_Player);
+    addPixelMovementToClass(Game_Follower);
   }
 
   static get currentMapCollisionTable() {
@@ -497,6 +501,10 @@ class CycloneMovement extends CyclonePlugin {
   static tileIdx(x, y) {
     const width = $dataMap.width;
     return y * width + x || 0;
+  }
+
+  static addPixelMovementToClass(classObj) {
+    addPixelMovementToClass(classObj);
   }
 }
 
