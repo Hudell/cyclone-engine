@@ -1,5 +1,5 @@
 /*:
- * @plugindesc Adds new movement features to the game v1.01.01
+ * @plugindesc Adds new movement features to the game v1.01.02
  *
  * <pluginName:CycloneMovement>
  * @author Hudell

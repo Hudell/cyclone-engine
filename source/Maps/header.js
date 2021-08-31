@@ -4,7 +4,7 @@
 
 /*:
  * @target MZ
- * @plugindesc Adds new features to game map
+ * @plugindesc Adds new features to game map 1.01.01
  *
  * <pluginName:CycloneMaps>
  * @author Hudell

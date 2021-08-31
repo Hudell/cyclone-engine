@@ -1,5 +1,5 @@
 /*:
- * @plugindesc Live Map Editor - 1.12.00
+ * @plugindesc Live Map Editor - 1.12.01
  *
  * <pluginName:CycloneMapEditor>
  * @author Hudell

@@ -29,10 +29,10 @@ class CyclonePlugin extends CyclonePatcher {
 
   static loadAllParams() {
     for (const plugin of globalThis.$plugins) {
-      if (!plugin?.status) {
+      if (!plugin || !plugin.status) {
         continue;
       }
-      if (!plugin?.description?.includes(`<pluginName:${ this.pluginName }`)) { //`
+      if (!plugin.description || !plugin.description.includes(`<pluginName:${ this.pluginName }`)) { //`
         continue;
       }
 
@@ -336,7 +336,9 @@ class CyclonePlugin extends CyclonePatcher {
 
   static getRegexMatch(text, regex, matchIndex) {
     const matches = text.match(regex);
-    return matches?.[matchIndex];
+    if (matches) {
+      return matches[matchIndex];
+    }
   }
 
   static parseStructParam({ value, defaultValue, type }) {

@@ -9,6 +9,25 @@ class CycloneMovement extends CyclonePlugin {
   static register() {
     super.initialize('CycloneMovement');
 
+    this.structs.set('CycloneHitbox', {
+      x: {
+        type: 'int',
+        defaultValue: 0,
+      },
+      y: {
+        type: 'int',
+        defaultValue: 0,
+      },
+      width: {
+        type: 'int',
+        defaultValue: 48,
+      },
+      height: {
+        type: 'int',
+        defaultValue: 48,
+      },
+    });
+
     super.register({
       stepCount: {
         type: 'int',
@@ -38,13 +57,17 @@ class CycloneMovement extends CyclonePlugin {
         defaultValue: 0.75,
       },
       sidestepEvents: 'boolean',
+      playerHitbox: {
+        type: 'struct<CycloneHitbox>',
+        defaultValue: '{"x":6,"y":24,"width":36,"height":18}',
+      },
     });
 
     this.stepCount = [1, 2, 4].includes(this.params.stepCount) ? this.params.stepCount : 1;
     this.collisionStepCount = Math.min(this.stepCount, [1, 2, 4].includes(this.params.collisionStepCount) ? this.params.collisionStepCount : 1);
     this.stepSize = 1 / this.stepCount;
     this.collisionSize = 1 / this.collisionStepCount;
-    this.followerStepsBehind = Number(this.params.followerStepsBehind || 1).clamp(1, this.stepCount);
+    this.followerStepsBehind = Number(this.params.followerStepsBehind || 1).clamp(1, 12);
     this.triggerAllEvents = this.params.triggerAllEvents === true;
     this.autoLeaveVehicles = this.params.autoLeaveVehicles === true;
     this.ignoreEmptyEvents = this.params.ignoreEmptyEvents !== false;
@@ -174,7 +197,7 @@ class CycloneMovement extends CyclonePlugin {
   }
 
   static setupCollision() {
-    if (!$gameMap?._loaded) {
+    if (!$gameMap || !$gameMap._loaded){
       return;
     }
 

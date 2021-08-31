@@ -31,7 +31,7 @@ function _defineProperties(target, props) { for (var i = 0; i < props.length; i+
 function _createClass(Constructor, protoProps, staticProps) { if (protoProps) _defineProperties(Constructor.prototype, protoProps); if (staticProps) _defineProperties(Constructor, staticProps); return Constructor; }
 
 /*:
- * @plugindesc Adds new movement features to the game v1.01.01
+ * @plugindesc Adds new movement features to the game v1.01.02
  *
  * <pluginName:CycloneMovement>
  * @author Hudell
@@ -284,7 +284,7 @@ function _createClass(Constructor, protoProps, staticProps) { if (protoProps) _d
     }, {
       key: "patchClass",
       value: function patchClass(baseClass, patchFn) {
-        var $super = this.superClasses[baseClass.name] || {};
+        var $super = this.superClasses && this.superClasses[baseClass.name] || {};
         var $prototype = {};
         var $dynamicSuper = {};
         var patchClass = patchFn($dynamicSuper, $prototype);
@@ -318,7 +318,9 @@ function _createClass(Constructor, protoProps, staticProps) { if (protoProps) _d
           Object.assign($dynamicSuper, $prototype);
         }
 
-        this.superClasses[baseClass.name] = $dynamicSuper;
+        if (this.superClasses) {
+          this.superClasses[baseClass.name] = $dynamicSuper;
+        }
       }
     }]);
 
@@ -373,15 +375,13 @@ function _createClass(Constructor, protoProps, staticProps) { if (protoProps) _d
 
         try {
           for (_iterator.s(); !(_step = _iterator.n()).done;) {
-            var _plugin$description;
-
             var plugin = _step.value;
 
-            if (!(plugin === null || plugin === void 0 ? void 0 : plugin.status)) {
+            if (!plugin || !plugin.status) {
               continue;
             }
 
-            if (!(plugin === null || plugin === void 0 ? void 0 : (_plugin$description = plugin.description) === null || _plugin$description === void 0 ? void 0 : _plugin$description.includes("<pluginName:".concat(this.pluginName)))) {
+            if (!plugin.description || !plugin.description.includes("<pluginName:".concat(this.pluginName))) {
               //`
               continue;
             }
@@ -850,7 +850,10 @@ function _createClass(Constructor, protoProps, staticProps) { if (protoProps) _d
       key: "getRegexMatch",
       value: function getRegexMatch(text, regex, matchIndex) {
         var matches = text.match(regex);
-        return matches === null || matches === void 0 ? void 0 : matches[matchIndex];
+
+        if (matches) {
+          return matches[matchIndex];
+        }
       }
     }, {
       key: "parseStructParam",
@@ -1373,669 +1376,14 @@ function _createClass(Constructor, protoProps, staticProps) { if (protoProps) _d
     return DirectionHelper;
   }();
 
-  var currentMapCollisionTable = false;
-
-  var CycloneMovement$1 = /*#__PURE__*/function (_CyclonePlugin) {
-    _inherits(CycloneMovement$1, _CyclonePlugin);
-
-    var _super2 = _createSuper(CycloneMovement$1);
-
-    function CycloneMovement$1() {
-      _classCallCheck(this, CycloneMovement$1);
-
-      return _super2.apply(this, arguments);
-    }
-
-    _createClass(CycloneMovement$1, null, [{
-      key: "register",
-      value: function register() {
-        _get(_getPrototypeOf(CycloneMovement$1), "initialize", this).call(this, 'CycloneMovement');
-
-        _get(_getPrototypeOf(CycloneMovement$1), "register", this).call(this, {
-          stepCount: {
-            type: 'int',
-            defaultValue: 1
-          },
-          collisionStepCount: {
-            type: 'int',
-            defaultValue: 1
-          },
-          followerStepsBehind: {
-            type: 'int',
-            defaultValue: 3
-          },
-          triggerAllEvents: 'boolean',
-          ignoreEmptyEvents: {
-            type: 'boolean',
-            defaultValue: true
-          },
-          autoLeaveVehicles: 'boolean',
-          diagonalPathfinding: {
-            type: 'boolean',
-            defaultValue: true
-          },
-          disableMouseMovement: 'boolean',
-          maxOffset: {
-            type: 'float',
-            defaultValue: 0.75
-          },
-          sidestepEvents: 'boolean'
-        });
-
-        this.stepCount = [1, 2, 4].includes(this.params.stepCount) ? this.params.stepCount : 1;
-        this.collisionStepCount = Math.min(this.stepCount, [1, 2, 4].includes(this.params.collisionStepCount) ? this.params.collisionStepCount : 1);
-        this.stepSize = 1 / this.stepCount;
-        this.collisionSize = 1 / this.collisionStepCount;
-        this.followerStepsBehind = Number(this.params.followerStepsBehind || 1).clamp(1, this.stepCount);
-        this.triggerAllEvents = this.params.triggerAllEvents === true;
-        this.autoLeaveVehicles = this.params.autoLeaveVehicles === true;
-        this.ignoreEmptyEvents = this.params.ignoreEmptyEvents !== false;
-        this.diagonalPathfinding = this.params.diagonalPathfinding !== false;
-        this.disableMouseMovement = this.params.disableMouseMovement === true;
-      }
-    }, {
-      key: "isRoundNumber",
-      value: function isRoundNumber(n) {
-        return Math.floor(n) === n;
-      }
-    }, {
-      key: "goesLeft",
-      value: function goesLeft(d) {
-        return DirectionHelper.goesLeft(d);
-      }
-    }, {
-      key: "goesRight",
-      value: function goesRight(d) {
-        return DirectionHelper.goesRight(d);
-      }
-    }, {
-      key: "goesUp",
-      value: function goesUp(d) {
-        return DirectionHelper.goesUp(d);
-      }
-    }, {
-      key: "goesDown",
-      value: function goesDown(d) {
-        return DirectionHelper.goesDown(d);
-      }
-    }, {
-      key: "isDiagonal",
-      value: function isDiagonal(d) {
-        return DirectionHelper.isDiagonal(d);
-      }
-    }, {
-      key: "isVertical",
-      value: function isVertical(d) {
-        return DirectionHelper.isVertical(d);
-      }
-    }, {
-      key: "isHorizontal",
-      value: function isHorizontal(d) {
-        return DirectionHelper.isHorizontal(d);
-      }
-    }, {
-      key: "shareADirection",
-      value: function shareADirection(dir1, dir2) {
-        return DirectionHelper.shareADirection(dir1, dir2);
-      }
-    }, {
-      key: "getFirstDirection",
-      value: function getFirstDirection(diagonalDirection) {
-        return DirectionHelper.getFirstDirection(diagonalDirection);
-      }
-    }, {
-      key: "getAlternativeDirection",
-      value: function getAlternativeDirection(direction, diagonalDirection) {
-        return DirectionHelper.getAlternativeDirection(direction, diagonalDirection);
-      }
-    }, {
-      key: "xWithDirection",
-      value: function xWithDirection(x, d) {
-        var _stepSize;
-
-        var stepSize = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : undefined;
-        stepSize = (_stepSize = stepSize) !== null && _stepSize !== void 0 ? _stepSize : this.stepSize;
-
-        if (this.goesLeft(d)) {
-          return x - stepSize;
-        }
-
-        if (this.goesRight(d)) {
-          return x + stepSize;
-        }
-
-        return x;
-      }
-    }, {
-      key: "yWithDirection",
-      value: function yWithDirection(y, d) {
-        var _stepSize2;
-
-        var stepSize = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : undefined;
-        stepSize = (_stepSize2 = stepSize) !== null && _stepSize2 !== void 0 ? _stepSize2 : this.stepSize;
-
-        if (this.goesDown(d)) {
-          return y + stepSize;
-        }
-
-        if (this.goesUp(d)) {
-          return y - stepSize;
-        }
-
-        return y;
-      }
-    }, {
-      key: "roundXWithDirection",
-      value: function roundXWithDirection(x, d) {
-        var stepSize = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : undefined;
-        return $gameMap.roundX(this.xWithDirection(x, d, stepSize));
-      }
-    }, {
-      key: "roundYWithDirection",
-      value: function roundYWithDirection(y, d) {
-        var stepSize = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : undefined;
-        return $gameMap.roundY(this.yWithDirection(y, d, stepSize));
-      }
-    }, {
-      key: "decompress",
-      value: function decompress(data) {
-        if (!data.startsWith('v=')) {
-          return LZString.decompress(data);
-        }
-
-        var idx = data.indexOf(';') + 1;
-        return LZString.decompressFromBase64(data.substring(idx));
-      }
-    }, {
-      key: "parseCollisionData",
-      value: function parseCollisionData(note) {
-        var json;
-
-        try {
-          json = this.decompress(note);
-        } catch (e) {
-          console.error('Failed to decompress data from CycloneMapEditor event.');
-          console.log(note);
-          console.log(e);
-          return;
-        }
-
-        var data;
-
-        try {
-          data = JSON.parse(json);
-        } catch (e) {
-          console.error('Failed to parse data from CycloneMapEditor event.');
-          console.log(json);
-          console.log(e);
-          return;
-        }
-
-        return data;
-      }
-    }, {
-      key: "setupCollision",
-      value: function setupCollision() {
-        var _$gameMap;
-
-        if (!((_$gameMap = $gameMap) === null || _$gameMap === void 0 ? void 0 : _$gameMap._loaded)) {
-          return;
-        }
-
-        var stepCount = this.collisionStepCount;
-        currentMapCollisionTable = new Array($dataMap.width * $dataMap.height * stepCount * stepCount);
-        this.loadDefaultCollisionTable();
-        this.loadCustomCollision();
-      }
-    }, {
-      key: "loadDefaultCollisionTable",
-      value: function loadDefaultCollisionTable() {
-        var _$dataMap = $dataMap,
-            width = _$dataMap.width,
-            height = _$dataMap.height;
-
-        for (var y = 0; y < height; y++) {
-          for (var x = 0; x < width; x++) {
-            var downPassable = $gameMap.isPassable(x, y, 2);
-            var leftPassable = $gameMap.isPassable(x, y, 4);
-            var rightPassable = $gameMap.isPassable(x, y, 6);
-            var upPassable = $gameMap.isPassable(x, y, 8);
-            this.applyTileCollision(x, y, downPassable, leftPassable, rightPassable, upPassable);
-          }
-        }
-      }
-    }, {
-      key: "setBlockCollision",
-      value: function setBlockCollision(x, y, collision) {
-        var index = this.collisionIndex(x, y);
-        currentMapCollisionTable[index] = collision;
-      }
-    }, {
-      key: "applySingleTileCollision",
-      value: function applySingleTileCollision(x, y, blockUp, blockDown, blockLeft, blockRight) {
-        var collision = this._mergeCustomCollisionValues(blockUp, blockDown, blockLeft, blockRight) || 1;
-        this.setBlockCollision(x, y, collision);
-      }
-    }, {
-      key: "applyFullTileCollision",
-      value: function applyFullTileCollision(x, y, collision) {
-        var size = this.collisionSize;
-
-        for (var subX = x; subX < x + 1; subX += size) {
-          for (var subY = y; subY < y + 1; subY += size) {
-            this.setBlockCollision(subX, subY, collision);
-          }
-        }
-      }
-    }, {
-      key: "applyTileDirectionCollision",
-      value: function applyTileDirectionCollision(x, y, direction, collision) {
-        var size = this.collisionSize;
-
-        if (direction === 2 || direction === 8) {
-          var subY = y + (direction === 2 ? 1 - size : 0);
-
-          for (var _subX = x; _subX < x + 1; _subX += size) {
-            this.setBlockCollision(_subX, subY, collision);
-          }
-
-          return;
-        }
-
-        var subX = x + (direction === 6 ? 1 - size : 0);
-
-        for (var _subY = y; _subY < y + 1; _subY += size) {
-          this.setBlockCollision(subX, _subY, collision);
-        }
-      }
-    }, {
-      key: "applyTileCornerCollision",
-      value: function applyTileCornerCollision(x, y, horz, vert, collision) {
-        var size = this.collisionSize;
-        var blockY = vert === 2 ? y + 1 - size : y;
-        var blockX = horz === 6 ? x + 1 - size : x;
-        this.setBlockCollision(blockX, blockY, collision);
-      }
-    }, {
-      key: "collisionIndex",
-      value: function collisionIndex(x, y) {
-        var useEditorStepCount = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : false;
-        var stepCount = useEditorStepCount ? 4 : this.collisionStepCount;
-        var intX = Math.floor(x * stepCount);
-        var intY = Math.floor(y * stepCount);
-        var height = $gameMap.height() * stepCount;
-        var width = $gameMap.width() * stepCount;
-        return intY % height * width + intX % width;
-      } // eslint-disable-next-line complexity
-
-    }, {
-      key: "_mergeCustomCollisionValues",
-      value: function _mergeCustomCollisionValues(blockUp, blockDown, blockLeft, blockRight) {
-        if (blockLeft && blockRight && blockDown && blockUp) {
-          return 20;
-        }
-
-        if (blockUp) {
-          if (blockLeft) {
-            if (blockRight) {
-              return 22;
-            }
-
-            return 17;
-          }
-
-          if (blockRight) {
-            if (blockDown) {
-              return 24;
-            }
-
-            return 19;
-          }
-
-          if (blockDown) {
-            return 4;
-          }
-
-          return 18;
-        }
-
-        if (blockDown) {
-          if (blockLeft) {
-            if (blockRight) {
-              return 28;
-            }
-
-            return 11;
-          }
-
-          if (blockRight) {
-            return 13;
-          }
-
-          return 12;
-        }
-
-        if (blockLeft) {
-          if (blockRight) {
-            return 5;
-          }
-
-          return 14;
-        }
-
-        if (blockRight) {
-          return 16;
-        }
-      } // If the collision is using less than 4 blocks per tile, then merge the sub-blocks into bigger blocks.
-      // This is needed for the directional passabilities to work properly
-      // eslint-disable-next-line complexity
-
-    }, {
-      key: "_mergeCustomCollisions",
-      value: function _mergeCustomCollisions(x, y, data) {
-        var _data$radix;
-
-        var radix = (_data$radix = data.radix) !== null && _data$radix !== void 0 ? _data$radix : 10;
-
-        if (this.collisionStepCount === 4) {
-          var editorIndex = this.collisionIndex(x, y);
-          return parseInt(data.collision[editorIndex], radix) || 0;
-        } // merge every sub-block into a single one
-
-
-        var diffCount = Math.floor(4 / this.collisionStepCount);
-        var diffSize = 1 / diffCount;
-        var result = false;
-        var blockUp = false;
-        var blockDown = false;
-        var blockRight = false;
-        var blockLeft = false;
-
-        for (var blockX = 0; blockX < diffCount; blockX++) {
-          for (var blockY = 0; blockY < diffCount; blockY++) {
-            var _editorIndex = this.collisionIndex(x + blockX * diffSize, y + blockY * diffSize, true);
-
-            var customCollision = parseInt(data.collision[_editorIndex], radix) || 0;
-
-            if (customCollision === 2) {
-              return 2;
-            }
-
-            var goesUp = false;
-            var goesLeft = false;
-            var goesRight = false;
-            var goesDown = false;
-
-            if (customCollision >= 20) {
-              var d = customCollision - 20;
-              goesUp = !DirectionHelper.goesUp(d);
-              goesLeft = !DirectionHelper.goesLeft(d);
-              goesRight = !DirectionHelper.goesRight(d);
-              goesDown = !DirectionHelper.goesDown(d);
-            } else if (customCollision > 10) {
-              var _d = customCollision - 10;
-
-              goesUp = DirectionHelper.goesUp(_d);
-              goesLeft = DirectionHelper.goesLeft(_d);
-              goesRight = DirectionHelper.goesRight(_d);
-              goesDown = DirectionHelper.goesDown(_d);
-            } else if (customCollision === 4) {
-              goesUp = true;
-              goesDown = true;
-            } else if (customCollision === 5) {
-              goesLeft = true;
-              goesRight = true;
-            } else {
-              if (result === false) {
-                result = customCollision;
-              }
-
-              continue;
-            }
-
-            if (goesUp && blockY === 0) {
-              blockUp = true;
-            }
-
-            if (goesDown && blockY === diffCount - 1) {
-              blockDown = true;
-            }
-
-            if (goesLeft && blockX === 0) {
-              blockLeft = true;
-            }
-
-            if (goesRight && blockX === diffCount - 1) {
-              blockRight = true;
-            }
-          }
-        }
-
-        return this._mergeCustomCollisionValues(blockUp, blockDown, blockLeft, blockRight) || result || 0;
-      }
-    }, {
-      key: "setupCustomCollision",
-      value: function setupCustomCollision(compressedData) {
-        var data = CycloneMovement$1.parseCollisionData(compressedData);
-
-        if (!data || !data.collision) {
-          return;
-        }
-
-        var increment = this.collisionSize;
-
-        for (var x = 0; x < $dataMap.width; x += increment) {
-          for (var y = 0; y < $dataMap.height; y += increment) {
-            var customCollision = this._mergeCustomCollisions(x, y, data);
-
-            if (customCollision > 0) {
-              this.setBlockCollision(x, y, customCollision);
-            }
-          }
-        }
-      }
-    }, {
-      key: "loadCustomCollision",
-      value: function loadCustomCollision() {
-        var _iterator6 = _createForOfIteratorHelper($dataMap.events),
-            _step6;
-
-        try {
-          for (_iterator6.s(); !(_step6 = _iterator6.n()).done;) {
-            var event = _step6.value;
-
-            if (!event) {
-              continue;
-            }
-
-            if (event.name !== 'CycloneMapEditor') {
-              continue;
-            }
-
-            this.setupCustomCollision(event.note);
-            return;
-          }
-        } catch (err) {
-          _iterator6.e(err);
-        } finally {
-          _iterator6.f();
-        }
-      }
-    }, {
-      key: "isPositionPassable",
-      value: function isPositionPassable(x, y, d) {
-        var index = this.collisionIndex(x, y);
-        var collision = currentMapCollisionTable[index];
-
-        if (!collision || collision === 1) {
-          return true;
-        }
-
-        if (collision === 2) {
-          return false;
-        }
-
-        if (collision >= 20) {
-          var unblockedDirection = collision - 20;
-
-          if (!this.shareADirection(d, unblockedDirection)) {
-            return false;
-          }
-        } else if (collision > 10) {
-          var blockedDirection = collision - 10;
-
-          if (this.shareADirection(d, blockedDirection)) {
-            return false;
-          }
-        } else if (collision === 4) {
-          if (DirectionHelper.goesUp(d) || DirectionHelper.goesDown(d)) {
-            return false;
-          }
-        } else if (collision === 5) {
-          if (DirectionHelper.goesLeft(d) || DirectionHelper.goesRight(d)) {
-            return false;
-          }
-        }
-
-        return true;
-      }
-    }, {
-      key: "applyTileCollision",
-      value: function applyTileCollision(x, y, down, left, right, up) {
-        if (down === left && down === right && down === up) {
-          this.applyFullTileCollision(x, y, down ? 1 : 2);
-          return;
-        }
-
-        if (CycloneMovement$1.collisionStepCount === 1) {
-          this.applySingleTileCollision(x, y, !up, !down, !left, !right);
-          return;
-        }
-
-        this.applyFullTileCollision(x, y, 1);
-
-        if (!left) {
-          this.applyTileDirectionCollision(x, y, 4, 14);
-        }
-
-        if (!right) {
-          this.applyTileDirectionCollision(x, y, 6, 16);
-        }
-
-        if (!down) {
-          this.applyTileDirectionCollision(x, y, 2, 12);
-
-          if (!left) {
-            this.applyTileCornerCollision(x, y, 4, 2, 11);
-          }
-
-          if (!right) {
-            this.applyTileCornerCollision(x, y, 6, 2, 13);
-          }
-        }
-
-        if (!up) {
-          this.applyTileDirectionCollision(x, y, 8, 18);
-
-          if (!left) {
-            this.applyTileCornerCollision(x, y, 4, 8, 17);
-          }
-
-          if (!right) {
-            this.applyTileCornerCollision(x, y, 6, 8, 19);
-          }
-        }
-      }
-    }, {
-      key: "tileIdx",
-      value: function tileIdx(x, y) {
-        var width = $dataMap.width;
-        return y * width + x || 0;
-      }
-    }, {
-      key: "currentMapCollisionTable",
-      get: function get() {
-        return currentMapCollisionTable;
-      }
-    }]);
-
-    return CycloneMovement$1;
-  }(CyclonePlugin);
-
-  globalThis.CycloneMovement = CycloneMovement$1;
-  CycloneMovement$1.register();
-  CycloneMovement.patchClass(Game_Map, function ($super) {
-    return /*#__PURE__*/function () {
-      function _class() {
-        _classCallCheck(this, _class);
-      }
-
-      _createClass(_class, [{
-        key: "isValid",
-        value: function isValid(x, y) {
-          return x >= 0 && y >= 0 && Math.floor(x) < this.width() && Math.floor(y) < this.height();
-        }
-      }, {
-        key: "setup",
-        value: function setup(mapId) {
-          $super.setup.call(this, mapId);
-          this._loaded = true;
-          CycloneMovement.setupCollision();
-        }
-      }, {
-        key: "isTileClear",
-        value: function isTileClear(x, y) {
-          if (!this.checkPassage(x, y, 2)) {
-            return false;
-          }
-
-          if (!this.checkPassage(x, y, 4)) {
-            return false;
-          }
-
-          if (!this.checkPassage(x, y, 6)) {
-            return false;
-          }
-
-          if (!this.checkPassage(x, y, 8)) {
-            return false;
-          }
-
-          return true;
-        }
-      }, {
-        key: "distance",
-        value: function distance(x1, y1, x2, y2) {
-          if (!CycloneMovement.diagonalPathfinding) {
-            return $super.distance.call(this, x1, y1, x2, y2);
-          } // good old Pythagoras
-
-
-          var b = Math.abs(this.deltaY(y1, y2));
-          var c = Math.abs(this.deltaX(x1, x2));
-          var a2 = Math.pow(b, 2) + Math.pow(c, 2);
-          var a = Math.sqrt(a2);
-          return a;
-        }
-      }, {
-        key: "regionId",
-        value: function regionId(x, y) {
-          return $super.regionId.call(this, Math.floor(x), Math.floor(y));
-        }
-      }]);
-
-      return _class;
-    }();
-  });
-
-  var addPixelMovementToClass = function addPixelMovementToClass(classRef) {
+  var _addPixelMovementToClass = function addPixelMovementToClass(classRef) {
     CycloneMovement.patchClass(classRef, function ($super) {
       return /*#__PURE__*/function () {
-        function _class2() {
-          _classCallCheck(this, _class2);
+        function _class() {
+          _classCallCheck(this, _class);
         }
 
-        _createClass(_class2, [{
+        _createClass(_class, [{
           key: "getWidth",
           value: function getWidth() {
             return 1;
@@ -3271,13 +2619,695 @@ function _createClass(Constructor, protoProps, staticProps) { if (protoProps) _d
           }
         }]);
 
-        return _class2;
+        return _class;
       }();
     });
   };
 
-  addPixelMovementToClass(Game_Player);
-  addPixelMovementToClass(Game_Follower);
+  var currentMapCollisionTable = false;
+
+  var CycloneMovement$1 = /*#__PURE__*/function (_CyclonePlugin) {
+    _inherits(CycloneMovement$1, _CyclonePlugin);
+
+    var _super2 = _createSuper(CycloneMovement$1);
+
+    function CycloneMovement$1() {
+      _classCallCheck(this, CycloneMovement$1);
+
+      return _super2.apply(this, arguments);
+    }
+
+    _createClass(CycloneMovement$1, null, [{
+      key: "register",
+      value: function register() {
+        _get(_getPrototypeOf(CycloneMovement$1), "initialize", this).call(this, 'CycloneMovement');
+
+        this.structs.set('CycloneHitbox', {
+          x: {
+            type: 'int',
+            defaultValue: 0
+          },
+          y: {
+            type: 'int',
+            defaultValue: 0
+          },
+          width: {
+            type: 'int',
+            defaultValue: 48
+          },
+          height: {
+            type: 'int',
+            defaultValue: 48
+          }
+        });
+
+        _get(_getPrototypeOf(CycloneMovement$1), "register", this).call(this, {
+          stepCount: {
+            type: 'int',
+            defaultValue: 1
+          },
+          collisionStepCount: {
+            type: 'int',
+            defaultValue: 1
+          },
+          followerStepsBehind: {
+            type: 'int',
+            defaultValue: 3
+          },
+          triggerAllEvents: 'boolean',
+          ignoreEmptyEvents: {
+            type: 'boolean',
+            defaultValue: true
+          },
+          autoLeaveVehicles: 'boolean',
+          diagonalPathfinding: {
+            type: 'boolean',
+            defaultValue: true
+          },
+          disableMouseMovement: 'boolean',
+          maxOffset: {
+            type: 'float',
+            defaultValue: 0.75
+          },
+          sidestepEvents: 'boolean',
+          playerHitbox: {
+            type: 'struct<CycloneHitbox>',
+            defaultValue: '{"x":6,"y":24,"width":36,"height":18}'
+          }
+        });
+
+        this.stepCount = [1, 2, 4].includes(this.params.stepCount) ? this.params.stepCount : 1;
+        this.collisionStepCount = Math.min(this.stepCount, [1, 2, 4].includes(this.params.collisionStepCount) ? this.params.collisionStepCount : 1);
+        this.stepSize = 1 / this.stepCount;
+        this.collisionSize = 1 / this.collisionStepCount;
+        this.followerStepsBehind = Number(this.params.followerStepsBehind || 1).clamp(1, 12);
+        this.triggerAllEvents = this.params.triggerAllEvents === true;
+        this.autoLeaveVehicles = this.params.autoLeaveVehicles === true;
+        this.ignoreEmptyEvents = this.params.ignoreEmptyEvents !== false;
+        this.diagonalPathfinding = this.params.diagonalPathfinding !== false;
+        this.disableMouseMovement = this.params.disableMouseMovement === true;
+
+        _addPixelMovementToClass(Game_Player);
+
+        _addPixelMovementToClass(Game_Follower);
+      }
+    }, {
+      key: "isRoundNumber",
+      value: function isRoundNumber(n) {
+        return Math.floor(n) === n;
+      }
+    }, {
+      key: "goesLeft",
+      value: function goesLeft(d) {
+        return DirectionHelper.goesLeft(d);
+      }
+    }, {
+      key: "goesRight",
+      value: function goesRight(d) {
+        return DirectionHelper.goesRight(d);
+      }
+    }, {
+      key: "goesUp",
+      value: function goesUp(d) {
+        return DirectionHelper.goesUp(d);
+      }
+    }, {
+      key: "goesDown",
+      value: function goesDown(d) {
+        return DirectionHelper.goesDown(d);
+      }
+    }, {
+      key: "isDiagonal",
+      value: function isDiagonal(d) {
+        return DirectionHelper.isDiagonal(d);
+      }
+    }, {
+      key: "isVertical",
+      value: function isVertical(d) {
+        return DirectionHelper.isVertical(d);
+      }
+    }, {
+      key: "isHorizontal",
+      value: function isHorizontal(d) {
+        return DirectionHelper.isHorizontal(d);
+      }
+    }, {
+      key: "shareADirection",
+      value: function shareADirection(dir1, dir2) {
+        return DirectionHelper.shareADirection(dir1, dir2);
+      }
+    }, {
+      key: "getFirstDirection",
+      value: function getFirstDirection(diagonalDirection) {
+        return DirectionHelper.getFirstDirection(diagonalDirection);
+      }
+    }, {
+      key: "getAlternativeDirection",
+      value: function getAlternativeDirection(direction, diagonalDirection) {
+        return DirectionHelper.getAlternativeDirection(direction, diagonalDirection);
+      }
+    }, {
+      key: "xWithDirection",
+      value: function xWithDirection(x, d) {
+        var _stepSize;
+
+        var stepSize = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : undefined;
+        stepSize = (_stepSize = stepSize) !== null && _stepSize !== void 0 ? _stepSize : this.stepSize;
+
+        if (this.goesLeft(d)) {
+          return x - stepSize;
+        }
+
+        if (this.goesRight(d)) {
+          return x + stepSize;
+        }
+
+        return x;
+      }
+    }, {
+      key: "yWithDirection",
+      value: function yWithDirection(y, d) {
+        var _stepSize2;
+
+        var stepSize = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : undefined;
+        stepSize = (_stepSize2 = stepSize) !== null && _stepSize2 !== void 0 ? _stepSize2 : this.stepSize;
+
+        if (this.goesDown(d)) {
+          return y + stepSize;
+        }
+
+        if (this.goesUp(d)) {
+          return y - stepSize;
+        }
+
+        return y;
+      }
+    }, {
+      key: "roundXWithDirection",
+      value: function roundXWithDirection(x, d) {
+        var stepSize = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : undefined;
+        return $gameMap.roundX(this.xWithDirection(x, d, stepSize));
+      }
+    }, {
+      key: "roundYWithDirection",
+      value: function roundYWithDirection(y, d) {
+        var stepSize = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : undefined;
+        return $gameMap.roundY(this.yWithDirection(y, d, stepSize));
+      }
+    }, {
+      key: "decompress",
+      value: function decompress(data) {
+        if (!data.startsWith('v=')) {
+          return LZString.decompress(data);
+        }
+
+        var idx = data.indexOf(';') + 1;
+        return LZString.decompressFromBase64(data.substring(idx));
+      }
+    }, {
+      key: "parseCollisionData",
+      value: function parseCollisionData(note) {
+        var json;
+
+        try {
+          json = this.decompress(note);
+        } catch (e) {
+          console.error('Failed to decompress data from CycloneMapEditor event.');
+          console.log(note);
+          console.log(e);
+          return;
+        }
+
+        var data;
+
+        try {
+          data = JSON.parse(json);
+        } catch (e) {
+          console.error('Failed to parse data from CycloneMapEditor event.');
+          console.log(json);
+          console.log(e);
+          return;
+        }
+
+        return data;
+      }
+    }, {
+      key: "setupCollision",
+      value: function setupCollision() {
+        if (!$gameMap || !$gameMap._loaded) {
+          return;
+        }
+
+        var stepCount = this.collisionStepCount;
+        currentMapCollisionTable = new Array($dataMap.width * $dataMap.height * stepCount * stepCount);
+        this.loadDefaultCollisionTable();
+        this.loadCustomCollision();
+      }
+    }, {
+      key: "loadDefaultCollisionTable",
+      value: function loadDefaultCollisionTable() {
+        var _$dataMap = $dataMap,
+            width = _$dataMap.width,
+            height = _$dataMap.height;
+
+        for (var y = 0; y < height; y++) {
+          for (var x = 0; x < width; x++) {
+            var downPassable = $gameMap.isPassable(x, y, 2);
+            var leftPassable = $gameMap.isPassable(x, y, 4);
+            var rightPassable = $gameMap.isPassable(x, y, 6);
+            var upPassable = $gameMap.isPassable(x, y, 8);
+            this.applyTileCollision(x, y, downPassable, leftPassable, rightPassable, upPassable);
+          }
+        }
+      }
+    }, {
+      key: "setBlockCollision",
+      value: function setBlockCollision(x, y, collision) {
+        var index = this.collisionIndex(x, y);
+        currentMapCollisionTable[index] = collision;
+      }
+    }, {
+      key: "applySingleTileCollision",
+      value: function applySingleTileCollision(x, y, blockUp, blockDown, blockLeft, blockRight) {
+        var collision = this._mergeCustomCollisionValues(blockUp, blockDown, blockLeft, blockRight) || 1;
+        this.setBlockCollision(x, y, collision);
+      }
+    }, {
+      key: "applyFullTileCollision",
+      value: function applyFullTileCollision(x, y, collision) {
+        var size = this.collisionSize;
+
+        for (var subX = x; subX < x + 1; subX += size) {
+          for (var subY = y; subY < y + 1; subY += size) {
+            this.setBlockCollision(subX, subY, collision);
+          }
+        }
+      }
+    }, {
+      key: "applyTileDirectionCollision",
+      value: function applyTileDirectionCollision(x, y, direction, collision) {
+        var size = this.collisionSize;
+
+        if (direction === 2 || direction === 8) {
+          var subY = y + (direction === 2 ? 1 - size : 0);
+
+          for (var _subX = x; _subX < x + 1; _subX += size) {
+            this.setBlockCollision(_subX, subY, collision);
+          }
+
+          return;
+        }
+
+        var subX = x + (direction === 6 ? 1 - size : 0);
+
+        for (var _subY = y; _subY < y + 1; _subY += size) {
+          this.setBlockCollision(subX, _subY, collision);
+        }
+      }
+    }, {
+      key: "applyTileCornerCollision",
+      value: function applyTileCornerCollision(x, y, horz, vert, collision) {
+        var size = this.collisionSize;
+        var blockY = vert === 2 ? y + 1 - size : y;
+        var blockX = horz === 6 ? x + 1 - size : x;
+        this.setBlockCollision(blockX, blockY, collision);
+      }
+    }, {
+      key: "collisionIndex",
+      value: function collisionIndex(x, y) {
+        var useEditorStepCount = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : false;
+        var stepCount = useEditorStepCount ? 4 : this.collisionStepCount;
+        var intX = Math.floor(x * stepCount);
+        var intY = Math.floor(y * stepCount);
+        var height = $gameMap.height() * stepCount;
+        var width = $gameMap.width() * stepCount;
+        return intY % height * width + intX % width;
+      } // eslint-disable-next-line complexity
+
+    }, {
+      key: "_mergeCustomCollisionValues",
+      value: function _mergeCustomCollisionValues(blockUp, blockDown, blockLeft, blockRight) {
+        if (blockLeft && blockRight && blockDown && blockUp) {
+          return 20;
+        }
+
+        if (blockUp) {
+          if (blockLeft) {
+            if (blockRight) {
+              return 22;
+            }
+
+            return 17;
+          }
+
+          if (blockRight) {
+            if (blockDown) {
+              return 24;
+            }
+
+            return 19;
+          }
+
+          if (blockDown) {
+            return 4;
+          }
+
+          return 18;
+        }
+
+        if (blockDown) {
+          if (blockLeft) {
+            if (blockRight) {
+              return 28;
+            }
+
+            return 11;
+          }
+
+          if (blockRight) {
+            return 13;
+          }
+
+          return 12;
+        }
+
+        if (blockLeft) {
+          if (blockRight) {
+            return 5;
+          }
+
+          return 14;
+        }
+
+        if (blockRight) {
+          return 16;
+        }
+      } // If the collision is using less than 4 blocks per tile, then merge the sub-blocks into bigger blocks.
+      // This is needed for the directional passabilities to work properly
+      // eslint-disable-next-line complexity
+
+    }, {
+      key: "_mergeCustomCollisions",
+      value: function _mergeCustomCollisions(x, y, data) {
+        var _data$radix;
+
+        var radix = (_data$radix = data.radix) !== null && _data$radix !== void 0 ? _data$radix : 10;
+
+        if (this.collisionStepCount === 4) {
+          var editorIndex = this.collisionIndex(x, y);
+          return parseInt(data.collision[editorIndex], radix) || 0;
+        } // merge every sub-block into a single one
+
+
+        var diffCount = Math.floor(4 / this.collisionStepCount);
+        var diffSize = 1 / diffCount;
+        var result = false;
+        var blockUp = false;
+        var blockDown = false;
+        var blockRight = false;
+        var blockLeft = false;
+
+        for (var blockX = 0; blockX < diffCount; blockX++) {
+          for (var blockY = 0; blockY < diffCount; blockY++) {
+            var _editorIndex = this.collisionIndex(x + blockX * diffSize, y + blockY * diffSize, true);
+
+            var customCollision = parseInt(data.collision[_editorIndex], radix) || 0;
+
+            if (customCollision === 2) {
+              return 2;
+            }
+
+            var goesUp = false;
+            var goesLeft = false;
+            var goesRight = false;
+            var goesDown = false;
+
+            if (customCollision >= 20) {
+              var d = customCollision - 20;
+              goesUp = !DirectionHelper.goesUp(d);
+              goesLeft = !DirectionHelper.goesLeft(d);
+              goesRight = !DirectionHelper.goesRight(d);
+              goesDown = !DirectionHelper.goesDown(d);
+            } else if (customCollision > 10) {
+              var _d = customCollision - 10;
+
+              goesUp = DirectionHelper.goesUp(_d);
+              goesLeft = DirectionHelper.goesLeft(_d);
+              goesRight = DirectionHelper.goesRight(_d);
+              goesDown = DirectionHelper.goesDown(_d);
+            } else if (customCollision === 4) {
+              goesUp = true;
+              goesDown = true;
+            } else if (customCollision === 5) {
+              goesLeft = true;
+              goesRight = true;
+            } else {
+              if (result === false) {
+                result = customCollision;
+              }
+
+              continue;
+            }
+
+            if (goesUp && blockY === 0) {
+              blockUp = true;
+            }
+
+            if (goesDown && blockY === diffCount - 1) {
+              blockDown = true;
+            }
+
+            if (goesLeft && blockX === 0) {
+              blockLeft = true;
+            }
+
+            if (goesRight && blockX === diffCount - 1) {
+              blockRight = true;
+            }
+          }
+        }
+
+        return this._mergeCustomCollisionValues(blockUp, blockDown, blockLeft, blockRight) || result || 0;
+      }
+    }, {
+      key: "setupCustomCollision",
+      value: function setupCustomCollision(compressedData) {
+        var data = CycloneMovement$1.parseCollisionData(compressedData);
+
+        if (!data || !data.collision) {
+          return;
+        }
+
+        var increment = this.collisionSize;
+
+        for (var x = 0; x < $dataMap.width; x += increment) {
+          for (var y = 0; y < $dataMap.height; y += increment) {
+            var customCollision = this._mergeCustomCollisions(x, y, data);
+
+            if (customCollision > 0) {
+              this.setBlockCollision(x, y, customCollision);
+            }
+          }
+        }
+      }
+    }, {
+      key: "loadCustomCollision",
+      value: function loadCustomCollision() {
+        var _iterator6 = _createForOfIteratorHelper($dataMap.events),
+            _step6;
+
+        try {
+          for (_iterator6.s(); !(_step6 = _iterator6.n()).done;) {
+            var event = _step6.value;
+
+            if (!event) {
+              continue;
+            }
+
+            if (event.name !== 'CycloneMapEditor') {
+              continue;
+            }
+
+            this.setupCustomCollision(event.note);
+            return;
+          }
+        } catch (err) {
+          _iterator6.e(err);
+        } finally {
+          _iterator6.f();
+        }
+      }
+    }, {
+      key: "isPositionPassable",
+      value: function isPositionPassable(x, y, d) {
+        var index = this.collisionIndex(x, y);
+        var collision = currentMapCollisionTable[index];
+
+        if (!collision || collision === 1) {
+          return true;
+        }
+
+        if (collision === 2) {
+          return false;
+        }
+
+        if (collision >= 20) {
+          var unblockedDirection = collision - 20;
+
+          if (!this.shareADirection(d, unblockedDirection)) {
+            return false;
+          }
+        } else if (collision > 10) {
+          var blockedDirection = collision - 10;
+
+          if (this.shareADirection(d, blockedDirection)) {
+            return false;
+          }
+        } else if (collision === 4) {
+          if (DirectionHelper.goesUp(d) || DirectionHelper.goesDown(d)) {
+            return false;
+          }
+        } else if (collision === 5) {
+          if (DirectionHelper.goesLeft(d) || DirectionHelper.goesRight(d)) {
+            return false;
+          }
+        }
+
+        return true;
+      }
+    }, {
+      key: "applyTileCollision",
+      value: function applyTileCollision(x, y, down, left, right, up) {
+        if (down === left && down === right && down === up) {
+          this.applyFullTileCollision(x, y, down ? 1 : 2);
+          return;
+        }
+
+        if (CycloneMovement$1.collisionStepCount === 1) {
+          this.applySingleTileCollision(x, y, !up, !down, !left, !right);
+          return;
+        }
+
+        this.applyFullTileCollision(x, y, 1);
+
+        if (!left) {
+          this.applyTileDirectionCollision(x, y, 4, 14);
+        }
+
+        if (!right) {
+          this.applyTileDirectionCollision(x, y, 6, 16);
+        }
+
+        if (!down) {
+          this.applyTileDirectionCollision(x, y, 2, 12);
+
+          if (!left) {
+            this.applyTileCornerCollision(x, y, 4, 2, 11);
+          }
+
+          if (!right) {
+            this.applyTileCornerCollision(x, y, 6, 2, 13);
+          }
+        }
+
+        if (!up) {
+          this.applyTileDirectionCollision(x, y, 8, 18);
+
+          if (!left) {
+            this.applyTileCornerCollision(x, y, 4, 8, 17);
+          }
+
+          if (!right) {
+            this.applyTileCornerCollision(x, y, 6, 8, 19);
+          }
+        }
+      }
+    }, {
+      key: "tileIdx",
+      value: function tileIdx(x, y) {
+        var width = $dataMap.width;
+        return y * width + x || 0;
+      }
+    }, {
+      key: "addPixelMovementToClass",
+      value: function addPixelMovementToClass(classObj) {
+        _addPixelMovementToClass(classObj);
+      }
+    }, {
+      key: "currentMapCollisionTable",
+      get: function get() {
+        return currentMapCollisionTable;
+      }
+    }]);
+
+    return CycloneMovement$1;
+  }(CyclonePlugin);
+
+  globalThis.CycloneMovement = CycloneMovement$1;
+  CycloneMovement$1.register();
+  CycloneMovement.patchClass(Game_Map, function ($super) {
+    return /*#__PURE__*/function () {
+      function _class2() {
+        _classCallCheck(this, _class2);
+      }
+
+      _createClass(_class2, [{
+        key: "isValid",
+        value: function isValid(x, y) {
+          return x >= 0 && y >= 0 && Math.floor(x) < this.width() && Math.floor(y) < this.height();
+        }
+      }, {
+        key: "setup",
+        value: function setup(mapId) {
+          $super.setup.call(this, mapId);
+          this._loaded = true;
+          CycloneMovement.setupCollision();
+        }
+      }, {
+        key: "isTileClear",
+        value: function isTileClear(x, y) {
+          if (!this.checkPassage(x, y, 2)) {
+            return false;
+          }
+
+          if (!this.checkPassage(x, y, 4)) {
+            return false;
+          }
+
+          if (!this.checkPassage(x, y, 6)) {
+            return false;
+          }
+
+          if (!this.checkPassage(x, y, 8)) {
+            return false;
+          }
+
+          return true;
+        }
+      }, {
+        key: "distance",
+        value: function distance(x1, y1, x2, y2) {
+          if (!CycloneMovement.diagonalPathfinding) {
+            return $super.distance.call(this, x1, y1, x2, y2);
+          } // good old Pythagoras
+
+
+          var b = Math.abs(this.deltaY(y1, y2));
+          var c = Math.abs(this.deltaX(x1, x2));
+          var a2 = Math.pow(b, 2) + Math.pow(c, 2);
+          var a = Math.sqrt(a2);
+          return a;
+        }
+      }, {
+        key: "regionId",
+        value: function regionId(x, y) {
+          return $super.regionId.call(this, Math.floor(x), Math.floor(y));
+        }
+      }]);
+
+      return _class2;
+    }();
+  });
   var tryToLeaveVehicleDelay = 0;
   CycloneMovement.patchClass(Game_Player, function ($super) {
     return /*#__PURE__*/function () {

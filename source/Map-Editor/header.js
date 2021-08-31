@@ -1,6 +1,6 @@
 /*:
  * @target MZ
- * @plugindesc Live Map Editor - v1.12.00
+ * @plugindesc Live Map Editor - v1.12.01
  *
  * <pluginName:CycloneMapEditor>
  * @author Hudell

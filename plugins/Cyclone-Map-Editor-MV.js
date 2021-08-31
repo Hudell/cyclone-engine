@@ -45,7 +45,7 @@ function _defineProperties(target, props) { for (var i = 0; i < props.length; i+
 function _createClass(Constructor, protoProps, staticProps) { if (protoProps) _defineProperties(Constructor.prototype, protoProps); if (staticProps) _defineProperties(Constructor, staticProps); return Constructor; }
 
 /*:
- * @plugindesc Live Map Editor - 1.12.00
+ * @plugindesc Live Map Editor - 1.12.01
  *
  * <pluginName:CycloneMapEditor>
  * @author Hudell
@@ -616,9 +616,7 @@ function _createClass(Constructor, protoProps, staticProps) { if (protoProps) _d
     }, {
       key: "patchClass",
       value: function patchClass(baseClass, patchFn) {
-        var _this$superClasses;
-
-        var $super = ((_this$superClasses = this.superClasses) === null || _this$superClasses === void 0 ? void 0 : _this$superClasses[baseClass.name]) || {};
+        var $super = this.superClasses && this.superClasses[baseClass.name] || {};
         var $prototype = {};
         var $dynamicSuper = {};
         var patchClass = patchFn($dynamicSuper, $prototype);
@@ -709,15 +707,13 @@ function _createClass(Constructor, protoProps, staticProps) { if (protoProps) _d
 
         try {
           for (_iterator.s(); !(_step = _iterator.n()).done;) {
-            var _plugin$description;
-
             var plugin = _step.value;
 
-            if (!(plugin === null || plugin === void 0 ? void 0 : plugin.status)) {
+            if (!plugin || !plugin.status) {
               continue;
             }
 
-            if (!(plugin === null || plugin === void 0 ? void 0 : (_plugin$description = plugin.description) === null || _plugin$description === void 0 ? void 0 : _plugin$description.includes("<pluginName:".concat(this.pluginName)))) {
+            if (!plugin.description || !plugin.description.includes("<pluginName:".concat(this.pluginName))) {
               //`
               continue;
             }
@@ -1186,7 +1182,10 @@ function _createClass(Constructor, protoProps, staticProps) { if (protoProps) _d
       key: "getRegexMatch",
       value: function getRegexMatch(text, regex, matchIndex) {
         var matches = text.match(regex);
-        return matches === null || matches === void 0 ? void 0 : matches[matchIndex];
+
+        if (matches) {
+          return matches[matchIndex];
+        }
       }
     }, {
       key: "parseStructParam",

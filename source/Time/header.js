@@ -1,7 +1,7 @@
 /*:
  * @target MZ
  * @plugindesc Background extendable time system with automatic weather change
- * and custom common event callbacks
+ * and custom common event callbacks - 1.01.01
  * <pluginName:CycloneTime>
  * @author Hudell
  * @url https://makerdevs.com/plugin/cyclone-time

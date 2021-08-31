@@ -478,8 +478,8 @@ class CycloneTime extends CyclonePlugin {
 
   static get paused() {
     if (SceneManager._scene instanceof Scene_Map) {
-      const tilesets = this.params.tilesetList;
-      if (tilesets?.length && tilesets.includes($dataMap.tilesetId)) {
+      const tilesets = this.params.tilesetList || [];
+      if (tilesets.length && tilesets.includes($dataMap.tilesetId)) {
         return true;
       }
     }
@@ -504,8 +504,8 @@ class CycloneTime extends CyclonePlugin {
 
   static get weatherPaused() {
     if (SceneManager._scene instanceof Scene_Map) {
-      const tilesets = this.params.weatherTilesetList;
-      if (tilesets?.length && tilesets.includes($dataMap.tilesetId)) {
+      const tilesets = this.params.weatherTilesetList || [];
+      if (tilesets.length && tilesets.includes($dataMap.tilesetId)) {
         return true;
       }
     }
@@ -559,13 +559,17 @@ class CycloneTime extends CyclonePlugin {
   }
 
   static loadInitialTime() {
+    if (!this.params.initialTime) {
+      return;
+    }
+
     this.setTime(this.convertObjectToNumber({
-      second: this.params.initialTime?.second ?? 0,
-      minute: this.params.initialTime?.minute ?? 0,
-      hour: this.params.initialTime?.hour ?? 6,
-      day: this.params.initialTime?.day ?? 1,
-      month: this.params.initialTime?.month ?? 1,
-      year: this.params.initialTime?.year ?? 1,
+      second: this.params.initialTime.second ?? 0,
+      minute: this.params.initialTime.minute ?? 0,
+      hour: this.params.initialTime.hour ?? 6,
+      day: this.params.initialTime.day ?? 1,
+      month: this.params.initialTime.month ?? 1,
+      year: this.params.initialTime.year ?? 1,
     }));
   }
 
@@ -635,8 +639,8 @@ class CycloneTime extends CyclonePlugin {
     }
 
     for (const callback of timeCallbacks) {
-      if (!callback?.type || !callback.event || isNaN(Number(callback.value))) {
-        return;
+      if (!callback || !callback.type || !callback.event || isNaN(Number(callback.value))) {
+        continue;
       }
 
       const eventName = `${ callback.type }:${ callback.value}`;
@@ -864,7 +868,7 @@ class CycloneTime extends CyclonePlugin {
 
   static progressTime(increment = 1) {
     if (this.stopped || this.pausedInternally || this.paused) {
-      const pausedId = this.params.variables?.isPaused;
+      const pausedId = this.params.variables && this.params.variables.isPaused;
       if (pausedId) {
         $gameSwitches.setValue(pausedId, true);
       }
@@ -1031,7 +1035,7 @@ class CycloneTime extends CyclonePlugin {
       return false;
     }
 
-    if (weatherSettings.monthListh?.length && !weatherSettings.monthListh.includes(dateObj.month)) {
+    if (weatherSettings.monthList && weatherSettings.monthListh.length && !weatherSettings.monthListh.includes(dateObj.month)) {
       return false;
     }
 

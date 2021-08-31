@@ -19,6 +19,12 @@ export default [{
 
     sourcemap: false,
     banner: header,
+  }, {
+    file: `${__dirname}/../../../../Downloads/Understood/js/plugins/Cyclone-Movement.js`,
+    format: 'cjs',
+
+    sourcemap: false,
+    banner: header,
   }],
   plugins: [
     iife(),

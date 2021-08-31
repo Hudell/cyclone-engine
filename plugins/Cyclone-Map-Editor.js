@@ -1,6 +1,6 @@
 /*:
  * @target MZ
- * @plugindesc Live Map Editor - v1.12.00
+ * @plugindesc Live Map Editor - v1.12.01
  *
  * <pluginName:CycloneMapEditor>
  * @author Hudell
@@ -309,7 +309,7 @@ class CyclonePatcher {
   }
 
   static patchClass(baseClass, patchFn) {
-    const $super = this.superClasses?.[baseClass.name] || {};
+    const $super = (this.superClasses && this.superClasses[baseClass.name]) || {};
     const $prototype = {};
     const $dynamicSuper = {};
     const patchClass = patchFn($dynamicSuper, $prototype);
@@ -371,10 +371,10 @@ class CyclonePlugin extends CyclonePatcher {
 
   static loadAllParams() {
     for (const plugin of globalThis.$plugins) {
-      if (!plugin?.status) {
+      if (!plugin || !plugin.status) {
         continue;
       }
-      if (!plugin?.description?.includes(`<pluginName:${ this.pluginName }`)) { //`
+      if (!plugin.description || !plugin.description.includes(`<pluginName:${ this.pluginName }`)) { //`
         continue;
       }
 
@@ -678,7 +678,9 @@ class CyclonePlugin extends CyclonePatcher {
 
   static getRegexMatch(text, regex, matchIndex) {
     const matches = text.match(regex);
-    return matches?.[matchIndex];
+    if (matches) {
+      return matches[matchIndex];
+    }
   }
 
   static parseStructParam({ value, defaultValue, type }) {
