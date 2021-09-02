@@ -1,10 +1,10 @@
 //=============================================================================
-// Cyclone Engine - Maps
+// Cyclone Engine - Movement
 //=============================================================================
 
 /*:
  * @target MZ
- * @plugindesc Adds new movement features to the game v1.01.01
+ * @plugindesc Adds new movement features to the game v1.01.02
  *
  * <pluginName:CycloneMovement>
  * @author Hudell
@@ -94,7 +94,7 @@
  * @desc How many steps behind should the followers be? Min = 1 step, Max = 1 tile
  * @type number
  * @min 1
- * @max 4
+ * @max 12
  * @default 3
  *
  * @param triggerAllEvents
@@ -150,4 +150,30 @@
  * @desc Should the player also sidestep to avoid events?
  * @default false
  *
+ *
+ * @param playerHitbox
+ * @text Player Hitbox
+ * @type struct<Hitbox>
+ * @default {"x":"6","y":"24","width":"36","height":"18"}
  **/
+/*~struct~Hitbox:
+ * @param x
+ * @type number
+ * @default 0
+ * @desc The hitbox X offset
+ *
+ * @param y
+ * @type number
+ * @default 0
+ * @desc The hitbox Y offset
+ *
+ * @param width
+ * @type number
+ * @default 48
+ * @desc The hitbox width
+ *
+ * @param height
+ * @type number
+ * @default 48
+ * @desc The hitbox height
+ */

@@ -1,9 +1,9 @@
 export function pluginIsActive(pluginName) {
   for (const plugin of globalThis.$plugins) {
-    if (!plugin?.status) {
+    if (!plugin || !plugin.status) {
       continue;
     }
-    if (!plugin?.description?.includes(`<pluginName:${ pluginName }`)) { //`
+    if (!plugin.description || !plugin.description.includes(`<pluginName:${ pluginName }`)) { //`
       continue;
     }
 

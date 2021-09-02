@@ -80,7 +80,7 @@ export class CyclonePatcher {
   }
 
   static patchClass(baseClass, patchFn) {
-    const $super = this.superClasses?.[baseClass.name] || {};
+    const $super = (this.superClasses && this.superClasses[baseClass.name]) || {};
     const $prototype = {};
     const $dynamicSuper = {};
     const patchClass = patchFn($dynamicSuper, $prototype);

@@ -16,7 +16,7 @@ CycloneMaps.patchClass(Spriteset_Map, $super => class {
   }
 
   createOverlayLayer(folderName, fileNamePrefix, tagName, zValue, visibilitySwitchId = 0, maxOpacity = 255) {
-    if (!$dataMap?.meta?.[tagName] && !$dataMap?.meta?.all) {
+    if (!this.getMeta(tagName) && !this.getMeta('all')) {
       return null;
     }
 
@@ -105,8 +105,14 @@ CycloneMaps.patchClass(Spriteset_Map, $super => class {
     this.createLightLayer();
   }
 
+  getMeta(name) {
+    if ($dataMap && $dataMap.meta) {
+      return $dataMap.meta[name];
+    }
+  }
+
   getOverlayVariable(variableName) {
-    if ($dataMap?.meta?.[variableName] === undefined) {
+    if (this.getMeta(variableName) === undefined) {
       return false;
     }
 

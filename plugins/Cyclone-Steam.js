@@ -1,6 +1,6 @@
 /*:
  * @target MZ
- * @plugindesc Integrate your game with the Steamworks SDK
+ * @plugindesc Integrate your game with the Steamworks SDK - 1.00.01
  * <pluginName:CycloneSteam>
  * @author Hudell
  * @url https://makerdevs.com/plugin/cyclone-steam
@@ -141,7 +141,7 @@ class CyclonePatcher {
   }
 
   static patchClass(baseClass, patchFn) {
-    const $super = this.superClasses[baseClass.name] || {};
+    const $super = (this.superClasses && this.superClasses[baseClass.name]) || {};
     const $prototype = {};
     const $dynamicSuper = {};
     const patchClass = patchFn($dynamicSuper, $prototype);
@@ -168,7 +168,9 @@ class CyclonePatcher {
       Object.assign($dynamicSuper, $prototype);
     }
 
-    this.superClasses[baseClass.name] = $dynamicSuper;
+    if (this.superClasses) {
+      this.superClasses[baseClass.name] = $dynamicSuper;
+    }
   }
 }
 
@@ -201,10 +203,10 @@ class CyclonePlugin extends CyclonePatcher {
 
   static loadAllParams() {
     for (const plugin of globalThis.$plugins) {
-      if (!plugin?.status) {
+      if (!plugin || !plugin.status) {
         continue;
       }
-      if (!plugin?.description?.includes(`<pluginName:${ this.pluginName }`)) { //`
+      if (!plugin.description || !plugin.description.includes(`<pluginName:${ this.pluginName }`)) { //`
         continue;
       }
 
@@ -508,7 +510,9 @@ class CyclonePlugin extends CyclonePatcher {
 
   static getRegexMatch(text, regex, matchIndex) {
     const matches = text.match(regex);
-    return matches?.[matchIndex];
+    if (matches) {
+      return matches[matchIndex];
+    }
   }
 
   static parseStructParam({ value, defaultValue, type }) {
@@ -654,7 +658,7 @@ class CycloneSteam extends CyclonePlugin {
       return 'Play Test';
     }
 
-    return this.steam?.screenName ?? '';
+    return (this.steam && this.steam.screenName) || '';
   }
 
   static get uiLanguage() {
@@ -681,11 +685,11 @@ class CycloneSteam extends CyclonePlugin {
   }
 
   static get running() {
-    return this.greenworks?.isSteamRunning();
+    return this.greenworks && this.greenworks.isSteamRunning();
   }
 
   static get overlayEnabled() {
-    return this.greenworks?.isGameOverlayEnabled();
+    return this.greenworks && this.greenworks.isGameOverlayEnabled();
   }
 
   static get dlcCount() {
@@ -742,7 +746,7 @@ class CycloneSteam extends CyclonePlugin {
     });
   }
 
-  static getAchivement(achievementId) {
+  static getAchievement(achievementId) {
     if (!achievementId) {
       console.error('Achievement name not provided.');
       return false;
@@ -756,7 +760,7 @@ class CycloneSteam extends CyclonePlugin {
       return;
     }
 
-    return this.greenworks.getAchivement(achievementId, () => {
+    return this.greenworks.getAchievement(achievementId, () => {
       // #ToDo
     }, () => {
       console.log(`Failed to check achievement: ${ achievementId }`);

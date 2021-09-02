@@ -1,7 +1,7 @@
 /*:
  * @target MZ
  * @plugindesc Background extendable time system with automatic weather change
- * and custom common event callbacks
+ * and custom common event callbacks - 1.01.01
  * <pluginName:CycloneTime>
  * @author Hudell
  * @url https://makerdevs.com/plugin/cyclone-time
@@ -577,7 +577,7 @@ class CyclonePatcher {
   }
 
   static patchClass(baseClass, patchFn) {
-    const $super = this.superClasses?.[baseClass.name] || {};
+    const $super = (this.superClasses && this.superClasses[baseClass.name]) || {};
     const $prototype = {};
     const $dynamicSuper = {};
     const patchClass = patchFn($dynamicSuper, $prototype);
@@ -639,10 +639,10 @@ class CyclonePlugin extends CyclonePatcher {
 
   static loadAllParams() {
     for (const plugin of globalThis.$plugins) {
-      if (!plugin?.status) {
+      if (!plugin || !plugin.status) {
         continue;
       }
-      if (!plugin?.description?.includes(`<pluginName:${ this.pluginName }`)) { //`
+      if (!plugin.description || !plugin.description.includes(`<pluginName:${ this.pluginName }`)) { //`
         continue;
       }
 
@@ -946,7 +946,9 @@ class CyclonePlugin extends CyclonePatcher {
 
   static getRegexMatch(text, regex, matchIndex) {
     const matches = text.match(regex);
-    return matches?.[matchIndex];
+    if (matches) {
+      return matches[matchIndex];
+    }
   }
 
   static parseStructParam({ value, defaultValue, type }) {
@@ -1535,8 +1537,8 @@ class CycloneTime$1 extends CyclonePlugin {
 
   static get paused() {
     if (SceneManager._scene instanceof Scene_Map) {
-      const tilesets = this.params.tilesetList;
-      if (tilesets?.length && tilesets.includes($dataMap.tilesetId)) {
+      const tilesets = this.params.tilesetList || [];
+      if (tilesets.length && tilesets.includes($dataMap.tilesetId)) {
         return true;
       }
     }
@@ -1561,8 +1563,8 @@ class CycloneTime$1 extends CyclonePlugin {
 
   static get weatherPaused() {
     if (SceneManager._scene instanceof Scene_Map) {
-      const tilesets = this.params.weatherTilesetList;
-      if (tilesets?.length && tilesets.includes($dataMap.tilesetId)) {
+      const tilesets = this.params.weatherTilesetList || [];
+      if (tilesets.length && tilesets.includes($dataMap.tilesetId)) {
         return true;
       }
     }
@@ -1616,13 +1618,17 @@ class CycloneTime$1 extends CyclonePlugin {
   }
 
   static loadInitialTime() {
+    if (!this.params.initialTime) {
+      return;
+    }
+
     this.setTime(this.convertObjectToNumber({
-      second: this.params.initialTime?.second ?? 0,
-      minute: this.params.initialTime?.minute ?? 0,
-      hour: this.params.initialTime?.hour ?? 6,
-      day: this.params.initialTime?.day ?? 1,
-      month: this.params.initialTime?.month ?? 1,
-      year: this.params.initialTime?.year ?? 1,
+      second: this.params.initialTime.second ?? 0,
+      minute: this.params.initialTime.minute ?? 0,
+      hour: this.params.initialTime.hour ?? 6,
+      day: this.params.initialTime.day ?? 1,
+      month: this.params.initialTime.month ?? 1,
+      year: this.params.initialTime.year ?? 1,
     }));
   }
 
@@ -1692,8 +1698,8 @@ class CycloneTime$1 extends CyclonePlugin {
     }
 
     for (const callback of timeCallbacks) {
-      if (!callback?.type || !callback.event || isNaN(Number(callback.value))) {
-        return;
+      if (!callback || !callback.type || !callback.event || isNaN(Number(callback.value))) {
+        continue;
       }
 
       const eventName = `${ callback.type }:${ callback.value}`;
@@ -1921,7 +1927,7 @@ class CycloneTime$1 extends CyclonePlugin {
 
   static progressTime(increment = 1) {
     if (this.stopped || this.pausedInternally || this.paused) {
-      const pausedId = this.params.variables?.isPaused;
+      const pausedId = this.params.variables && this.params.variables.isPaused;
       if (pausedId) {
         $gameSwitches.setValue(pausedId, true);
       }
@@ -2088,7 +2094,7 @@ class CycloneTime$1 extends CyclonePlugin {
       return false;
     }
 
-    if (weatherSettings.monthListh?.length && !weatherSettings.monthListh.includes(dateObj.month)) {
+    if (weatherSettings.monthList && weatherSettings.monthListh.length && !weatherSettings.monthListh.includes(dateObj.month)) {
       return false;
     }
 

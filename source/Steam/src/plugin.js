@@ -35,7 +35,7 @@ class CycloneSteam extends CyclonePlugin {
       return 'Play Test';
     }
 
-    return this.steam?.screenName ?? '';
+    return (this.steam && this.steam.screenName) || '';
   }
 
   static get uiLanguage() {
@@ -62,11 +62,11 @@ class CycloneSteam extends CyclonePlugin {
   }
 
   static get running() {
-    return this.greenworks?.isSteamRunning();
+    return this.greenworks && this.greenworks.isSteamRunning();
   }
 
   static get overlayEnabled() {
-    return this.greenworks?.isGameOverlayEnabled();
+    return this.greenworks && this.greenworks.isGameOverlayEnabled();
   }
 
   static get dlcCount() {
@@ -123,7 +123,7 @@ class CycloneSteam extends CyclonePlugin {
     });
   }
 
-  static getAchivement(achievementId) {
+  static getAchievement(achievementId) {
     if (!achievementId) {
       console.error('Achievement name not provided.');
       return false;
@@ -137,7 +137,7 @@ class CycloneSteam extends CyclonePlugin {
       return;
     }
 
-    return this.greenworks.getAchivement(achievementId, () => {
+    return this.greenworks.getAchievement(achievementId, () => {
       // #ToDo
     }, () => {
       console.log(`Failed to check achievement: ${ achievementId }`);

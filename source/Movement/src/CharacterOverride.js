@@ -1,4 +1,4 @@
-const addPixelMovementToClass = (classRef) => {
+export const addPixelMovementToClass = (classRef) => {
   CycloneMovement.patchClass(classRef, $super => class {
     get left() {
       return this._x + this.hitboxX;
@@ -1094,6 +1094,3 @@ const addPixelMovementToClass = (classRef) => {
     }
   });
 };
-
-addPixelMovementToClass(Game_Player);
-addPixelMovementToClass(Game_Follower);

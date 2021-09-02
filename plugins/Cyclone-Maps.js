@@ -4,7 +4,7 @@
 
 /*:
  * @target MZ
- * @plugindesc Adds new features to game map
+ * @plugindesc Adds new features to game map 1.01.01
  *
  * <pluginName:CycloneMaps>
  * @author Hudell
@@ -460,13 +460,127 @@
 (function () {
 'use strict';
 
-const trueStrings = Object.freeze(['TRUE', 'ON', '1', 'YES', 'T', 'V' ]);
-
-class CyclonePlugin {
+class CyclonePatcher {
   static initialize(pluginName) {
     this.pluginName = pluginName;
-    this.fileName = undefined;
     this.superClasses = new Map();
+  }
+
+  static _descriptorIsProperty(descriptor) {
+    return descriptor.get || descriptor.set || !descriptor.value || typeof descriptor.value !== 'function';
+  }
+
+  static _getAllClassDescriptors(classObj, usePrototype = false) {
+    if (classObj === Object) {
+      return {};
+    }
+
+    const descriptors = Object.getOwnPropertyDescriptors(usePrototype ? classObj.prototype : classObj);
+    let parentDescriptors = {};
+    if (classObj.prototype) {
+      const parentClass = Object.getPrototypeOf(classObj.prototype).constructor;
+      if (parentClass !== Object) {
+        parentDescriptors = this._getAllClassDescriptors(parentClass, usePrototype);
+      }
+    }
+
+    return Object.assign({}, parentDescriptors, descriptors);
+  }
+
+  static _assignDescriptor(receiver, giver, descriptor, descriptorName, autoRename = false) {
+    if (this._descriptorIsProperty(descriptor)) {
+      if (descriptor.get || descriptor.set) {
+        Object.defineProperty(receiver, descriptorName, {
+          get: descriptor.get,
+          set: descriptor.set,
+          enumerable: descriptor.enumerable,
+          configurable: descriptor.configurable,
+        });
+      } else {
+        Object.defineProperty(receiver, descriptorName, {
+          value: descriptor.value,
+          enumerable: descriptor.enumerable,
+          configurable: descriptor.configurable,
+        });
+      }
+    } else {
+      let newName = descriptorName;
+      if (autoRename) {
+        while (newName in receiver) {
+          newName = `_${ newName }`;
+        }
+      }
+
+      receiver[newName] = giver[descriptorName];
+    }
+  }
+
+  static _applyPatch(baseClass, patchClass, $super, ignoredNames, usePrototype = false) {
+    const baseMethods = this._getAllClassDescriptors(baseClass, usePrototype);
+
+    const baseClassOrPrototype = usePrototype ? baseClass.prototype : baseClass;
+    const patchClassOrPrototype = usePrototype ? patchClass.prototype : patchClass;
+    const descriptors = Object.getOwnPropertyDescriptors(patchClassOrPrototype);
+    let anyOverride = false;
+
+    for (const methodName in descriptors) {
+      if (ignoredNames.includes(methodName)) {
+        continue;
+      }
+
+      if (methodName in baseMethods) {
+        anyOverride = true;
+        const baseDescriptor = baseMethods[methodName];
+        this._assignDescriptor($super, baseClassOrPrototype, baseDescriptor, methodName, true);
+      }
+
+      const descriptor = descriptors[methodName];
+      this._assignDescriptor(baseClassOrPrototype, patchClassOrPrototype, descriptor, methodName);
+    }
+
+    return anyOverride;
+  }
+
+  static patchClass(baseClass, patchFn) {
+    const $super = (this.superClasses && this.superClasses[baseClass.name]) || {};
+    const $prototype = {};
+    const $dynamicSuper = {};
+    const patchClass = patchFn($dynamicSuper, $prototype);
+
+    if (typeof patchClass !== 'function') {
+      throw new Error(`Invalid class patch for ${ baseClass.name }`); //`
+    }
+
+    const ignoredStaticNames = Object.getOwnPropertyNames(class Test{});
+    const ignoredNames = Object.getOwnPropertyNames((class Test{}).prototype);
+    const anyStaticOverride = this._applyPatch(baseClass, patchClass, $super, ignoredStaticNames);
+    const anyNonStaticOverride = this._applyPatch(baseClass, patchClass, $prototype, ignoredNames, true);
+
+    if (anyStaticOverride) {
+      const descriptors = Object.getOwnPropertyDescriptors($super);
+      for (const descriptorName in descriptors) {
+        this._assignDescriptor($dynamicSuper, $super, descriptors[descriptorName], descriptorName);
+      }
+
+      if (anyNonStaticOverride) {
+        $dynamicSuper.$prototype = $prototype;
+      }
+    } else  {
+      Object.assign($dynamicSuper, $prototype);
+    }
+
+    if (this.superClasses) {
+      this.superClasses[baseClass.name] = $dynamicSuper;
+    }
+  }
+}
+
+const trueStrings = Object.freeze(['TRUE', 'ON', '1', 'YES', 'T', 'V' ]);
+
+class CyclonePlugin extends CyclonePatcher {
+  static initialize(pluginName) {
+    super.initialize(pluginName);
+    this.fileName = undefined;
     this.params = {};
     this.structs = new Map();
     this.eventListeners = new Map();
@@ -490,10 +604,10 @@ class CyclonePlugin {
 
   static loadAllParams() {
     for (const plugin of globalThis.$plugins) {
-      if (!plugin?.status) {
+      if (!plugin || !plugin.status) {
         continue;
       }
-      if (!plugin?.description?.includes(`<pluginName:${ this.pluginName }`)) {
+      if (!plugin.description || !plugin.description.includes(`<pluginName:${ this.pluginName }`)) { //`
         continue;
       }
 
@@ -523,7 +637,7 @@ class CyclonePlugin {
       try {
         params[key] = this.parseParam(key, paramMap, dataMap);
       } catch(e) {
-        console.error(`CycloneEngine crashed while trying to parse a parameter value (${ key }). Please report the following error to Hudell:`);
+        console.error(`CycloneEngine crashed while trying to parse a parameter value (${ key }). Please report the following error to Hudell:`); //`
         console.log(e);
       }
     }
@@ -603,7 +717,7 @@ class CyclonePlugin {
       // Tap into rpg maker core so we can update our interpreters in sync with the engine
       const oldUpdateMain = SceneManager.updateMain;
       SceneManager.updateMain = () => {
-        oldUpdateMain.call(this);
+        oldUpdateMain.call(SceneManager);
         this.update();
       };
     }
@@ -629,105 +743,6 @@ class CyclonePlugin {
     return this.fileName ?? this.pluginName;
   }
 
-  static _descriptorIsProperty(descriptor) {
-    return descriptor.get || descriptor.set || !descriptor.value || typeof descriptor.value !== 'function';
-  }
-
-  static _getAllClassDescriptors(classObj, usePrototype = false) {
-    if (classObj === Object) {
-      return {};
-    }
-
-    const descriptors = Object.getOwnPropertyDescriptors(usePrototype ? classObj.prototype : classObj);
-    let parentDescriptors = {};
-    if (classObj.prototype) {
-      const parentClass = Object.getPrototypeOf(classObj.prototype).constructor;
-      if (parentClass !== Object) {
-        parentDescriptors = this._getAllClassDescriptors(parentClass, usePrototype);
-      }
-    }
-
-    return Object.assign({}, parentDescriptors, descriptors);
-  }
-
-  static _assignDescriptor(receiver, giver, descriptor, descriptorName) {
-    if (this._descriptorIsProperty(descriptor)) {
-      if (descriptor.get || descriptor.set) {
-        Object.defineProperty(receiver, descriptorName, {
-          get: descriptor.get,
-          set: descriptor.set,
-          enumerable: descriptor.enumerable,
-          configurable: descriptor.configurable,
-        });
-      } else {
-        Object.defineProperty(receiver, descriptorName, {
-          value: descriptor.value,
-          enumerable: descriptor.enumerable,
-          configurable: descriptor.configurable,
-        });
-      }
-    } else {
-      receiver[descriptorName] = giver[descriptorName];
-    }
-  }
-
-  static _applyPatch(baseClass, patchClass, $super, ignoredNames, usePrototype = false) {
-    const baseMethods = this._getAllClassDescriptors(baseClass, usePrototype);
-
-    const baseClassOrPrototype = usePrototype ? baseClass.prototype : baseClass;
-    const patchClassOrPrototype = usePrototype ? patchClass.prototype : patchClass;
-    const descriptors = Object.getOwnPropertyDescriptors(patchClassOrPrototype);
-    let anyOverride = false;
-
-    for (const methodName in descriptors) {
-      if (ignoredNames.includes(methodName)) {
-        continue;
-      }
-
-      if (methodName in baseMethods) {
-        anyOverride = true;
-        const baseDescriptor = baseMethods[methodName];
-        this._assignDescriptor($super, baseClassOrPrototype, baseDescriptor, methodName);
-      }
-
-      const descriptor = descriptors[methodName];
-      this._assignDescriptor(baseClassOrPrototype, patchClassOrPrototype, descriptor, methodName);
-    }
-
-    return anyOverride;
-  }
-
-  static patchClass(baseClass, patchFn) {
-    const $super = {};
-    const $prototype = {};
-    const $dynamicSuper = {};
-    const patchClass = patchFn($dynamicSuper, $prototype);
-
-    if (typeof patchClass !== 'function') {
-      throw new Error(`Invalid class patch for ${ baseClass.name }`);
-    }
-
-    const ignoredStaticNames = Object.getOwnPropertyNames(class {});
-    const ignoredNames = Object.getOwnPropertyNames((class {}).prototype);
-    const anyStaticOverride = this._applyPatch(baseClass, patchClass, $super, ignoredStaticNames);
-    const anyNonStaticOverride = this._applyPatch(baseClass, patchClass, $prototype, ignoredNames, true);
-
-    if (anyStaticOverride) {
-      const descriptors = Object.getOwnPropertyDescriptors($super);
-      for (const descriptorName in descriptors) {
-        this._assignDescriptor($dynamicSuper, $super, descriptors[descriptorName], descriptorName);
-      }
-
-      if (anyNonStaticOverride) {
-        $dynamicSuper.$prototype = $prototype;
-      }
-    } else  {
-      Object.assign($dynamicSuper, $prototype);
-    }
-
-    this.superClasses[baseClass.name] = $dynamicSuper;
-  }
-
   static isTrue(value) {
     if (typeof value !== 'string') {
       return Boolean(value);
@@ -751,7 +766,7 @@ class CyclonePlugin {
       return result;
     } catch(e) {
       if (value !== '') {
-        console.error(`Cyclone Engine plugin ${ this.pluginName }: Param is expected to be an integer number, but the received value was '${ value }'.`);
+        console.error(`Cyclone Engine plugin ${ this.pluginName }: Param is expected to be an integer number, but the received value was '${ value }'.`); //`
       }
       return defaultValue;
     }
@@ -768,7 +783,7 @@ class CyclonePlugin {
       return result;
     } catch(e) {
       if (value !== '') {
-        console.error(`Cyclone Engine plugin ${ this.pluginName }: Param is expected to be a number, but the received value was '${ value }'.`);
+        console.error(`Cyclone Engine plugin ${ this.pluginName }: Param is expected to be a number, but the received value was '${ value }'.`); //`
       }
 
       return defaultValue;
@@ -781,7 +796,7 @@ class CyclonePlugin {
         return parseInt(item.trim());
       } catch(e) {
         if (item !== '') {
-          console.error(`Cyclone Engine plugin ${ this.pluginName }: Param is expected to be a list of integer numbers, but one of the items was '${ item }'.`);
+          console.error(`Cyclone Engine plugin ${ this.pluginName }: Param is expected to be a list of integer numbers, but one of the items was '${ item }'.`); //`
         }
         return 0;
       }
@@ -806,7 +821,7 @@ class CyclonePlugin {
         return parseFloat(item.trim());
       } catch(e) {
         if (item !== '') {
-          console.error(`Cyclone Engine plugin ${ this.pluginName }: Param ${ name } is expected to be a list of numbers, but one of the items was '${ item }'.`);
+          console.error(`Cyclone Engine plugin ${ this.pluginName }: Param ${ name } is expected to be a list of numbers, but one of the items was '${ item }'.`); //`
         }
         return 0;
       }
@@ -896,7 +911,9 @@ class CyclonePlugin {
 
   static getRegexMatch(text, regex, matchIndex) {
     const matches = text.match(regex);
-    return matches?.[matchIndex];
+    if (matches) {
+      return matches[matchIndex];
+    }
   }
 
   static parseStructParam({ value, defaultValue, type }) {
@@ -916,13 +933,13 @@ class CyclonePlugin {
 
     const structTypeName = this.getRegexMatch(type, /struct<(.*)>/i, 1);
     if (!structTypeName) {
-      console.error(`Unknown plugin param type: ${ type }`);
+      console.error(`Unknown plugin param type: ${ type }`); //`
       return data;
     }
 
     const structType = this.structs.get(structTypeName);
     if (!structType) {
-      console.error(`Unknown param structure type: ${ structTypeName }`);
+      console.error(`Unknown param structure type: ${ structTypeName }`); //`
       return data;
     }
 
@@ -984,80 +1001,6 @@ class CyclonePlugin {
     }
 
     return data;
-  }
-
-  static buildMetadata(notes) {
-    const rgx = /<([^<>:]+)(:?)([^>]*)>/g;
-    const matches = notes.matchAll(rgx);
-    const values = new Map();
-
-    for (const match of matches) {
-      if (match.length > 3 && match[2] === ':') {
-        values.set(match[1], match[3]);
-      } else {
-        values.set(match[1], true);
-      }
-    }
-
-    return values;
-  }
-
-  static defaultIfNaN(value, defaultValue) {
-    if (isNaN(Number(value))) {
-      return defaultValue;
-    }
-
-    return value;
-  }
-
-  static getValueMaybeVariable(rawValue) {
-    const value = rawValue.trim();
-
-    if (value.startsWith('$')) {
-      const variableId = parseInt(value.slice(1));
-      if (isNaN(variableId)) {
-        throw new Error(`Invalid Variable ID: ${ variableId }`);
-      }
-
-      if (variableId === 0) {
-        return 0;
-      }
-
-      return $gameVariables.value(variableId);
-    }
-
-    return value;
-  }
-
-  static debounce(fn, delay) {
-    let clearTimer;
-    return function(...args) {
-      const context = this;
-      clearTimeout(clearTimer);
-      clearTimer = setTimeout(() => fn.call(context, ...args), delay);
-    };
-  }
-
-  static _addProperty(classObj, propName, { getter: getterFn, setter: setterFn, lazy = false })  {
-    if (lazy) {
-      // Creates a property that replaces itself with the value the first time it's called.
-      return Object.defineProperty(classObj, propName, {
-        get: function() { // eslint-disable-line object-shorthand
-          delete this[propName];
-          const value = getterFn.call(this);
-          Object.defineProperty(this, propName, { value });
-          return value;
-        },
-        set: setterFn === true ? (function(value) {this[`_${ propName }`] = value; }) : undefined,
-        configurable: true,
-      });
-    }
-
-    return Object.defineProperty(classObj, propName, {
-      get: getterFn ?? (function() { return this[`_${ propName }`]; }),
-      set: setterFn === false ? undefined : (typeof setterFn === 'function' ? setterFn : (function(value) {this[`_${ propName }`] = value; })),
-      configurable: false,
-    });
   }
 
   static registerCommand(commandName, params, fn) {
@@ -1450,7 +1393,7 @@ CycloneMaps.patchClass(Game_Map, $super => class {
     return $gameMap.regionId(x, y) === bushRegionId;
   }
 
-  checkPassage(x, y, bit) {
+  checkRegionPassability(x, y) {
     const blockRegionId = CycloneMaps.blockRegionId;
     const unblockRegionId = CycloneMaps.unblockRegionId;
 
@@ -1466,6 +1409,15 @@ CycloneMaps.patchClass(Game_Map, $super => class {
           return true;
         }
       }
+    }
+
+    return null;
+  }
+
+  checkPassage(x, y, bit) {
+    const region = this.checkRegionPassability(x, y);
+    if (typeof region === 'boolean') {
+      return region;
     }
 
     return $super.checkPassage.call(this, x, y, bit);
@@ -1630,6 +1582,33 @@ CycloneMaps.patchClass(Sprite_Balloon, $super => class {
   }
 });
 
+function defaultIfNaN(value, defaultValue) {
+  if (isNaN(Number(value))) {
+    return defaultValue;
+  }
+
+  return value;
+}
+
+function getValueMaybeVariable(rawValue) {
+  const value = rawValue.trim();
+
+  if (value.startsWith('$')) {
+    const variableId = parseInt(value.slice(1));
+    if (isNaN(variableId)) {
+      throw new Error(`Invalid Variable ID: ${ variableId }`); //`
+    }
+
+    if (variableId === 0) {
+      return 0;
+    }
+
+    return $gameVariables.value(variableId);
+  }
+
+  return value;
+}
+
 CycloneMaps.patchClass(Spriteset_Map, $super => class {
   createLowerLayer() {
     CycloneMaps.clearSettings();
@@ -1645,7 +1624,7 @@ CycloneMaps.patchClass(Spriteset_Map, $super => class {
   }
 
   createOverlayLayer(folderName, fileNamePrefix, tagName, zValue, visibilitySwitchId = 0, maxOpacity = 255) {
-    if (!$dataMap?.meta?.[tagName] && !$dataMap?.meta?.all) {
+    if (!this.getMeta(tagName) && !this.getMeta('all')) {
       return null;
     }
 
@@ -1734,17 +1713,23 @@ CycloneMaps.patchClass(Spriteset_Map, $super => class {
     this.createLightLayer();
   }
 
+  getMeta(name) {
+    if ($dataMap && $dataMap.meta) {
+      return $dataMap.meta[name];
+    }
+  }
+
   getOverlayVariable(variableName) {
-    if ($dataMap?.meta?.[variableName] === undefined) {
+    if (this.getMeta(variableName) === undefined) {
       return false;
     }
 
-    return CycloneMaps.getValueMaybeVariable($dataMap.meta[variableName]);
+    return getValueMaybeVariable($dataMap.meta[variableName]);
   }
 
   getOverlayIntVariable(variableName, defaultValue) {
     const value = parseInt(this.getOverlayVariable(variableName)) ?? defaultValue;
-    return CycloneMaps.defaultIfNaN(value, defaultValue);
+    return defaultIfNaN(value, defaultValue);
   }
 
   updateLayerOpacity(layer, maxOpacity, opacityChange) {

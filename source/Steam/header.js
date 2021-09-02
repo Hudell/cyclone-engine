@@ -1,6 +1,6 @@
 /*:
  * @target MZ
- * @plugindesc Integrate your game with the Steamworks SDK
+ * @plugindesc Integrate your game with the Steamworks SDK - 1.00.01
  * <pluginName:CycloneSteam>
  * @author Hudell
  * @url https://makerdevs.com/plugin/cyclone-steam

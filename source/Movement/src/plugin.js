@@ -1,12 +1,32 @@
 import { CyclonePlugin } from '../../Core/main';
 import { LZString } from '../../Libs/lz-string.min';
 import { DirectionHelper } from '../../Utils/DirectionHelper';
+import { addPixelMovementToClass } from './CharacterOverride';
 
 let currentMapCollisionTable = false;
 
 class CycloneMovement extends CyclonePlugin {
   static register() {
     super.initialize('CycloneMovement');
+
+    this.structs.set('CycloneHitbox', {
+      x: {
+        type: 'int',
+        defaultValue: 0,
+      },
+      y: {
+        type: 'int',
+        defaultValue: 0,
+      },
+      width: {
+        type: 'int',
+        defaultValue: 48,
+      },
+      height: {
+        type: 'int',
+        defaultValue: 48,
+      },
+    });
 
     super.register({
       stepCount: {
@@ -37,18 +57,25 @@ class CycloneMovement extends CyclonePlugin {
         defaultValue: 0.75,
       },
       sidestepEvents: 'boolean',
+      playerHitbox: {
+        type: 'struct<CycloneHitbox>',
+        defaultValue: '{"x":6,"y":24,"width":36,"height":18}',
+      },
     });
 
     this.stepCount = [1, 2, 4].includes(this.params.stepCount) ? this.params.stepCount : 1;
     this.collisionStepCount = Math.min(this.stepCount, [1, 2, 4].includes(this.params.collisionStepCount) ? this.params.collisionStepCount : 1);
     this.stepSize = 1 / this.stepCount;
     this.collisionSize = 1 / this.collisionStepCount;
-    this.followerStepsBehind = Number(this.params.followerStepsBehind || 1).clamp(1, this.stepCount);
+    this.followerStepsBehind = Number(this.params.followerStepsBehind || 1).clamp(1, 12);
     this.triggerAllEvents = this.params.triggerAllEvents === true;
     this.autoLeaveVehicles = this.params.autoLeaveVehicles === true;
     this.ignoreEmptyEvents = this.params.ignoreEmptyEvents !== false;
     this.diagonalPathfinding = this.params.diagonalPathfinding !== false;
     this.disableMouseMovement = this.params.disableMouseMovement === true;
+
+    addPixelMovementToClass(Game_Player);
+    addPixelMovementToClass(Game_Follower);
   }
 
   static get currentMapCollisionTable() {
@@ -170,7 +197,7 @@ class CycloneMovement extends CyclonePlugin {
   }
 
   static setupCollision() {
-    if (!$gameMap?._loaded) {
+    if (!$gameMap || !$gameMap._loaded){
       return;
     }
 
@@ -497,6 +524,10 @@ class CycloneMovement extends CyclonePlugin {
   static tileIdx(x, y) {
     const width = $dataMap.width;
     return y * width + x || 0;
+  }
+
+  static addPixelMovementToClass(classObj) {
+    addPixelMovementToClass(classObj);
   }
 }
 

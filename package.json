@@ -21,7 +21,8 @@
     "steam": "cd source/Steam & rollup -cw",
     "stamps": "cd source/Stamps & rollup -cw",
     "online": "cd source/Online & rollup -cw",
-    "aurora": "cd source/Aurora & rollup -cw"
+    "aurora": "cd source/Aurora & rollup -cw",
+    "colyseus": "cd source/Colyseus & rollup -cw"
   },
   "author": "Hudell",
   "license": "Apache2",
