@@ -10,8 +10,8 @@ class CycloneAsync extends CyclonePlugin {
       this.waitForAsyncJobs();
     });
 
-    this.registerCommand('asyncKill', function() {
-      this.killAsyncJobs();
+    this.registerCommand('asyncKill', () => {
+      $gameMap.killAsyncJobs();
     });
   }
 }

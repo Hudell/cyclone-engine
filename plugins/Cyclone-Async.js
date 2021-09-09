@@ -58,6 +58,8 @@
  * ===========================================================================
  * Change Log
  * ===========================================================================
+ * 2021-09-09 - Version 1.01.00
+ * - Changed plugin to run async code independently from source event.
  * 2021-09-09 - Version 1.00.00
  * ===========================================================================
  * @command asyncWait
@@ -646,8 +648,8 @@ class CycloneAsync$1 extends CyclonePlugin {
       this.waitForAsyncJobs();
     });
 
-    this.registerCommand('asyncKill', function() {
-      this.killAsyncJobs();
+    this.registerCommand('asyncKill', () => {
+      $gameMap.killAsyncJobs();
     });
   }
 }
@@ -685,29 +687,12 @@ CycloneAsync.patchClass(Game_Interpreter, $super => class {
       index++;
     }
 
-    const child = new Game_Interpreter(this._depth + 1);
     const eventId = this.isOnCurrentMap() ? this._eventId : 0;
-    console.log(commandList);
-    child.setup(commandList, eventId);
-
-    this._asyncInterpreters.push(child);
-  }
-
-  clear() {
-    $super.clear.call(this);
-    this._asyncInterpreters = [];
-  }
-
-  hasAsyncRunning() {
-    return this._asyncInterpreters.find(child => child.isRunning());
+    $gameMap.addAsyncBlock(commandList, this._depth + 1, eventId);
   }
 
   waitForAsyncJobs() {
     this.setWaitMode('async');
-  }
-
-  killAsyncJobs() {
-    this._asyncInterpreters = [];
   }
 
   updateWaitMode() {
@@ -715,12 +700,19 @@ CycloneAsync.patchClass(Game_Interpreter, $super => class {
       return $super.updateWaitMode.call(this);
     }
 
-    if (this.hasAsyncRunning()) {
+    if ($gameMap.hasAsyncRunning()) {
       return true;
     }
 
     this._waitMode = '';
     return false;
+  }
+});
+
+CycloneAsync.patchClass(Game_Map, $super => class {
+  update(...args) {
+    this.updateAsync();
+    $super.update.call(this, ...args);
   }
 
   updateAsync() {
@@ -742,9 +734,30 @@ CycloneAsync.patchClass(Game_Interpreter, $super => class {
     }
   }
 
-  updateChild() {
-    this.updateAsync();
-    $super.updateChild.call(this);
+  hasAsyncRunning() {
+    return this._asyncInterpreters.find(child => child.isRunning());
+  }
+
+  killAsyncJobs() {
+    this._asyncInterpreters = [];
+  }
+
+  initialize(...args) {
+    $super.initialize.call(this, ...args);
+    this._asyncInterpreters = [];
+  }
+
+  setup(...args) {
+    $super.setup.call(this, ...args);
+    this._asyncInterpreters = [];
+  }
+
+  addAsyncBlock(commandList, depth = 0, eventId = 0) {
+    const child = new Game_Interpreter(depth);
+
+    child.setup(commandList, eventId);
+
+    this._asyncInterpreters.push(child);
   }
 });
 })();

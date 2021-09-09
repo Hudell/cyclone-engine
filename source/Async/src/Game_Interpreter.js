@@ -28,29 +28,12 @@ CycloneAsync.patchClass(Game_Interpreter, $super => class {
       index++;
     }
 
-    const child = new Game_Interpreter(this._depth + 1);
     const eventId = this.isOnCurrentMap() ? this._eventId : 0;
-    console.log(commandList);
-    child.setup(commandList, eventId);
-
-    this._asyncInterpreters.push(child);
-  }
-
-  clear() {
-    $super.clear.call(this);
-    this._asyncInterpreters = [];
-  }
-
-  hasAsyncRunning() {
-    return this._asyncInterpreters.find(child => child.isRunning());
+    $gameMap.addAsyncBlock(commandList, this._depth + 1, eventId);
   }
 
   waitForAsyncJobs() {
     this.setWaitMode('async');
-  }
-
-  killAsyncJobs() {
-    this._asyncInterpreters = [];
   }
 
   updateWaitMode() {
@@ -58,35 +41,11 @@ CycloneAsync.patchClass(Game_Interpreter, $super => class {
       return $super.updateWaitMode.call(this);
     }
 
-    if (this.hasAsyncRunning()) {
+    if ($gameMap.hasAsyncRunning()) {
       return true;
     }
 
     this._waitMode = '';
     return false;
-  }
-
-  updateAsync() {
-    let needsFiltering = false;
-
-    for (const child of this._asyncInterpreters) {
-      if (!child) {
-        continue;
-      }
-
-      child.update();
-      if (!child.isRunning()) {
-        needsFiltering = true;
-      }
-    }
-
-    if (needsFiltering) {
-      this._asyncInterpreters = this._asyncInterpreters.filter(child => child.isRunning());
-    }
-  }
-
-  updateChild() {
-    this.updateAsync();
-    $super.updateChild.call(this);
   }
 });
