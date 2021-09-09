@@ -93,8 +93,7 @@ globals:
   CycloneOnline: true
   CycloneEvents: true
   CycloneAurora: true
-
-  WindowResizer: true
+  CycloneAsync: true
 rules:
   indent:
     - warn

@@ -1,0 +1,20 @@
+import { CyclonePlugin } from '../../Core/main';
+
+class CycloneAsync extends CyclonePlugin {
+  static register() {
+    this.initialize('CycloneAsync');
+
+    super.register({});
+
+    this.registerCommand('asyncWait', function() {
+      this.waitForAsyncJobs();
+    });
+
+    this.registerCommand('asyncKill', function() {
+      this.killAsyncJobs();
+    });
+  }
+}
+
+globalThis.CycloneAsync = CycloneAsync;
+CycloneAsync.register();

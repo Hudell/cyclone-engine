@@ -22,7 +22,8 @@
     "stamps": "cd source/Stamps & rollup -cw",
     "online": "cd source/Online & rollup -cw",
     "aurora": "cd source/Aurora & rollup -cw",
-    "colyseus": "cd source/Colyseus & rollup -cw"
+    "colyseus": "cd source/Colyseus & rollup -cw",
+    "async": "cd source/Async & rollup -cw"
   },
   "author": "Hudell",
   "license": "Apache2",
