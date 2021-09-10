@@ -1,4 +1,4 @@
-import { CyclonePlugin } from '../../Core/main';
+import '../../Core/main.min';
 import { CustomEventData } from '../../Shared/CustomEventData';
 import { loadFileAsync } from '../../Utils/loadFileAsync';
 import { EventTriggers, EventPriorities } from './constants';

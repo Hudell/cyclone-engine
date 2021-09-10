@@ -1,4 +1,4 @@
-import { CyclonePatcher } from './patcher';
+import './patcher';
 
 const trueStrings = Object.freeze(['TRUE', 'ON', '1', 'YES', 'T', 'V' ]);
 
@@ -449,6 +449,4 @@ class CyclonePlugin extends CyclonePatcher {
   }
 }
 
-export {
-  CyclonePlugin,
-};
+globalThis.CyclonePlugin = CyclonePlugin;

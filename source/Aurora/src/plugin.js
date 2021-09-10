@@ -1,7 +1,5 @@
 /* eslint-disable camelcase */
-import {
-  CyclonePlugin
-} from '../../Core/main';
+import '../../Core/main.min';
 import { colors } from './constants';
 import { PlayerLight } from './managers/PlayerLight';
 import { EventLight } from './managers/EventLight';

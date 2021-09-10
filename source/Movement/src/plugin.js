@@ -1,4 +1,4 @@
-import { CyclonePlugin } from '../../Core/main';
+import '../../Core/main.min';
 import { LZString } from '../../Libs/lz-string.min';
 import { DirectionHelper } from '../../Utils/DirectionHelper';
 import { addPixelMovementToClass } from './CharacterOverride';

@@ -1,4 +1,4 @@
-import { CyclonePlugin } from '../../Core/main';
+import '../../Core/main.min';
 import { Layers, Tools, tilePropTools } from './constants';
 import { MapshotTileMap } from './mapshot/MapshotTileMap';
 import { LZString } from '../../Libs/lz-string.min';

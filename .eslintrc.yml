@@ -7,6 +7,9 @@ parserOptions:
   ecmaVersion: 2020
   sourceType: 'module'
 globals:
+  CyclonePatcher: true
+  CyclonePlugin: true
+
   require: false
   nw: false
   globalThis: false

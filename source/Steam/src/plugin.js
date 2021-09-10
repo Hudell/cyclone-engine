@@ -1,4 +1,4 @@
-import { CyclonePlugin } from '../../Core/main';
+import '../../Core/main.min';
 
 class CycloneSteam extends CyclonePlugin {
   static register() {
