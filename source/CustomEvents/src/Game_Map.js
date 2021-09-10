@@ -1,6 +1,6 @@
 import { CustomEvent } from '../../Shared/CustomEvent';
 
-CycloneEvents.patchClass(Game_Map, $super => class {
+CycloneCustomEvents.patchClass(Game_Map, $super => class {
   getIndexForNewEvent() {
     let index = 1;
     while (index < this._events.length && !!this._events[index]) {
@@ -79,7 +79,7 @@ CycloneEvents.patchClass(Game_Map, $super => class {
   }
 
   getEventDataFrom(mapIdOrigin, eventIdOrigin, callback) {
-    CycloneEvents.getAnotherMapData(mapIdOrigin, () => {
+    CycloneCustomEvents.getAnotherMapData(mapIdOrigin, () => {
       const variableName = `$Map${ mapIdOrigin.padZero(3) }`;
 
       if (!window[variableName]) {
@@ -176,22 +176,22 @@ CycloneEvents.patchClass(Game_Map, $super => class {
   }
 
   createActorAt(...args) {
-    return CycloneEvents.createActorAt(...args);
+    return CycloneCustomEvents.createActorAt(...args);
   }
 
   createNormalEventAt(...args) {
-    return CycloneEvents.createNormalEventAt(...args);
+    return CycloneCustomEvents.createNormalEventAt(...args);
   }
 
   createTriggerEventAt(...args) {
-    return CycloneEvents.createTriggerEventAt(...args);
+    return CycloneCustomEvents.createTriggerEventAt(...args);
   }
 
   createTeleportEventAt(...args) {
-    return CycloneEvents.createTeleportEventAt(...args);
+    return CycloneCustomEvents.createTeleportEventAt(...args);
   }
 
   createParallelProcess(...args) {
-    return CycloneEvents.createParallelProcess(...args);
+    return CycloneCustomEvents.createParallelProcess(...args);
   }
 });

@@ -1,4 +1,4 @@
-CycloneEvents.patchClass(Game_System, $super => class {
+CycloneCustomEvents.patchClass(Game_System, $super => class {
   clearSelfSwitches(mapId, eventId) {
     const switches = ['A', 'B', 'C', 'D'];
 

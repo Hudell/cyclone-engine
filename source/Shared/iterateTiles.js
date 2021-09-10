@@ -1,5 +1,3 @@
-import { CyclonePatcher } from '../Core/patcher';
-
 CyclonePatcher.patchClass(Game_Map, $super => class {
   iterateTiles(callback) {
     const { width, height } = $dataMap;
