@@ -124,12 +124,6 @@
  * @default 0
  * @desc (Optional) The ID to use on the new event
  *
- * @arg wait
- * @type boolean
- * @text Wait
- * @default true
- * @desc Wait until the event is loaded before continuing
- *
  * @command createActorAt
  * @text Create Actor
  * @desc Create an event for an actor on the current map
@@ -855,13 +849,8 @@ class CycloneCustomEvents$1 extends CyclonePlugin {
       y: 'int',
       temporary: 'boolean',
       newIndex: 'int',
-      wait: 'boolean',
     }, (mapId, eventId, x, y, temporary, newIndex, wait) => {
-      if (!wait) {
-        return $gameMap.copyEventFrom(mapId, eventId, x, y, temporary, newIndex);
-      }
-
-      // #ToDo: make the interpreter wait for copying to be complete
+      return $gameMap.copyEventFrom(mapId, eventId, x, y, temporary, newIndex);
     });
 
     this.registerCommand('createActorAt', {

@@ -27,13 +27,8 @@ class CycloneCustomEvents extends CyclonePlugin {
       y: 'int',
       temporary: 'boolean',
       newIndex: 'int',
-      wait: 'boolean',
     }, (mapId, eventId, x, y, temporary, newIndex, wait) => {
-      if (!wait) {
-        return $gameMap.copyEventFrom(mapId, eventId, x, y, temporary, newIndex);
-      }
-
-      // #ToDo: make the interpreter wait for copying to be complete
+      return $gameMap.copyEventFrom(mapId, eventId, x, y, temporary, newIndex);
     });
 
     this.registerCommand('createActorAt', {

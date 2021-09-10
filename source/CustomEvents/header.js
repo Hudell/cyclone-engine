@@ -124,12 +124,6 @@
  * @default 0
  * @desc (Optional) The ID to use on the new event
  *
- * @arg wait
- * @type boolean
- * @text Wait
- * @default true
- * @desc Wait until the event is loaded before continuing
- *
  * @command createActorAt
  * @text Create Actor
  * @desc Create an event for an actor on the current map
