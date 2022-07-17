@@ -24,7 +24,7 @@ CycloneMaps.patchClass(Game_Player, $super => class {
         }
 
         if (regionId === unblockRegionId) {
-          return false;
+          return true;
         }
       }
     }

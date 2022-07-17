@@ -10,8 +10,8 @@ CycloneAdvancedMaps.patchClass(Game_Player, $super => class {
   }
 
   isMapPassable(x, y, d) {
-    const blockRegionId = CycloneAdvancedMaps.blockPlayerRegionId;
-    const unblockRegionId = CycloneAdvancedMaps.unblockPlayerRegionId;
+    const blockRegionId = CycloneAdvancedMaps.params.blockPlayerRegionId;
+    const unblockRegionId = CycloneAdvancedMaps.params.unblockPlayerRegionId;
 
     if (blockRegionId > 0 || unblockRegionId > 0) {
       const newX = $gameMap.roundXWithDirection(x, d);
@@ -24,7 +24,7 @@ CycloneAdvancedMaps.patchClass(Game_Player, $super => class {
         }
 
         if (regionId === unblockRegionId) {
-          return false;
+          return true;
         }
       }
     }

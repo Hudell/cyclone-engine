@@ -109,7 +109,7 @@
  * Recomended default = 7, with parallaxes = 30
  * @default 7
  *
- * @param animationsZ
+ * @param animationZ
  * @text Animations Z
  * @parent Map Settings
  * @type number
@@ -151,7 +151,7 @@
  * @text Layers
  * @parent Overlays
  * @type struct<OverlayItem>[]
- * @default ["{\"layerName\":\"Ground\",\"fileName\":\"ground\",\"tagName\":\"ground\",\"appendMapId\":\"true\",\"switchId\":\"0\",\"quickStart\":\"true\",\"z\":\"1\"}","{\"layerName\":\"Parallax\",\"fileName\":\"par\",\"tagName\":\"par\",\"appendMapId\":\"true\",\"switchId\":\"0\",\"quickStart\":\"true\",\"z\":\"20\"}","{\"layerName\":\"Shadow\",\"fileName\":\"shadow\",\"tagName\":\"shadow\",\"appendMapId\":\"true\",\"switchId\":\"0\",\"quickStart\":\"true\",\"z\":\"21\"}","{\"layerName\":\"Fog\",\"fileName\":\"fog\",\"tagName\":\"fog\",\"appendMapId\":\"true\",\"switchId\":\"0\",\"quickStart\":\"true\",\"z\":\"22\"}","{\"layerName\":\"Light\",\"fileName\":\"light\",\"tagName\":\"light\",\"appendMapId\":\"true\",\"switchId\":\"0\",\"quickStart\":\"true\",\"z\":\"23\",\"opacity\":\"185\"}"]
+ * @default ["{\"layerName\":\"Ground\",\"fileName\":\"ground\",\"tagName\":\"ground\",\"appendMapId\":\"true\",\"switchId\":\"0\",\"quickStart\":\"true\",\"z\":\"1\"}","{\"layerName\":\"Parallax\",\"fileName\":\"par\",\"tagName\":\"par\",\"appendMapId\":\"true\",\"switchId\":\"0\",\"quickStart\":\"true\",\"z\":\"20\"}","{\"layerName\":\"Shadow\",\"fileName\":\"shadow\",\"tagName\":\"shadow\",\"appendMapId\":\"true\",\"switchId\":\"0\",\"quickStart\":\"true\",\"z\":\"21\"}","{\"layerName\":\"Fog\",\"fileName\":\"fog\",\"tagName\":\"fog\",\"appendMapId\":\"true\",\"switchId\":\"0\",\"quickStart\":\"true\",\"z\":\"22\"}","{\"layerName\":\"Light\",\"fileName\":\"light\",\"tagName\":\"light\",\"appendMapId\":\"true\",\"switchId\":\"0\",\"quickStart\":\"true\",\"z\":\"23\",\"opacity\":\"185\",\"opacitySpeed\":\"180\",\"blendMode\":\"1\"}"]
  *
  * @param Regions
  *
@@ -229,109 +229,11 @@
  * @type boolean
  * @default false
  *
- * @command newFogOpacity
- * @text Change Fog Opacity
- * @desc
- *
- * @arg opacity
- * @text Opacity
- * @type number
- * @desc The new value for the fog opacity: 1 - 255
- *
- * @arg duration
- * @text Duration
- * @type number
- * @desc How long should the opacity transition last? Leave it at zero to use the map's default.
- * @default 0
- *
- * @command fogFadeout
- * @text Fog fade out
- * @desc Fade out and deactivate the fog layer
- *
- * @arg duration
- * @text Duration
- * @type number
- * @desc How long should the fade out last?
- * @default 0
- *
- * @command moveFog
- * @text Move Fog
- * @desc Change the speed at which the fog moves
- *
- * @arg moveX
- * @text X Speed
- * @type number
- * @desc how many pixels the fog should move horizontally at a time. Use a negative value to move left.
- *
- * @arg moveY
- * @text Y Speed
- * @type number
- * @desc how many pixels the fog should move vertically at a time. Use a negative value to move up.
- *
- * @command fogBlendMode
- * @text Change Fog Blend Mode
- * @desc
- *
- * @arg blend
- * @text Blend Type
- * @type select
- * @desc The blend type you want to use in the fog layer
- * @default 0
- * @option Normal
- * @value 0
- * @option Additive
- * @value 1
- *
- * @command fog
- * @text Change Fog
- * @desc
- *
- * @arg fileName
- * @text File Name
- * @type string
- * @desc The file name of the new fog
- *
- * @command light
- * @text Change Light
- * @desc
- *
- * @arg fileName
- * @text File Name
- * @type string
- * @desc The file name of the new light
- *
- * @command shadow
- * @text Change Shadow
- * @desc
- *
- * @arg fileName
- * @text File Name
- * @type string
- * @desc The file name of the new shadow
- *
- * @command par
- * @text Change Parallax
- * @desc
- *
- * @arg fileName
- * @text File Name
- * @type string
- * @desc The file name of the new parallax
- *
- * @command ground
- * @text Change Ground
- * @desc
- *
- * @arg fileName
- * @text File Name
- * @type string
- * @desc The file name of the new ground
- *
  **/
 /*~struct~OverlayItem:
  * @param layerName
  * @text Layer Name
- * @desc Used only for your own organization
+ * @desc Name used to identify this layer on plugin commands
  * @default
  *
  * @param fileName
@@ -356,6 +258,12 @@
  * @desc A switch to control if this layer should be enabled or not
  * @default 0
  *
+ * @param invertSwitch
+ * @text Invert Switch
+ * @type boolean
+ * @desc Display this layer when the switch is off instead of on.
+ * @default false
+ *
  * @param quickStart
  * @text Enable Automatically
  * @type boolean
@@ -372,7 +280,17 @@
  * @text Opacity
  * @type number
  * @desc The opacity level for this layer
+ * @min 1
+ * @max 255
  * @default 255
+ *
+ * @param opacitySpeed
+ * @text Opacity Speed
+ * @type number
+ * @desc How many frames should it take for this layer to change from completely hidden to completely visible.
+ * @min 1
+ * @max 255
+ * @default 25
  *
  * @param mapList
  * @text Map List
@@ -380,7 +298,79 @@
  * @desc A list of map ids where this layer will be active without needing tags
  * @default []
  *
+ * @param blendMode
+ * @text Blend Mode
+ * @type number
+ * @desc The blend type you want to use in this layer. Default is 0 for most layers, or 1 for lights.
+ * @default 0
+ *
+ * @param position
+ * @text Position
+ * @type Struct<LayerPosition>
+ * @desc The top left position of this layer.
+ * @default {}
+ *
+ * @param fadeIn
+ * @text Fade In
+ * @type boolean
+ * @desc Should this layer be made visible with a fade effect or instantly?
+ * @on Fade In
+ * @off Instantly
+ * @default false
+ *
 */
+/*~struct~LayerPosition:
+ * @param x
+ * @text X Position
+ * @type number
+ * @default 0
+ *
+ * @param y
+ * @text Y Position
+ * @type number
+ * @default 0
+ *
+ * @param unit
+ * @text Position Unit
+ * @desc Is this layer's position set in pixels or tiles?
+ * @type select
+ * @default tiles
+ * @option Tiles
+ * @value tiles
+ * @option Pixels
+ * @value pixels
+ *
+ * @param boundTo
+ * @text Bound To
+ * @desc Is this layer's position bound to the map or the screen?
+ * @type select
+ * @default map
+ * @option Map
+ * @value map
+ * @option Screen
+ * @value screen
+ *
+ * @param moveX
+ * @text X Speed
+ * @type number
+ * @desc how many pixels the layer should move horizontally at a time. Use a negative value to move left.
+ * @default 0
+ *
+ * @param moveY
+ * @text Y Speed
+ * @type number
+ * @desc how many pixels the layer should move vertically at a time. Use a negative value to move up.
+ * @default 0
+ *
+ * @param tiling
+ * @text Tiling
+ * @type boolean
+ * @desc Should this layer use a tiling sprite? (Usually only enabled for fog layer)
+ * @on Tiled
+ * @off Not Tiled
+ * @default false
+ *
+ */
 /*~struct~CommonEventRegion:
  * @param regionId
  * @text Region Id

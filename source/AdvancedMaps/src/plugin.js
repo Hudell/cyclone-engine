@@ -1,4 +1,5 @@
 import '../../Core/main.min';
+import { getMetaObject } from '../../Utils/getMetaObject';
 
 class CycloneAdvancedMaps extends CyclonePlugin {
   static register() {
@@ -12,6 +13,15 @@ class CycloneAdvancedMaps extends CyclonePlugin {
       regionId: 'int',
       name: 'string',
     });
+    this.structs.set('CycloneLayerPosition', {
+      x: 'int',
+      y: 'int',
+      unit: 'string',
+      boundTo: 'string',
+      moveX: 'int',
+      moveY: 'int',
+      tiling: 'boolean',
+    });
     this.structs.set('CycloneOverlayItem', {
       layerName: 'string',
       fileName: 'string',
@@ -21,6 +31,7 @@ class CycloneAdvancedMaps extends CyclonePlugin {
         defaultValue: true,
       },
       switchId: 'int',
+      invertSwitch: 'boolean',
       quickStart: {
         type: 'boolean',
         defaultValue: true,
@@ -30,7 +41,35 @@ class CycloneAdvancedMaps extends CyclonePlugin {
         type: 'int',
         defaultValue: 255,
       },
+      opacitySpeed: {
+        type: 'int',
+        defaultValue: 25,
+      },
+      blendMode: 'int',
       mapList: 'int[]',
+      position: 'struct<CycloneLayerPosition>',
+      fadeIn: 'boolean',
+    });
+    this.structs.set('CycloneCustomLayer', {
+      name: 'string',
+      layerName: 'string',
+      file: 'string',
+      fileName: 'string',
+      // tag: 'string',
+      switch: 'int',
+      switchId: 'int',
+      invertSwitch: 'boolean',
+      z: 'int',
+      opacity: 'int',
+      opacitySpeed: 'int',
+      blendMode: 'int',
+      x: 'int',
+      y: 'int',
+      unit: 'string',
+      boundTo: 'string',
+      moveX: 'int',
+      moveY: 'int',
+      tiling: 'boolean'
     });
 
     super.register({
@@ -58,7 +97,7 @@ class CycloneAdvancedMaps extends CyclonePlugin {
         type: 'int',
         defaultValue: 7,
       },
-      animationsZ: {
+      animationZ: {
         type: 'int',
         defaultValue: 8,
       },
@@ -94,135 +133,81 @@ class CycloneAdvancedMaps extends CyclonePlugin {
       regionNamesStay: 'boolean',
     });
 
-    this.registerCommand('changeOpacity', {
+    this.registerCommand('newLayerOpacity', {
       layerName: 'string',
       opacity: 'int',
       duration: 'int',
     }, ({layerName, opacity, duration}) => {
-      this.newFogOpacity = opacity;
-      this.newFogOpacityDuration = duration;
-    }, ['opacity', 'duration']);
+      this.changeLayerOpacity(layerName, opacity, duration);
+    }, ['layerName', 'opacity', 'duration']);
 
-    this.registerCommand('fogFadeout', {
-      duration: 'int',
-    }, ({duration}) => {
-      this.needsFogFadeOut = true;
-      this.fogFadeOutDuration = duration;
-    }, ['duration']);
-
-    this.registerCommand('moveFog', {
-      moveX: 'int',
-      moveY: 'int',
-    }, ({moveX, moveY}) => {
-      this.fogMoveX = moveX;
-      this.fogMoveY = moveY;
-    }, ['moveX', 'moveY']);
-
-    this.registerCommand('fogBlendMode', {
-      blend: 'int',
-    }, ({blend}) => {
-      this.fogBlendMode = blend;
-    }, ['blend']);
-
-    this.registerCommand('fog', {
+    this.registerCommand('layer', {
+      layerName: 'string',
       fileName: 'string',
-      moveX: 'int',
-      moveY: 'int',
-      blend: 'int',
-    }, ({fileName, moveX, moveY, blend}) => {
-      CycloneAdvancedMaps.params.debug && console.log('change FOG layer', fileName);
-      this.fogFileName = fileName;
-      this.changedFogFileName = true;
-    }, ['fileName', 'moveX', 'moveY', 'blend']);
+    }, ({layerName, fileName}) => {
+      if (!layerName || !fileName) {
+        CycloneAdvancedMaps.params.debug && console.error('Invalid layer parameters', layerName, fileName);
+        return;
+      }
 
-    this.registerCommand('light', ({fileName}) => {
-      CycloneAdvancedMaps.params.debug && console.log('change LIGHT layer', fileName);
-      this.lightName = fileName;
-      this.changedLightFileName = true;
-    }, ['fileName']);
+      CycloneAdvancedMaps.changeLayerFileName(layerName, fileName);
+    }, ['layerName', 'fileName'])
 
-    this.registerCommand('shadow', ({fileName}) => {
-      CycloneAdvancedMaps.params.debug && console.log('change SHADOW layer', fileName);
-      this.shadowName = fileName;
-      this.changedShadowFileName = true;
-    }, ['fileName']);
-    this.registerCommand('par', ({fileName}) => {
-      CycloneAdvancedMaps.params.debug && console.log('change PAR layer', fileName);
-      this.parallaxName = fileName;
-      this.changedParallaxFileName = true;
-    }, ['fileName']);
+    this.registerCommand('customLayer', {
+      layerName: 'string',
+      fileName: 'string',
+      z : 'int',
+      switchId: 'int',
+      x: 'int',
+      y: 'int',
+      unit: 'string',
+      invertSwitch: 'boolean',
+    }, ({layerName, fileName, z, switchId = 0, x = 0, y = 0, unit = 'tiles', invertSwitch = false}) => {
+      if (!layerName || !fileName || typeof z !== 'number') {
+        CycloneAdvancedMaps.params.debug && console.error('Invalid custom layer parameters', layerName, fileName, z);
+        return;
+      }
 
-    this.registerCommand('ground', ({fileName}) => {
-      CycloneAdvancedMaps.params.debug && console.log('change GROUND layer', fileName);
-      this.groundName = fileName;
-      this.changedGroundFileName = true;
-    }, ['fileName']);
+      CycloneAdvancedMaps.addCustomLayer({
+        layerName,
+        fileName,
+        z,
+        switchId,
+        invertSwitch,
+        position: {
+          x,
+          y,
+          unit: ['pixels', 'px'].includes(unit)  ? 'pixels' : 'tiles',
+        },
+      });
+    }, ['layerName', 'fileName', 'z', 'switchId', 'x', 'y', 'unit', 'invertSwitch']);
 
     this.clearSettings();
   }
 
-  static get groundZ() {
-    return this.params.groundZ;
-  }
-  static get parallaxZ() {
-    return this.params.parallaxZ;
-  }
-  static get shadowZ() {
-    return this.params.shadowZ;
-  }
-  static get fogZ() {
-    return this.params.fogZ;
-  }
-  static get lightZ() {
-    return this.params.lightZ;
-  }
-
   static clearSettings() {
-    // Set this attribute to a numeric value to change the fog opacity temporarily
-    this.newFogOpacity = false;
-    // Set this to use a custom duration for the fog opacity transition
-    this.newFogOpacityDuration = 0;
-    // Set this to true to fade out the fog and then erase the temporary fog data
-    this.needsFogFadeOut = false;
-    this.fogFadeOutDuration = 1;
+    this.params.debug && console.log('Clearing CycloneAdvancedMaps settings');
 
-    this.fogMoveX = 0;
-    this.fogMoveY = 0;
-    this.fogBlendMode = 0;
-
-    // the default opacity and duration are loaded with the map
-    this.fogOpacity = 255;
-    this.fogDuration = 1;
-
-    this.fogFileName = '';
-    this.changedFogFileName = false;
-
-    this.changedLightFileName = false;
-    this.lightName = '';
-
-    this.changedShadowFileName = false;
-    this.shadowName = '';
-
-    this.changedParallaxFileName = false;
-    this.parallaxName = '';
-
-    this.changedGroundFileName = false;
-    this.groundName = '';
-
-    this.blockRegionId = this.params.blockRegionId;
-    this.unblockRegionId = this.params.unblockRegionId;
-    this.blockPlayerRegionId = this.params.blockPlayerRegionId;
-    this.unblockPlayerRegionId = this.params.unblockPlayerRegionId;
-    this.blockEventRegionId = this.params.blockEventRegionId;
-    this.unblockEventRegionId = this.params.unblockEventRegionId;
-
-    this.disableAutoShadows = this.params.disableAutoShadows;
-
+    const layers = this.params.layers;
     const commonEventRegions = this.params.commonEventRegions;
     const namedRegions = this.params.namedRegions;
 
     this.commonEventRegions = new Map();
     this.namedRegions = new Map();
+    this.layers = [];
+    for (let i = 0; i < layers.length; i++) {
+      this.layers.push({
+        ...layers[i],
+        index: i,
+        id: `cyclone_layer_${i}`,
+        changed: false,
+        extraX: 0,
+        extraY: 0,
+        opacityChange: this.opacitySpeedToChange(layers[i].opacitySpeed),
+      })
+    }
+
+    this.params.debug && console.log('Layer Configuration', this.layers);
 
     for (const config of commonEventRegions) {
       if (config.regionId > 0 && config.commonEventId > 0) {
@@ -232,6 +217,101 @@ class CycloneAdvancedMaps extends CyclonePlugin {
     for (const config of namedRegions) {
       if (config.regionId > 0) {
         this.namedRegions.set(config.regionId, config.name.trim());
+      }
+    }
+  }
+
+  static opacitySpeedToChange(speed) {
+    if (speed) {
+      return 255 / speed;
+    }
+
+    return 10;
+  }
+
+  static changeLayerOpacity(layerName, opacity, duration) {
+    for (const layer of this.layers) {
+      if (layer.layerName === layerName) {
+        CycloneAdvancedMaps.params.debug && console.log(`Layer ${layerName} opacity changed from ${ layer.opacity } to ${ opacity }, duration = ${ duration || layer.opacitySpeed }`);
+        layer.opacity = opacity;
+        layer.oneTimeOpacityDuration = duration;
+        return;
+      }
+    }
+  }
+
+  static addCustomLayer(layerData) {
+    this.params.debug && console.log('Add custom layer', layerData);
+
+    // Remove an existing layer with the same name if found
+    if (layerData.layerName) {
+      for (let i = 0; i < this.layers.length; i++) {
+        if (this.layers[i].layerName === layerData.layerName) {
+          this.layers.splice(i, 1);
+          break;
+        }
+      }
+    }
+
+    this.layers.push({
+      extraX: 0,
+      extraY: 0,
+      ...layerData,
+      index: this.layers.length,
+      id: `cyclone_custom_layer_${ this.layers.length }`,
+      changed: false,
+      opacityChange: this.opacitySpeedToChange(layerData.opacitySpeed),
+      mapList: [
+        $gameMap._mapId,
+      ],
+    });
+  }
+
+  static loadMapCustomLayers() {
+    const objects = getMetaObject($dataMap.note || '', 'customLayer');
+    const structType = this.structs.get('CycloneCustomLayer');
+
+    for (const data of objects) {
+      CycloneAdvancedMaps.parseStructData(structType, data);
+
+      if (!data.name && !data.layerName) {
+        this.params.debug && console.error('Custom Layer is missing a name');
+        continue;
+      }
+
+      this.addCustomLayer({
+        layerName: data.name || data.layerName,
+        fileName: data.file || data.fileName || '',
+        tagName: '',
+        appendMapId: false,
+        switchId: data.switch || data.switchId || 0,
+        invertSwitch: !!data.invertSwitch,
+        quickStart: false,
+        z: data.z || 0,
+        opacity: data.opacity || 255,
+        opacitySpeed: data.opacitySpeed || 25,
+        blendMode: data.blendMode || 0,
+        fadeIn: false,
+        position: {
+          x: data.x || 0,
+          y: data.y || 0,
+          unit: ['pixels', 'px'].includes(data.unit) ? 'pixels' : 'tiles',
+          boundTo: data.boundTo === 'screen' ? 'screen' : 'map',
+          moveX: data.moveX || 0,
+          moveY: data.moveY || 0,
+          tiling: !!data.tiling,
+        }
+      });
+    }
+  }
+
+  static changeLayerFileName(layerName, fileName) {
+    for (const layer of this.layers) {
+      if (layer.layerName === layerName) {
+        CycloneAdvancedMaps.params.debug && console.log(`Layer ${layerName} file name changed from ${ layer.fileName } to ${ fileName }`);
+        layer.fileName = fileName;
+        layer.changed = true;
+        return;
       }
     }
   }

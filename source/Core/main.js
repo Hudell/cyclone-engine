@@ -286,6 +286,8 @@ class CyclonePlugin extends CyclonePatcher {
     switch(typeName) {
       case 'int':
         return 0;
+      case 'float':
+        return 0;
       case 'boolean':
         return false;
     }
@@ -341,6 +343,30 @@ class CyclonePlugin extends CyclonePatcher {
     }
   }
 
+  static parseStructData(structType, data) {
+    for (const key in structType) {
+      if (!structType.hasOwnProperty(key)) {
+        continue;
+      }
+
+      let dataType = structType[key];
+      if (typeof dataType === 'string') {
+        dataType = {
+          type: dataType,
+          defaultValue: this.defaultValueForType(dataType),
+        };
+      }
+
+      data[key] = this.getParam({
+        value: data[key],
+        defaultValue: dataType.defaultValue,
+        type: dataType.type,
+      });
+    }
+
+    return data;
+  }
+
   static parseStructParam({ value, defaultValue, type }) {
     let data;
     if (value) {
@@ -368,27 +394,7 @@ class CyclonePlugin extends CyclonePatcher {
       return data;
     }
 
-    for (const key in structType) {
-      if (!structType.hasOwnProperty(key)) {
-        continue;
-      }
-
-      let dataType = structType[key];
-      if (typeof dataType === 'string') {
-        dataType = {
-          type: dataType,
-          defaultValue: this.defaultValueForType(dataType),
-        };
-      }
-
-      data[key] = this.getParam({
-        value: data[key],
-        defaultValue: dataType.defaultValue,
-        type: dataType.type,
-      });
-    }
-
-    return data;
+    return this.parseStructData(structType, data);
   }
 
   static parseList(data, mapper, separator = ',') {

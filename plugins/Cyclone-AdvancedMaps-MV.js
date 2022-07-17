@@ -24,7 +24,7 @@ function _iterableToArray(iter) { if (typeof Symbol !== "undefined" && Symbol.it
 
 function _arrayWithoutHoles(arr) { if (Array.isArray(arr)) return _arrayLikeToArray(arr); }
 
-function _createForOfIteratorHelper(o, allowArrayLike) { var it; if (typeof Symbol === "undefined" || o[Symbol.iterator] == null) { if (Array.isArray(o) || (it = _unsupportedIterableToArray(o)) || allowArrayLike && o && typeof o.length === "number") { if (it) o = it; var i = 0; var F = function F() {}; return { s: F, n: function n() { if (i >= o.length) return { done: true }; return { done: false, value: o[i++] }; }, e: function e(_e8) { throw _e8; }, f: F }; } throw new TypeError("Invalid attempt to iterate non-iterable instance.\nIn order to be iterable, non-array objects must have a [Symbol.iterator]() method."); } var normalCompletion = true, didErr = false, err; return { s: function s() { it = o[Symbol.iterator](); }, n: function n() { var step = it.next(); normalCompletion = step.done; return step; }, e: function e(_e9) { didErr = true; err = _e9; }, f: function f() { try { if (!normalCompletion && it["return"] != null) it["return"](); } finally { if (didErr) throw err; } } }; }
+function _createForOfIteratorHelper(o, allowArrayLike) { var it; if (typeof Symbol === "undefined" || o[Symbol.iterator] == null) { if (Array.isArray(o) || (it = _unsupportedIterableToArray(o)) || allowArrayLike && o && typeof o.length === "number") { if (it) o = it; var i = 0; var F = function F() {}; return { s: F, n: function n() { if (i >= o.length) return { done: true }; return { done: false, value: o[i++] }; }, e: function e(_e7) { throw _e7; }, f: F }; } throw new TypeError("Invalid attempt to iterate non-iterable instance.\nIn order to be iterable, non-array objects must have a [Symbol.iterator]() method."); } var normalCompletion = true, didErr = false, err; return { s: function s() { it = o[Symbol.iterator](); }, n: function n() { var step = it.next(); normalCompletion = step.done; return step; }, e: function e(_e8) { didErr = true; err = _e8; }, f: function f() { try { if (!normalCompletion && it["return"] != null) it["return"](); } finally { if (didErr) throw err; } } }; }
 
 function _unsupportedIterableToArray(o, minLen) { if (!o) return; if (typeof o === "string") return _arrayLikeToArray(o, minLen); var n = Object.prototype.toString.call(o).slice(8, -1); if (n === "Object" && o.constructor) n = o.constructor.name; if (n === "Map" || n === "Set") return Array.from(o); if (n === "Arguments" || /^(?:Ui|I)nt(?:8|16|32)(?:Clamped)?Array$/.test(n)) return _arrayLikeToArray(o, minLen); }
 
@@ -61,9 +61,9 @@ function _createClass(Constructor, protoProps, staticProps) { if (protoProps) _d
 /*:
  * @plugindesc Adds new features to game map 1.00.00
  *
- * <pluginName:CycloneMaps>
+ * <pluginName:CycloneAdvancedMaps>
  * @author Hudell
- * @url https://makerdevs.com/plugin/cyclone-maps
+ * @url
  *
  * @help
  * ===========================================================================
@@ -82,66 +82,29 @@ function _createClass(Constructor, protoProps, staticProps) { if (protoProps) _d
  * Terms of Use
  * ===========================================================================
  * 1. For support, feature requests or bug reports, you may contact me through
- *  any of the following channels (in order of preference):
+ *  any of the following channels:
  *
  *   1.a. Opening an issue on the plugin's GitHub repository:
  *      https://github.com/Hudell/cyclone-engine
  *   1.b. Opening threads on the plugin's itch.io page
  *   1.c. Tagging my user on Rpg Maker related sub-reddits, such as r/rpgmaker
  *
- * 2. Do not send me Direct Messages asking for support or bug reports.
- * You may only send me direct messages when none of the above platforms are
- * appropiate for it, or when you want to share pictures of cute dogs.
+ * 2. This plugin is released under the Apache License 2.0 (Apache-2.0).
  *
- * 3. Sending plugin related questions on channels related to any of my other
- * projects (such as my game's Discord server) may result in an immediate ban
- * from such platforms and I may also choose to ignore your future requests.
- *
- * 4. This plugin is released under the Apache License 2.0 (Apache-2.0).
- *
- * 5. You can send me your own changes to this plugin if you wish to see them
+ * 3. You can send me your own changes to this plugin if you wish to see them
  * included in an update, by registering a Pull Request on the plugin's GitHub
  * repository.
  *
- * 6. This plugin is provided as is. While I'll often read feedback and offer
+ * 4. This plugin is provided as is. While I'll often read feedback and offer
  * updates to my plugins, I am in no obligation to do so.
  *
- * 7. I'm not responsible for anything created with this plugin.
+ * 5. I'm not responsible for anything created with this plugin.
  * ===========================================================================
  * Change Log
  * ===========================================================================
  * 2022-07-17 - Version 1.00.00
+ *
  * ===========================================================================
- * Instructions
- * ===========================================================================
- * You can use this plugin to add overlay images to your maps
- * You can keep the images either on the img/parallaxes folder
- * or (if you set the Organized Folders param to true) on separate
- * folders like this:
- *
- * img/overlays/grounds
- * img/overlays/pars
- * img/overlays/shadows
- * img/overlays/lights
- * img/overlays/fogs
- *
- * All image filenames must end with the number of the map
- *
- * Map notetags:
- *
- * <all> : Display all overlays
- * <ground> : Display ground overlay
- * <par> : Display parallax overlay
- * <light> : Display light overlay
- * <shadow> : Display shadow overlay
- * <fogName:filename> : Display the specified fog image
- * <fogOpacity:number> : Change the opacity level of the fog image (0 to 255)
- * <fogBlend:number> : Changes the blend type of the fog image
- * <fogDuration:number> : Changes the duration of the opacity transition
- * <xMove:number> : Changes the horizontal speed of the fog
- * <yMove:number> : Changes the vertical speed of the fog
- *
- * Go to https://makerdevs.com/plugin/cyclone-maps for more instructions
  *
  * @param debug
  * @text Debug
@@ -202,7 +165,7 @@ function _createClass(Constructor, protoProps, staticProps) { if (protoProps) _d
  * Recomended default = 7, with parallaxes = 30
  * @default 7
  *
- * @param animationsZ
+ * @param animationZ
  * @text Animations Z
  * @parent Map Settings
  * @type number
@@ -244,7 +207,7 @@ function _createClass(Constructor, protoProps, staticProps) { if (protoProps) _d
  * @text Layers
  * @parent Overlays
  * @type struct<OverlayItem>[]
- * @default ["{\"layerName\":\"Ground\",\"fileName\":\"ground\",\"tagName\":\"ground\",\"appendMapId\":\"true\",\"switchId\":\"0\",\"quickStart\":\"true\",\"z\":\"1\"}","{\"layerName\":\"Parallax\",\"fileName\":\"par\",\"tagName\":\"par\",\"appendMapId\":\"true\",\"switchId\":\"0\",\"quickStart\":\"true\",\"z\":\"20\"}","{\"layerName\":\"Shadow\",\"fileName\":\"shadow\",\"tagName\":\"shadow\",\"appendMapId\":\"true\",\"switchId\":\"0\",\"quickStart\":\"true\",\"z\":\"21\"}","{\"layerName\":\"Fog\",\"fileName\":\"fog\",\"tagName\":\"fog\",\"appendMapId\":\"true\",\"switchId\":\"0\",\"quickStart\":\"true\",\"z\":\"22\"}","{\"layerName\":\"Light\",\"fileName\":\"light\",\"tagName\":\"light\",\"appendMapId\":\"true\",\"switchId\":\"0\",\"quickStart\":\"true\",\"z\":\"23\",\"opacity\":\"185\"}"]
+ * @default ["{\"layerName\":\"Ground\",\"fileName\":\"ground\",\"tagName\":\"ground\",\"appendMapId\":\"true\",\"switchId\":\"0\",\"quickStart\":\"true\",\"z\":\"1\"}","{\"layerName\":\"Parallax\",\"fileName\":\"par\",\"tagName\":\"par\",\"appendMapId\":\"true\",\"switchId\":\"0\",\"quickStart\":\"true\",\"z\":\"20\"}","{\"layerName\":\"Shadow\",\"fileName\":\"shadow\",\"tagName\":\"shadow\",\"appendMapId\":\"true\",\"switchId\":\"0\",\"quickStart\":\"true\",\"z\":\"21\"}","{\"layerName\":\"Fog\",\"fileName\":\"fog\",\"tagName\":\"fog\",\"appendMapId\":\"true\",\"switchId\":\"0\",\"quickStart\":\"true\",\"z\":\"22\"}","{\"layerName\":\"Light\",\"fileName\":\"light\",\"tagName\":\"light\",\"appendMapId\":\"true\",\"switchId\":\"0\",\"quickStart\":\"true\",\"z\":\"23\",\"opacity\":\"185\",\"opacitySpeed\":\"180\",\"blendMode\":\"1\"}"]
  *
  * @param Regions
  *
@@ -322,110 +285,12 @@ function _createClass(Constructor, protoProps, staticProps) { if (protoProps) _d
  * @type boolean
  * @default false
  *
- * @command newFogOpacity
- * @text Change Fog Opacity
- * @desc
- *
- * @arg opacity
- * @text Opacity
- * @type number
- * @desc The new value for the fog opacity: 1 - 255
- *
- * @arg duration
- * @text Duration
- * @type number
- * @desc How long should the opacity transition last? Leave it at zero to use the map's default.
- * @default 0
- *
- * @command fogFadeout
- * @text Fog fade out
- * @desc Fade out and deactivate the fog layer
- *
- * @arg duration
- * @text Duration
- * @type number
- * @desc How long should the fade out last?
- * @default 0
- *
- * @command moveFog
- * @text Move Fog
- * @desc Change the speed at which the fog moves
- *
- * @arg moveX
- * @text X Speed
- * @type number
- * @desc how many pixels the fog should move horizontally at a time. Use a negative value to move left.
- *
- * @arg moveY
- * @text Y Speed
- * @type number
- * @desc how many pixels the fog should move vertically at a time. Use a negative value to move up.
- *
- * @command fogBlendMode
- * @text Change Fog Blend Mode
- * @desc
- *
- * @arg blend
- * @text Blend Type
- * @type select
- * @desc The blend type you want to use in the fog layer
- * @default 0
- * @option Normal
- * @value 0
- * @option Additive
- * @value 1
- *
- * @command fog
- * @text Change Fog
- * @desc
- *
- * @arg fileName
- * @text File Name
- * @type string
- * @desc The file name of the new fog
- *
- * @command light
- * @text Change Light
- * @desc
- *
- * @arg fileName
- * @text File Name
- * @type string
- * @desc The file name of the new light
- *
- * @command shadow
- * @text Change Shadow
- * @desc
- *
- * @arg fileName
- * @text File Name
- * @type string
- * @desc The file name of the new shadow
- *
- * @command par
- * @text Change Parallax
- * @desc
- *
- * @arg fileName
- * @text File Name
- * @type string
- * @desc The file name of the new parallax
- *
- * @command ground
- * @text Change Ground
- * @desc
- *
- * @arg fileName
- * @text File Name
- * @type string
- * @desc The file name of the new ground
- *
  **/
 
 /*~struct~OverlayItem:
  * @param layerName
  * @text Layer Name
- * @desc Used only for your own organization
+ * @desc Name used to identify this layer on plugin commands
  * @default
  *
  * @param fileName
@@ -450,6 +315,12 @@ function _createClass(Constructor, protoProps, staticProps) { if (protoProps) _d
  * @desc A switch to control if this layer should be enabled or not
  * @default 0
  *
+ * @param invertSwitch
+ * @text Invert Switch
+ * @type boolean
+ * @desc Display this layer when the switch is off instead of on.
+ * @default false
+ *
  * @param quickStart
  * @text Enable Automatically
  * @type boolean
@@ -466,7 +337,17 @@ function _createClass(Constructor, protoProps, staticProps) { if (protoProps) _d
  * @text Opacity
  * @type number
  * @desc The opacity level for this layer
+ * @min 1
+ * @max 255
  * @default 255
+ *
+ * @param opacitySpeed
+ * @text Opacity Speed
+ * @type number
+ * @desc How many frames should it take for this layer to change from completely hidden to completely visible.
+ * @min 1
+ * @max 255
+ * @default 25
  *
  * @param mapList
  * @text Map List
@@ -474,7 +355,80 @@ function _createClass(Constructor, protoProps, staticProps) { if (protoProps) _d
  * @desc A list of map ids where this layer will be active without needing tags
  * @default []
  *
+ * @param blendMode
+ * @text Blend Mode
+ * @type number
+ * @desc The blend type you want to use in this layer. Default is 0 for most layers, or 1 for lights.
+ * @default 0
+ *
+ * @param position
+ * @text Position
+ * @type Struct<LayerPosition>
+ * @desc The top left position of this layer.
+ * @default {}
+ *
+ * @param fadeIn
+ * @text Fade In
+ * @type boolean
+ * @desc Should this layer be made visible with a fade effect or instantly?
+ * @on Fade In
+ * @off Instantly
+ * @default false
+ *
 */
+
+/*~struct~LayerPosition:
+ * @param x
+ * @text X Position
+ * @type number
+ * @default 0
+ *
+ * @param y
+ * @text Y Position
+ * @type number
+ * @default 0
+ *
+ * @param unit
+ * @text Position Unit
+ * @desc Is this layer's position set in pixels or tiles?
+ * @type select
+ * @default tiles
+ * @option Tiles
+ * @value tiles
+ * @option Pixels
+ * @value pixels
+ *
+ * @param boundTo
+ * @text Bound To
+ * @desc Is this layer's position bound to the map or the screen?
+ * @type select
+ * @default map
+ * @option Map
+ * @value map
+ * @option Screen
+ * @value screen
+ *
+ * @param moveX
+ * @text X Speed
+ * @type number
+ * @desc how many pixels the layer should move horizontally at a time. Use a negative value to move left.
+ * @default 0
+ *
+ * @param moveY
+ * @text Y Speed
+ * @type number
+ * @desc how many pixels the layer should move vertically at a time. Use a negative value to move up.
+ * @default 0
+ *
+ * @param tiling
+ * @text Tiling
+ * @type boolean
+ * @desc Should this layer use a tiling sprite? (Usually only enabled for fog layer)
+ * @on Tiled
+ * @off Not Tiled
+ * @default false
+ *
+ */
 
 /*~struct~CommonEventRegion:
  * @param regionId
@@ -963,6 +917,7 @@ function _createClass(Constructor, protoProps, staticProps) { if (protoProps) _d
       value: function defaultValueForType(t) {
         switch (t) {
           case "int":
+          case "float":
             return 0;
 
           case "boolean":
@@ -1040,6 +995,24 @@ function _createClass(Constructor, protoProps, staticProps) { if (protoProps) _d
         if (s) return s[r];
       }
     }, {
+      key: "parseStructData",
+      value: function parseStructData(t, e) {
+        for (var r in t) {
+          if (!t.hasOwnProperty(r)) continue;
+          var s = t[r];
+          "string" == typeof s && (s = {
+            type: s,
+            defaultValue: this.defaultValueForType(s)
+          }), e[r] = this.getParam({
+            value: e[r],
+            defaultValue: s.defaultValue,
+            type: s.type
+          });
+        }
+
+        return e;
+      }
+    }, {
       key: "parseStructParam",
       value: function parseStructParam(_ref10) {
         var t = _ref10.value,
@@ -1055,22 +1028,7 @@ function _createClass(Constructor, protoProps, staticProps) { if (protoProps) _d
         var a = this.getRegexMatch(r, /struct<(.*)>/i, 1);
         if (!a) return console.error("Unknown plugin param type: ".concat(r)), s;
         var n = this.structs.get(a);
-        if (!n) return console.error("Unknown param structure type: ".concat(a)), s;
-
-        for (var _t9 in n) {
-          if (!n.hasOwnProperty(_t9)) continue;
-          var _e6 = n[_t9];
-          "string" == typeof _e6 && (_e6 = {
-            type: _e6,
-            defaultValue: this.defaultValueForType(_e6)
-          }), s[_t9] = this.getParam({
-            value: s[_t9],
-            defaultValue: _e6.defaultValue,
-            type: _e6.type
-          });
-        }
-
-        return s;
+        return n ? this.parseStructData(n, s) : (console.error("Unknown param structure type: ".concat(a)), s);
       }
     }, {
       key: "parseList",
@@ -1107,8 +1065,8 @@ function _createClass(Constructor, protoProps, staticProps) { if (protoProps) _d
         return "function" == typeof e ? PluginManager.registerCommand(this.getPluginFileName(), t, e) : PluginManager.registerCommand(this.getPluginFileName(), t, function (t) {
           var s = new Map();
 
-          for (var _e7 in t) {
-            t.hasOwnProperty(_e7) && s.set(_e7, t[_e7]);
+          for (var _e6 in t) {
+            t.hasOwnProperty(_e6) && s.set(_e6, t[_e6]);
           }
 
           var a = _this4.loadParamMap(e, s);
@@ -1174,23 +1132,72 @@ function _createClass(Constructor, protoProps, staticProps) { if (protoProps) _d
     };
   }
 
-  var CycloneMaps$1 = /*#__PURE__*/function (_CyclonePlugin) {
-    _inherits(CycloneMaps$1, _CyclonePlugin);
+  function getMetaObject(notes, tagName) {
+    var rgx = new RegExp("<".concat(tagName, "([^>]*)"), 'gis');
+    var list = [];
 
-    var _super2 = _createSuper(CycloneMaps$1);
+    while (true) {
+      var match = rgx.exec(notes);
 
-    function CycloneMaps$1() {
-      _classCallCheck(this, CycloneMaps$1);
+      if (!match) {
+        break;
+      }
+
+      if (match.length < 2) {
+        continue;
+      }
+
+      var dataRgx = /([^=:\n\r\t]+)[=:]?(.*)/gm;
+      var obj = match[1];
+      var newObject = {};
+
+      while (true) {
+        var attribute = dataRgx.exec(obj);
+
+        if (!attribute) {
+          break;
+        }
+
+        if (attribute.length < 2) {
+          continue;
+        }
+
+        var _name2 = attribute[1].trim();
+
+        if (!_name2) {
+          continue;
+        }
+
+        if (attribute.length > 2 && attribute[0] !== attribute[1]) {
+          newObject[_name2] = attribute[2].trim();
+        } else {
+          newObject[_name2] = true;
+        }
+      }
+
+      list.push(newObject);
+    }
+
+    return list;
+  }
+
+  var CycloneAdvancedMaps$1 = /*#__PURE__*/function (_CyclonePlugin) {
+    _inherits(CycloneAdvancedMaps$1, _CyclonePlugin);
+
+    var _super2 = _createSuper(CycloneAdvancedMaps$1);
+
+    function CycloneAdvancedMaps$1() {
+      _classCallCheck(this, CycloneAdvancedMaps$1);
 
       return _super2.apply(this, arguments);
     }
 
-    _createClass(CycloneMaps$1, null, [{
+    _createClass(CycloneAdvancedMaps$1, null, [{
       key: "register",
       value: function register() {
         var _this5 = this;
 
-        _get(_getPrototypeOf(CycloneMaps$1), "initialize", this).call(this, 'CycloneMaps');
+        _get(_getPrototypeOf(CycloneAdvancedMaps$1), "initialize", this).call(this, 'CycloneAdvancedMaps');
 
         this.structs.set('CycloneCommonEventRegion', {
           regionId: 'int',
@@ -1199,6 +1206,15 @@ function _createClass(Constructor, protoProps, staticProps) { if (protoProps) _d
         this.structs.set('CycloneNamedRegion', {
           regionId: 'int',
           name: 'string'
+        });
+        this.structs.set('CycloneLayerPosition', {
+          x: 'int',
+          y: 'int',
+          unit: 'string',
+          boundTo: 'string',
+          moveX: 'int',
+          moveY: 'int',
+          tiling: 'boolean'
         });
         this.structs.set('CycloneOverlayItem', {
           layerName: 'string',
@@ -1209,6 +1225,7 @@ function _createClass(Constructor, protoProps, staticProps) { if (protoProps) _d
             defaultValue: true
           },
           switchId: 'int',
+          invertSwitch: 'boolean',
           quickStart: {
             type: 'boolean',
             defaultValue: true
@@ -1218,10 +1235,38 @@ function _createClass(Constructor, protoProps, staticProps) { if (protoProps) _d
             type: 'int',
             defaultValue: 255
           },
-          mapList: 'int[]'
+          opacitySpeed: {
+            type: 'int',
+            defaultValue: 25
+          },
+          blendMode: 'int',
+          mapList: 'int[]',
+          position: 'struct<CycloneLayerPosition>',
+          fadeIn: 'boolean'
+        });
+        this.structs.set('CycloneCustomLayer', {
+          name: 'string',
+          layerName: 'string',
+          file: 'string',
+          fileName: 'string',
+          // tag: 'string',
+          "switch": 'int',
+          switchId: 'int',
+          invertSwitch: 'boolean',
+          z: 'int',
+          opacity: 'int',
+          opacitySpeed: 'int',
+          blendMode: 'int',
+          x: 'int',
+          y: 'int',
+          unit: 'string',
+          boundTo: 'string',
+          moveX: 'int',
+          moveY: 'int',
+          tiling: 'boolean'
         });
 
-        _get(_getPrototypeOf(CycloneMaps$1), "register", this).call(this, {
+        _get(_getPrototypeOf(CycloneAdvancedMaps$1), "register", this).call(this, {
           debug: {
             name: 'debug',
             type: 'boolean',
@@ -1246,7 +1291,7 @@ function _createClass(Constructor, protoProps, staticProps) { if (protoProps) _d
             type: 'int',
             defaultValue: 7
           },
-          animationsZ: {
+          animationZ: {
             type: 'int',
             defaultValue: 8
           },
@@ -1278,115 +1323,98 @@ function _createClass(Constructor, protoProps, staticProps) { if (protoProps) _d
           regionNamesStay: 'boolean'
         });
 
-        console.log(this.params);
-        this.registerCommand('newFogOpacity', {
+        this.registerCommand('newLayerOpacity', {
+          layerName: 'string',
           opacity: 'int',
           duration: 'int'
         }, function (_ref13) {
-          var opacity = _ref13.opacity,
+          var layerName = _ref13.layerName,
+              opacity = _ref13.opacity,
               duration = _ref13.duration;
-          _this5.newFogOpacity = opacity;
-          _this5.newFogOpacityDuration = duration;
-        }, ['opacity', 'duration']);
-        this.registerCommand('fogFadeout', {
-          duration: 'int'
+
+          _this5.changeLayerOpacity(layerName, opacity, duration);
+        }, ['layerName', 'opacity', 'duration']);
+        this.registerCommand('layer', {
+          layerName: 'string',
+          fileName: 'string'
         }, function (_ref14) {
-          var duration = _ref14.duration;
-          _this5.needsFogFadeOut = true;
-          _this5.fogFadeOutDuration = duration;
-        }, ['duration']);
-        this.registerCommand('moveFog', {
-          moveX: 'int',
-          moveY: 'int'
-        }, function (_ref15) {
-          var moveX = _ref15.moveX,
-              moveY = _ref15.moveY;
-          _this5.fogMoveX = moveX;
-          _this5.fogMoveY = moveY;
-        }, ['moveX', 'moveY']);
-        this.registerCommand('fogBlendMode', {
-          blend: 'int'
-        }, function (_ref16) {
-          var blend = _ref16.blend;
-          _this5.fogBlendMode = blend;
-        }, ['blend']);
-        this.registerCommand('fog', {
+          var layerName = _ref14.layerName,
+              fileName = _ref14.fileName;
+
+          if (!layerName || !fileName) {
+            CycloneAdvancedMaps$1.params.debug && console.error('Invalid layer parameters', layerName, fileName);
+            return;
+          }
+
+          CycloneAdvancedMaps$1.changeLayerFileName(layerName, fileName);
+        }, ['layerName', 'fileName']);
+        this.registerCommand('customLayer', {
+          layerName: 'string',
           fileName: 'string',
-          moveX: 'int',
-          moveY: 'int',
-          blend: 'int'
-        }, function (_ref17) {
-          var fileName = _ref17.fileName,
-              moveX = _ref17.moveX,
-              moveY = _ref17.moveY,
-              blend = _ref17.blend;
-          CycloneMaps$1.params.debug && console.log('change FOG layer', fileName);
-          _this5.fogFileName = fileName;
-          _this5.changedFogFileName = true;
-        }, ['fileName', 'moveX', 'moveY', 'blend']);
-        this.registerCommand('light', function (_ref18) {
-          var fileName = _ref18.fileName;
-          CycloneMaps$1.params.debug && console.log('change LIGHT layer', fileName);
-          _this5.lightName = fileName;
-          _this5.changedLightFileName = true;
-        }, ['fileName']);
-        this.registerCommand('shadow', function (_ref19) {
-          var fileName = _ref19.fileName;
-          CycloneMaps$1.params.debug && console.log('change SHADOW layer', fileName);
-          _this5.shadowName = fileName;
-          _this5.changedShadowFileName = true;
-        }, ['fileName']);
-        this.registerCommand('par', function (_ref20) {
-          var fileName = _ref20.fileName;
-          CycloneMaps$1.params.debug && console.log('change PAR layer', fileName);
-          _this5.parallaxName = fileName;
-          _this5.changedParallaxFileName = true;
-        }, ['fileName']);
-        this.registerCommand('ground', function (_ref21) {
-          var fileName = _ref21.fileName;
-          CycloneMaps$1.params.debug && console.log('change GROUND layer', fileName);
-          _this5.groundName = fileName;
-          _this5.changedGroundFileName = true;
-        }, ['fileName']);
+          z: 'int',
+          switchId: 'int',
+          x: 'int',
+          y: 'int',
+          unit: 'string',
+          invertSwitch: 'boolean'
+        }, function (_ref15) {
+          var layerName = _ref15.layerName,
+              fileName = _ref15.fileName,
+              z = _ref15.z,
+              _ref15$switchId = _ref15.switchId,
+              switchId = _ref15$switchId === void 0 ? 0 : _ref15$switchId,
+              _ref15$x = _ref15.x,
+              x = _ref15$x === void 0 ? 0 : _ref15$x,
+              _ref15$y = _ref15.y,
+              y = _ref15$y === void 0 ? 0 : _ref15$y,
+              _ref15$unit = _ref15.unit,
+              unit = _ref15$unit === void 0 ? 'tiles' : _ref15$unit,
+              _ref15$invertSwitch = _ref15.invertSwitch,
+              invertSwitch = _ref15$invertSwitch === void 0 ? false : _ref15$invertSwitch;
+
+          if (!layerName || !fileName || typeof z !== 'number') {
+            CycloneAdvancedMaps$1.params.debug && console.error('Invalid custom layer parameters', layerName, fileName, z);
+            return;
+          }
+
+          CycloneAdvancedMaps$1.addCustomLayer({
+            layerName: layerName,
+            fileName: fileName,
+            z: z,
+            switchId: switchId,
+            invertSwitch: invertSwitch,
+            position: {
+              x: x,
+              y: y,
+              unit: ['pixels', 'px'].includes(unit) ? 'pixels' : 'tiles'
+            }
+          });
+        }, ['layerName', 'fileName', 'z', 'switchId', 'x', 'y', 'unit', 'invertSwitch']);
         this.clearSettings();
       }
     }, {
       key: "clearSettings",
       value: function clearSettings() {
-        // Set this attribute to a numeric value to change the fog opacity temporarily
-        this.newFogOpacity = false; // Set this to use a custom duration for the fog opacity transition
-
-        this.newFogOpacityDuration = 0; // Set this to true to fade out the fog and then erase the temporary fog data
-
-        this.needsFogFadeOut = false;
-        this.fogFadeOutDuration = 1;
-        this.fogMoveX = 0;
-        this.fogMoveY = 0;
-        this.fogBlendMode = 0; // the default opacity and duration are loaded with the map
-
-        this.fogOpacity = 255;
-        this.fogDuration = 1;
-        this.fogFileName = '';
-        this.changedFogFileName = false;
-        this.changedLightFileName = false;
-        this.lightName = '';
-        this.changedShadowFileName = false;
-        this.shadowName = '';
-        this.changedParallaxFileName = false;
-        this.parallaxName = '';
-        this.changedGroundFileName = false;
-        this.groundName = '';
-        this.blockRegionId = this.params.blockRegionId;
-        this.unblockRegionId = this.params.unblockRegionId;
-        this.blockPlayerRegionId = this.params.blockPlayerRegionId;
-        this.unblockPlayerRegionId = this.params.unblockPlayerRegionId;
-        this.blockEventRegionId = this.params.blockEventRegionId;
-        this.unblockEventRegionId = this.params.unblockEventRegionId;
-        this.disableAutoShadows = this.params.disableAutoShadows;
+        this.params.debug && console.log('Clearing CycloneAdvancedMaps settings');
+        var layers = this.params.layers;
         var commonEventRegions = this.params.commonEventRegions;
         var namedRegions = this.params.namedRegions;
         this.commonEventRegions = new Map();
         this.namedRegions = new Map();
+        this.layers = [];
+
+        for (var i = 0; i < layers.length; i++) {
+          this.layers.push(_objectSpread(_objectSpread({}, layers[i]), {}, {
+            index: i,
+            id: "cyclone_layer_".concat(i),
+            changed: false,
+            extraX: 0,
+            extraY: 0,
+            opacityChange: this.opacitySpeedToChange(layers[i].opacitySpeed)
+          }));
+        }
+
+        this.params.debug && console.log('Layer Configuration', this.layers);
 
         var _iterator6 = _createForOfIteratorHelper(commonEventRegions),
             _step6;
@@ -1423,6 +1451,135 @@ function _createClass(Constructor, protoProps, staticProps) { if (protoProps) _d
         }
       }
     }, {
+      key: "opacitySpeedToChange",
+      value: function opacitySpeedToChange(speed) {
+        if (speed) {
+          return 255 / speed;
+        }
+
+        return 10;
+      }
+    }, {
+      key: "changeLayerOpacity",
+      value: function changeLayerOpacity(layerName, opacity, duration) {
+        var _iterator8 = _createForOfIteratorHelper(this.layers),
+            _step8;
+
+        try {
+          for (_iterator8.s(); !(_step8 = _iterator8.n()).done;) {
+            var layer = _step8.value;
+
+            if (layer.layerName === layerName) {
+              CycloneAdvancedMaps$1.params.debug && console.log("Layer ".concat(layerName, " opacity changed from ").concat(layer.opacity, " to ").concat(opacity, ", duration = ").concat(duration || layer.opacitySpeed));
+              layer.opacity = opacity;
+              layer.oneTimeOpacityDuration = duration;
+              return;
+            }
+          }
+        } catch (err) {
+          _iterator8.e(err);
+        } finally {
+          _iterator8.f();
+        }
+      }
+    }, {
+      key: "addCustomLayer",
+      value: function addCustomLayer(layerData) {
+        this.params.debug && console.log('Add custom layer', layerData); // Remove an existing layer with the same name if found
+
+        if (layerData.layerName) {
+          for (var i = 0; i < this.layers.length; i++) {
+            if (this.layers[i].layerName === layerData.layerName) {
+              this.layers.splice(i, 1);
+              break;
+            }
+          }
+        }
+
+        this.layers.push(_objectSpread(_objectSpread({
+          extraX: 0,
+          extraY: 0
+        }, layerData), {}, {
+          index: this.layers.length,
+          id: "cyclone_custom_layer_".concat(this.layers.length),
+          changed: false,
+          opacityChange: this.opacitySpeedToChange(layerData.opacitySpeed),
+          mapList: [$gameMap._mapId]
+        }));
+      }
+    }, {
+      key: "loadMapCustomLayers",
+      value: function loadMapCustomLayers() {
+        var objects = getMetaObject($dataMap.note || '', 'customLayer');
+        var structType = this.structs.get('CycloneCustomLayer');
+
+        var _iterator9 = _createForOfIteratorHelper(objects),
+            _step9;
+
+        try {
+          for (_iterator9.s(); !(_step9 = _iterator9.n()).done;) {
+            var data = _step9.value;
+            CycloneAdvancedMaps$1.parseStructData(structType, data);
+
+            if (!data.name && !data.layerName) {
+              this.params.debug && console.error('Custom Layer is missing a name');
+              continue;
+            }
+
+            this.addCustomLayer({
+              layerName: data.name || data.layerName,
+              fileName: data.file || data.fileName || '',
+              tagName: '',
+              appendMapId: false,
+              switchId: data["switch"] || data.switchId || 0,
+              invertSwitch: !!data.invertSwitch,
+              quickStart: false,
+              z: data.z || 0,
+              opacity: data.opacity || 255,
+              opacitySpeed: data.opacitySpeed || 25,
+              blendMode: data.blendMode || 0,
+              fadeIn: false,
+              position: {
+                x: data.x || 0,
+                y: data.y || 0,
+                unit: ['pixels', 'px'].includes(data.unit) ? 'pixels' : 'tiles',
+                boundTo: data.boundTo === 'screen' ? 'screen' : 'map',
+                moveX: data.moveX || 0,
+                moveY: data.moveY || 0,
+                tiling: !!data.tiling
+              }
+            });
+          }
+        } catch (err) {
+          _iterator9.e(err);
+        } finally {
+          _iterator9.f();
+        }
+      }
+    }, {
+      key: "changeLayerFileName",
+      value: function changeLayerFileName(layerName, fileName) {
+        var _iterator10 = _createForOfIteratorHelper(this.layers),
+            _step10;
+
+        try {
+          for (_iterator10.s(); !(_step10 = _iterator10.n()).done;) {
+            var layer = _step10.value;
+
+            if (layer.layerName === layerName) {
+              CycloneAdvancedMaps$1.params.debug && console.log("Layer ".concat(layerName, " file name changed from ").concat(layer.fileName, " to ").concat(fileName));
+              layer.fileName = fileName;
+              layer.changed = true;
+              return;
+            }
+          }
+        } catch (err) {
+          _iterator10.e(err);
+        } finally {
+          _iterator10.f();
+        }
+      }
+    }, {
       key: "checkRegionActions",
       value: function checkRegionActions() {
         var regionId = $gameMap.regionId($gamePlayer.x, $gamePlayer.y);
@@ -1431,39 +1588,14 @@ function _createClass(Constructor, protoProps, staticProps) { if (protoProps) _d
           this.runCommonEvent(this.commonEventRegions.get(regionId));
         }
       }
-    }, {
-      key: "groundZ",
-      get: function get() {
-        return this.params.groundZ;
-      }
-    }, {
-      key: "parallaxZ",
-      get: function get() {
-        return this.params.parallaxZ;
-      }
-    }, {
-      key: "shadowZ",
-      get: function get() {
-        return this.params.shadowZ;
-      }
-    }, {
-      key: "fogZ",
-      get: function get() {
-        return this.params.fogZ;
-      }
-    }, {
-      key: "lightZ",
-      get: function get() {
-        return this.params.lightZ;
-      }
     }]);
 
-    return CycloneMaps$1;
+    return CycloneAdvancedMaps$1;
   }(CyclonePlugin);
 
-  globalThis.CycloneMaps = CycloneMaps$1;
-  CycloneMaps$1.register();
-  CycloneMaps.patchClass(DataManager, function ($super) {
+  globalThis.CycloneAdvancedMaps = CycloneAdvancedMaps$1;
+  CycloneAdvancedMaps$1.register();
+  CycloneAdvancedMaps.patchClass(DataManager, function ($super) {
     return /*#__PURE__*/function () {
       function _class4() {
         _classCallCheck(this, _class4);
@@ -1474,36 +1606,44 @@ function _createClass(Constructor, protoProps, staticProps) { if (protoProps) _d
         value: function setupNewGame() {
           $super.setupNewGame.call(this);
 
-          if (CycloneMaps.params.enableOverlays && CycloneMaps.params.quickStart) {
-            var _CycloneMaps$params = CycloneMaps.params,
-                fogSwitchId = _CycloneMaps$params.fogSwitchId,
-                lightSwitchId = _CycloneMaps$params.lightSwitchId,
-                parallaxSwitchId = _CycloneMaps$params.parallaxSwitchId,
-                shadowSwitchId = _CycloneMaps$params.shadowSwitchId;
-
-            if (fogSwitchId > 0) {
-              $gameSwitches.setValue(fogSwitchId, true);
-            }
-
-            if (lightSwitchId > 0) {
-              $gameSwitches.setValue(lightSwitchId, true);
-            }
-
-            if (parallaxSwitchId > 0) {
-              $gameSwitches.setValue(parallaxSwitchId, true);
-            }
-
-            if (shadowSwitchId > 0) {
-              $gameSwitches.setValue(shadowSwitchId, true);
-            }
+          if (!CycloneAdvancedMaps.params.overlayEnabled) {
+            return;
           }
+
+          var _iterator11 = _createForOfIteratorHelper(CycloneAdvancedMaps.params.layers),
+              _step11;
+
+          try {
+            for (_iterator11.s(); !(_step11 = _iterator11.n()).done;) {
+              var _step11$value = _step11.value,
+                  quickStart = _step11$value.quickStart,
+                  switchId = _step11$value.switchId;
+
+              if (!quickStart || !switchId) {
+                continue;
+              }
+
+              CycloneAdvancedMaps.params.debug && console.log("Initializing switch ".concat(switchId));
+              $gameSwitches.setValue(switchId, true);
+            }
+          } catch (err) {
+            _iterator11.e(err);
+          } finally {
+            _iterator11.f();
+          }
+        }
+      }, {
+        key: "createGameObjects",
+        value: function createGameObjects() {
+          $super.createGameObjects.call(this);
+          CycloneAdvancedMaps.clearSettings();
         }
       }]);
 
       return _class4;
     }();
   });
-  CycloneMaps.patchClass(Game_Event, function ($super) {
+  CycloneAdvancedMaps.patchClass(Game_Event, function ($super) {
     return /*#__PURE__*/function () {
       function _class5() {
         _classCallCheck(this, _class5);
@@ -1512,8 +1652,8 @@ function _createClass(Constructor, protoProps, staticProps) { if (protoProps) _d
       _createClass(_class5, [{
         key: "isMapPassable",
         value: function isMapPassable(x, y, d) {
-          var blockRegionId = CycloneMaps.blockEventRegionId;
-          var unblockRegionId = CycloneMaps.unblockEventRegionId;
+          var blockRegionId = CycloneAdvancedMaps.params.blockEventRegionId;
+          var unblockRegionId = CycloneAdvancedMaps.params.unblockEventRegionId;
 
           if (blockRegionId > 0 || unblockRegionId > 0) {
             var newX = $gameMap.roundXWithDirection(x, d);
@@ -1526,7 +1666,7 @@ function _createClass(Constructor, protoProps, staticProps) { if (protoProps) _d
               }
 
               if (regionId === unblockRegionId) {
-                return false;
+                return true;
               }
             }
           }
@@ -1538,16 +1678,31 @@ function _createClass(Constructor, protoProps, staticProps) { if (protoProps) _d
       return _class5;
     }();
   });
-  CycloneMaps.patchClass(Game_Map, function ($super) {
+  CycloneAdvancedMaps.patchClass(Game_Map, function ($super) {
     return /*#__PURE__*/function () {
       function _class6() {
         _classCallCheck(this, _class6);
       }
 
       _createClass(_class6, [{
+        key: "setup",
+        value: function setup() {
+          var _$super$setup;
+
+          for (var _len2 = arguments.length, args = new Array(_len2), _key2 = 0; _key2 < _len2; _key2++) {
+            args[_key2] = arguments[_key2];
+          }
+
+          (_$super$setup = $super.setup).call.apply(_$super$setup, [this].concat(args));
+
+          if (CycloneAdvancedMaps.params.overlayEnabled) {
+            CycloneAdvancedMaps.loadMapCustomLayers();
+          }
+        }
+      }, {
         key: "tileWidth",
         value: function tileWidth() {
-          var customWidth = CycloneMaps.params.tileWidth;
+          var customWidth = CycloneAdvancedMaps.params.tileWidth;
 
           if (typeof customWidth === 'number' && customWidth > 0) {
             return customWidth;
@@ -1558,7 +1713,7 @@ function _createClass(Constructor, protoProps, staticProps) { if (protoProps) _d
       }, {
         key: "tileHeight",
         value: function tileHeight() {
-          var customHeight = CycloneMaps.params.tileHeight;
+          var customHeight = CycloneAdvancedMaps.params.tileHeight;
 
           if (typeof customHeight === 'number' && customHeight > 0) {
             return customHeight;
@@ -1573,7 +1728,7 @@ function _createClass(Constructor, protoProps, staticProps) { if (protoProps) _d
             return true;
           }
 
-          var bushRegionId = CycloneMaps.params.bushRegionId;
+          var bushRegionId = CycloneAdvancedMaps.params.bushRegionId;
 
           if (!bushRegionId) {
             return false;
@@ -1588,8 +1743,8 @@ function _createClass(Constructor, protoProps, staticProps) { if (protoProps) _d
       }, {
         key: "checkRegionPassability",
         value: function checkRegionPassability(x, y) {
-          var blockRegionId = CycloneMaps.blockRegionId;
-          var unblockRegionId = CycloneMaps.unblockRegionId;
+          var blockRegionId = CycloneAdvancedMaps.params.blockRegionId;
+          var unblockRegionId = CycloneAdvancedMaps.params.unblockRegionId;
 
           if (blockRegionId > 0 || unblockRegionId > 0) {
             var regionId = this.regionId(x, y);
@@ -1623,7 +1778,7 @@ function _createClass(Constructor, protoProps, staticProps) { if (protoProps) _d
       return _class6;
     }();
   });
-  CycloneMaps.patchClass(Game_Party, function ($super) {
+  CycloneAdvancedMaps.patchClass(Game_Party, function ($super) {
     return /*#__PURE__*/function () {
       function _class7() {
         _classCallCheck(this, _class7);
@@ -1634,8 +1789,8 @@ function _createClass(Constructor, protoProps, staticProps) { if (protoProps) _d
         value: function onPlayerWalk() {
           $super.onPlayerWalk.call(this);
 
-          if (CycloneMaps.commonEventRegions.size > 0) {
-            CycloneMaps.checkRegionActions();
+          if (CycloneAdvancedMaps.commonEventRegions.size > 0) {
+            CycloneAdvancedMaps.checkRegionActions();
           }
         }
       }]);
@@ -1643,7 +1798,7 @@ function _createClass(Constructor, protoProps, staticProps) { if (protoProps) _d
       return _class7;
     }();
   });
-  CycloneMaps.patchClass(Game_Player, function ($super) {
+  CycloneAdvancedMaps.patchClass(Game_Player, function ($super) {
     return /*#__PURE__*/function () {
       function _class8() {
         _classCallCheck(this, _class8);
@@ -1653,8 +1808,8 @@ function _createClass(Constructor, protoProps, staticProps) { if (protoProps) _d
         key: "performTransfer",
         value: function performTransfer() {
           if (this.isTransferring()) {
-            if (CycloneMaps.params.commonEventId > 0) {
-              $gameTemp.reserveCommonEvent(CycloneMaps.params.commonEventId);
+            if (CycloneAdvancedMaps.params.commonEventId > 0) {
+              $gameTemp.reserveCommonEvent(CycloneAdvancedMaps.params.commonEventId);
             }
           }
 
@@ -1663,8 +1818,8 @@ function _createClass(Constructor, protoProps, staticProps) { if (protoProps) _d
       }, {
         key: "isMapPassable",
         value: function isMapPassable(x, y, d) {
-          var blockRegionId = CycloneMaps.blockPlayerRegionId;
-          var unblockRegionId = CycloneMaps.unblockPlayerRegionId;
+          var blockRegionId = CycloneAdvancedMaps.params.blockPlayerRegionId;
+          var unblockRegionId = CycloneAdvancedMaps.params.unblockPlayerRegionId;
 
           if (blockRegionId > 0 || unblockRegionId > 0) {
             var newX = $gameMap.roundXWithDirection(x, d);
@@ -1677,7 +1832,7 @@ function _createClass(Constructor, protoProps, staticProps) { if (protoProps) _d
               }
 
               if (regionId === unblockRegionId) {
-                return false;
+                return true;
               }
             }
           }
@@ -1689,7 +1844,7 @@ function _createClass(Constructor, protoProps, staticProps) { if (protoProps) _d
       return _class8;
     }();
   });
-  CycloneMaps.patchClass(ImageManager, function ($super) {
+  CycloneAdvancedMaps.patchClass(ImageManager, function ($super) {
     return /*#__PURE__*/function () {
       function _class9() {
         _classCallCheck(this, _class9);
@@ -1698,7 +1853,7 @@ function _createClass(Constructor, protoProps, staticProps) { if (protoProps) _d
       _createClass(_class9, null, [{
         key: "loadTileset",
         value: function loadTileset(filename) {
-          var customPath = CycloneMaps.params.tilesetPath;
+          var customPath = CycloneAdvancedMaps.params.tilesetPath;
 
           if (customPath) {
             return this.loadBitmap(customPath, filename);
@@ -1711,7 +1866,7 @@ function _createClass(Constructor, protoProps, staticProps) { if (protoProps) _d
       return _class9;
     }();
   });
-  CycloneMaps.patchClass(Scene_Map, function ($super) {
+  CycloneAdvancedMaps.patchClass(Scene_Map, function ($super) {
     return /*#__PURE__*/function () {
       function _class10() {
         _classCallCheck(this, _class10);
@@ -1747,7 +1902,7 @@ function _createClass(Constructor, protoProps, staticProps) { if (protoProps) _d
           return;
         }
 
-        var regionName = CycloneMaps.namedRegions.get(regionId);
+        var regionName = CycloneAdvancedMaps.namedRegions.get(regionId);
 
         if (!regionName) {
           return;
@@ -1769,7 +1924,7 @@ function _createClass(Constructor, protoProps, staticProps) { if (protoProps) _d
         var regionId = $gameMap.regionId($gamePlayer._x, $gamePlayer._y);
         var shouldUpdate = regionId > 0 || !this._showCount;
 
-        if (shouldUpdate && (CycloneMaps.params.regionNamesStay || regionId !== this._currentRegionId)) {
+        if (shouldUpdate && (CycloneAdvancedMaps.params.regionNamesStay || regionId !== this._currentRegionId)) {
           this._currentRegionId = regionId;
           this.open();
           return;
@@ -1782,7 +1937,7 @@ function _createClass(Constructor, protoProps, staticProps) { if (protoProps) _d
     return WindowRegionName;
   }(Window_MapName);
 
-  CycloneMaps.patchClass(Scene_Map, function ($super) {
+  CycloneAdvancedMaps.patchClass(Scene_Map, function ($super) {
     return /*#__PURE__*/function () {
       function _class11() {
         _classCallCheck(this, _class11);
@@ -1839,7 +1994,7 @@ function _createClass(Constructor, protoProps, staticProps) { if (protoProps) _d
       return _class11;
     }();
   });
-  CycloneMaps.patchClass(Sprite_Animation, function ($super) {
+  CycloneAdvancedMaps.patchClass(Sprite_Animation, function ($super) {
     return /*#__PURE__*/function () {
       function _class12() {
         _classCallCheck(this, _class12);
@@ -1849,7 +2004,7 @@ function _createClass(Constructor, protoProps, staticProps) { if (protoProps) _d
         key: "initMembers",
         value: function initMembers() {
           $super.initMembers.call(this);
-          var animationZ = CycloneMaps.params.animationZ; // Only apply if we have a valid Z different from the default
+          var animationZ = CycloneAdvancedMaps.params.animationZ; // Only apply if we have a valid Z different from the default
 
           if (animationZ !== 0 && animationZ !== 8) {
             this.z = animationZ;
@@ -1860,7 +2015,7 @@ function _createClass(Constructor, protoProps, staticProps) { if (protoProps) _d
       return _class12;
     }();
   });
-  CycloneMaps.patchClass(Sprite_Balloon, function ($super) {
+  CycloneAdvancedMaps.patchClass(Sprite_Balloon, function ($super) {
     return /*#__PURE__*/function () {
       function _class13() {
         _classCallCheck(this, _class13);
@@ -1870,7 +2025,7 @@ function _createClass(Constructor, protoProps, staticProps) { if (protoProps) _d
         key: "initMembers",
         value: function initMembers() {
           $super.initMembers.call(this);
-          var balloonZ = CycloneMaps.params.balloonZ; // Only apply if we have a valid Z different from the default
+          var balloonZ = CycloneAdvancedMaps.params.balloonZ; // Only apply if we have a valid Z different from the default
 
           if (balloonZ !== 0 && balloonZ !== 7) {
             this.z = balloonZ;
@@ -1881,167 +2036,179 @@ function _createClass(Constructor, protoProps, staticProps) { if (protoProps) _d
       return _class13;
     }();
   });
-
-  function defaultIfNaN(value, defaultValue) {
-    if (isNaN(Number(value))) {
-      return defaultValue;
-    }
-
-    return value;
-  }
-
-  function getValueMaybeVariable(rawValue) {
-    var value = rawValue.trim();
-
-    if (value.startsWith('$')) {
-      var variableId = parseInt(value.slice(1));
-
-      if (isNaN(variableId)) {
-        throw new Error("Invalid Variable ID: ".concat(variableId)); //`
-      }
-
-      if (variableId === 0) {
-        return 0;
-      }
-
-      return $gameVariables.value(variableId);
-    }
-
-    return value;
-  }
-
-  CycloneMaps.patchClass(Spriteset_Map, function ($super) {
+  CycloneAdvancedMaps.patchClass(Spriteset_Map, function ($super) {
     return /*#__PURE__*/function () {
       function _class14() {
         _classCallCheck(this, _class14);
       }
 
       _createClass(_class14, [{
-        key: "createLowerLayer",
-        value: function createLowerLayer() {
-          CycloneMaps.clearSettings();
-          $super.createLowerLayer.call(this);
+        key: "getLayerFolderName",
+        value: function getLayerFolderName(layerData) {
+          switch (CycloneAdvancedMaps.params.folders) {
+            case 'perLayer':
+              return layerData.tagName;
+
+            case 'perMap':
+              return $gameMap._mapId ? String($gameMap._mapId) : '';
+          }
+
+          return '';
+        }
+      }, {
+        key: "getLayerFileName",
+        value: function getLayerFileName(layerData) {
+          var fileNamePrefix = layerData.fileName || '';
+          var tagFileName = this.getMeta(layerData.tagName);
+          var fileName = typeof tagFileName === 'string' ? tagFileName : '';
+          var fileNameSuffix = layerData.appendMapId ? $gameMap._mapId : '';
+          return "".concat(fileNamePrefix).concat(fileName).concat(fileNameSuffix);
         }
       }, {
         key: "loadOverlayBitmap",
-        value: function loadOverlayBitmap(folderName, fileName) {
-          var overlayFolder = CycloneMaps.params.overlayFolder || 'img/overlays';
+        value: function loadOverlayBitmap(layerData) {
+          var bitmapPath = this.getLayerFileName(layerData);
 
-          if (CycloneMaps.params.organizedFolders) {
-            CycloneMaps.params.debug && console.log('Loading bitmap: ', "".concat(overlayFolder, "/").concat(folderName, "/").concat(fileName));
-            return ImageManager.loadBitmap("".concat(overlayFolder, "/").concat(folderName, "/"), fileName);
-          }
-
-          CycloneMaps.params.debug && console.log('Loading bitmap: ', "".concat(overlayFolder, "/").concat(fileName));
-          return ImageManager.loadBitmap("".concat(overlayFolder, "/"), fileName); // return ImageManager.loadParallax(fileName);
-        }
-      }, {
-        key: "createOverlayLayer",
-        value: function createOverlayLayer(folderName, fileNamePrefix, tagName, zValue) {
-          var visibilitySwitchId = arguments.length > 4 && arguments[4] !== undefined ? arguments[4] : 0;
-          var maxOpacity = arguments.length > 5 && arguments[5] !== undefined ? arguments[5] : 255;
-
-          if (!this.getMeta(tagName) && !this.getMeta('all')) {
+          if (!bitmapPath) {
             return null;
           }
 
-          var bitmap = this.loadOverlayBitmap(folderName, fileNamePrefix + $gameMap._mapId);
-          var layer = new Sprite(bitmap);
-          layer.z = zValue;
+          CycloneAdvancedMaps.params.debug && console.log('Loading bitmap: ', bitmapPath);
+          var overlayFolder = CycloneAdvancedMaps.params.overlayPath || 'img/overlays';
+          var folderName = this.getLayerFolderName(layerData);
+          var path = folderName ? "".concat(overlayFolder, "/").concat(folderName) : overlayFolder;
+          return ImageManager.loadBitmap("".concat(path, "/"), bitmapPath);
+        }
+      }, {
+        key: "isLayerEnabled",
+        value: function isLayerEnabled(layerData) {
+          if (layerData.switchId > 0) {
+            var switchValue = $gameSwitches.value(layerData.switchId);
+            return layerData.invertSwitch ? !switchValue : switchValue;
+          }
+
+          return true;
+        }
+      }, {
+        key: "isLayerAllowed",
+        value: function isLayerAllowed(layerData) {
+          var _layerData$mapList, _layerData$mapList2;
+
+          var debug = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : false;
+
+          if ((_layerData$mapList = layerData.mapList) === null || _layerData$mapList === void 0 ? void 0 : _layerData$mapList.includes($gameMap._mapId)) {
+            debug && CycloneAdvancedMaps.params.debug && console.log("Layer ".concat(layerData.layerName || layerData.tagName, " allowed by map list. (Map ").concat($gameMap._mapId, ")"));
+            return true;
+          }
+
+          if (layerData.tagName) {
+            if (this.getMeta(layerData.tagName) || this.getMeta('all')) {
+              debug && CycloneAdvancedMaps.params.debug && console.log("Layer ".concat(layerData.layerName || layerData.tagName, " allowed by tag. (Map ").concat($gameMap._mapId, ")"));
+              return true;
+            }
+
+            debug && CycloneAdvancedMaps.params.debug && console.log("Layer ".concat(layerData.layerName || layerData.tagName, " blocked by tag. (Map ").concat($gameMap._mapId, ")"));
+            return false;
+          }
+
+          if (!((_layerData$mapList2 = layerData.mapList) === null || _layerData$mapList2 === void 0 ? void 0 : _layerData$mapList2.length)) {
+            debug && CycloneAdvancedMaps.params.debug && console.log("Layer ".concat(layerData.layerName || layerData.tagName, " allowed by lack of filters. (Map ").concat($gameMap._mapId, ")"));
+            return true;
+          }
+
+          debug && CycloneAdvancedMaps.params.debug && console.log("Layer ".concat(layerData.layerName || layerData.tagName, " blocked by map list. (Map ").concat($gameMap._mapId, ")"));
+          return false;
+        }
+      }, {
+        key: "createOverlayLayer",
+        value: function createOverlayLayer(layerData) {
+          var _layerData$position, _layerData$position2;
+
+          if (!this.isLayerAllowed(layerData, true)) {
+            return null;
+          }
+
+          var bitmap = this.loadOverlayBitmap(layerData);
+
+          if (!bitmap) {
+            return null;
+          }
+
+          var layer = ((_layerData$position = layerData.position) === null || _layerData$position === void 0 ? void 0 : _layerData$position.tiling) ? new TilingSprite(bitmap) : new Sprite(bitmap);
+
+          if ((_layerData$position2 = layerData.position) === null || _layerData$position2 === void 0 ? void 0 : _layerData$position2.tiling) {
+            layer.width = Graphics.width;
+            layer.height = Graphics.height;
+          }
+
+          layer.z = layerData.z || 0;
 
           this._tilemap.addChild(layer);
 
-          if (visibilitySwitchId > 0) {
-            layer.opacity = $gameSwitches.value(visibilitySwitchId) ? maxOpacity : 0;
+          if (layerData.fadeIn) {
+            layer.opacity = 0;
+          } else {
+            layer.opacity = this.isLayerEnabled(layerData) ? layerData.opacity || 255 : 0;
+          }
+
+          if (layerData.blendMode) {
+            layer.blendMode = layerData.blendMode;
           }
 
           return layer;
         }
       }, {
-        key: "createGroundLayer",
-        value: function createGroundLayer() {
-          this._groundLayer = this.createOverlayLayer('grounds', CycloneMaps.params.groundLayerFileName, 'ground', CycloneMaps.groundZ);
-        }
-      }, {
-        key: "createParallaxLayer",
-        value: function createParallaxLayer() {
-          var _CycloneMaps$params2 = CycloneMaps.params,
-              parallaxLayerFileName = _CycloneMaps$params2.parallaxLayerFileName,
-              parallaxSwitchId = _CycloneMaps$params2.parallaxSwitchId;
-          this._parallaxLayer = this.createOverlayLayer('pars', parallaxLayerFileName, 'par', CycloneMaps.parallaxZ, parallaxSwitchId);
-        }
-      }, {
-        key: "createShadowLayer",
-        value: function createShadowLayer() {
-          var _CycloneMaps$params3 = CycloneMaps.params,
-              shadowLayerFileName = _CycloneMaps$params3.shadowLayerFileName,
-              shadowSwitchId = _CycloneMaps$params3.shadowSwitchId;
-          this._shadowLayer = this.createOverlayLayer('shadows', shadowLayerFileName, 'shadow', CycloneMaps.shadowZ, shadowSwitchId);
-        }
-      }, {
-        key: "createLightLayer",
-        value: function createLightLayer() {
-          var _CycloneMaps$params4 = CycloneMaps.params,
-              lightLayerFileName = _CycloneMaps$params4.lightLayerFileName,
-              lightSwitchId = _CycloneMaps$params4.lightSwitchId,
-              lightOpacity = _CycloneMaps$params4.lightOpacity;
-          this._lightLayer = this.createOverlayLayer('lights', lightLayerFileName, 'light', CycloneMaps.lightZ, lightSwitchId, lightOpacity);
+        key: "createLowerOverlayLayers",
+        value: function createLowerOverlayLayers() {
+          var _iterator12 = _createForOfIteratorHelper(CycloneAdvancedMaps.layers),
+              _step12;
 
-          if (this._lightLayer) {
-            this._lightLayer.blendMode = 1;
+          try {
+            for (_iterator12.s(); !(_step12 = _iterator12.n()).done;) {
+              var layer = _step12.value;
+
+              if (layer.z > 1) {
+                continue;
+              }
+
+              this[layer.id] = this.createOverlayLayer(layer);
+            }
+          } catch (err) {
+            _iterator12.e(err);
+          } finally {
+            _iterator12.f();
           }
         }
       }, {
-        key: "createFogLayer",
-        value: function createFogLayer() {
-          CycloneMaps.fogFileName = this.getOverlayVariable('fogName');
-          CycloneMaps.fogOpacity = this.getOverlayIntVariable('fogOpacity', 255);
-          CycloneMaps.fogMoveX = this.getOverlayIntVariable('xMove', 0);
-          CycloneMaps.fogMoveY = this.getOverlayIntVariable('yMove', 0);
-          CycloneMaps.fogBlendMode = this.getOverlayIntVariable('fogBlend', 0);
-          CycloneMaps.fogDuration = this.getOverlayIntVariable('fogDuration', 1);
+        key: "createUpperOverlayLayers",
+        value: function createUpperOverlayLayers() {
+          var _iterator13 = _createForOfIteratorHelper(CycloneAdvancedMaps.layers),
+              _step13;
 
-          if (!CycloneMaps.fogFileName) {
-            return;
+          try {
+            for (_iterator13.s(); !(_step13 = _iterator13.n()).done;) {
+              var layer = _step13.value;
+
+              if (layer.z > 1) {
+                this[layer.id] = this.createOverlayLayer(layer);
+              }
+            }
+          } catch (err) {
+            _iterator13.e(err);
+          } finally {
+            _iterator13.f();
           }
-
-          var bitmap = this.loadOverlayBitmap('fogs', CycloneMaps.fogFileName);
-
-          if (!bitmap) {
-            return;
-          }
-
-          var layer = new TilingSprite();
-          layer.bitmap = bitmap;
-          layer.width = Graphics.width;
-          layer.height = Graphics.height;
-          layer.blendMode = CycloneMaps.fogBlendMode;
-          layer.opacity = 0;
-          layer.origin.x = $gameMap.displayX() * $gameMap.tileWidth();
-          layer.origin.y = $gameMap.displayY() * $gameMap.tileHeight();
-          layer.z = CycloneMaps.fogZ;
-          CycloneMaps.fogNewX = 0;
-          CycloneMaps.fogNewY = 0;
-
-          this._tilemap.addChild(layer);
-
-          this._fogLayer = layer;
-          CycloneMaps.changedFogFileName = false;
         }
       }, {
         key: "createCharacters",
         value: function createCharacters() {
-          if (!CycloneMaps.params.enableOverlays) {
-            $super.createCharacters.call(this);
-            return;
+          if (!CycloneAdvancedMaps.params.overlayEnabled) {
+            return $super.createCharacters.call(this);
           }
 
-          this.createGroundLayer();
+          this.createLowerOverlayLayers();
           $super.createCharacters.call(this);
-          this.createParallaxLayer();
-          this.createShadowLayer();
-          this.createFogLayer();
-          this.createLightLayer();
+          this.createUpperOverlayLayers();
         }
       }, {
         key: "getMeta",
@@ -2051,193 +2218,135 @@ function _createClass(Constructor, protoProps, staticProps) { if (protoProps) _d
           }
         }
       }, {
-        key: "getOverlayVariable",
-        value: function getOverlayVariable(variableName) {
-          if (this.getMeta(variableName) === undefined) {
-            return false;
+        key: "getLayerPosition",
+        value: function getLayerPosition(layerData) {
+          var _layerData$position3, _layerData$position4, _layerData$position5, _layerData$position6;
+
+          var boundToScreen = ((_layerData$position3 = layerData.position) === null || _layerData$position3 === void 0 ? void 0 : _layerData$position3.boundTo) === 'screen';
+          var top = boundToScreen ? 0 : $gameMap.displayY() * (0 - $gameMap.tileHeight());
+          var left = boundToScreen ? 0 : $gameMap.displayX() * (0 - $gameMap.tileWidth());
+          var x = ((_layerData$position4 = layerData.position) === null || _layerData$position4 === void 0 ? void 0 : _layerData$position4.x) || 0;
+          var y = ((_layerData$position5 = layerData.position) === null || _layerData$position5 === void 0 ? void 0 : _layerData$position5.y) || 0;
+
+          if (((_layerData$position6 = layerData.position) === null || _layerData$position6 === void 0 ? void 0 : _layerData$position6.unit) === 'pixels') {
+            return [left + x, top + y];
           }
 
-          return getValueMaybeVariable($dataMap.meta[variableName]);
+          return [left + x * $gameMap.tileWidth(), top + y * $gameMap.tileHeight()];
         }
       }, {
-        key: "getOverlayIntVariable",
-        value: function getOverlayIntVariable(variableName, defaultValue) {
-          var _parseInt;
+        key: "updateOverlayLayer",
+        value: function updateOverlayLayer(layerData) {
+          var _layer, _layerData$position7, _layerData$position8, _layerData$position9;
 
-          var value = (_parseInt = parseInt(this.getOverlayVariable(variableName))) !== null && _parseInt !== void 0 ? _parseInt : defaultValue;
-          return defaultIfNaN(value, defaultValue);
+          var layer = this[layerData.id];
+          var bitmap = ((_layer = layer) === null || _layer === void 0 ? void 0 : _layer.bitmap) || this.loadOverlayBitmap(layerData);
+
+          if (!bitmap) {
+            return;
+          }
+
+          if (!layer) {
+            layer = this.createOverlayLayer(layerData);
+            layerData.changed = false;
+          }
+
+          if (!layer) {
+            return;
+          }
+
+          layerData.extraX -= ((_layerData$position7 = layerData.position) === null || _layerData$position7 === void 0 ? void 0 : _layerData$position7.moveX) || 0;
+          layerData.extraY -= ((_layerData$position8 = layerData.position) === null || _layerData$position8 === void 0 ? void 0 : _layerData$position8.moveY) || 0;
+
+          var _this$getLayerPositio = this.getLayerPosition(layerData),
+              _this$getLayerPositio2 = _slicedToArray(_this$getLayerPositio, 2),
+              x = _this$getLayerPositio2[0],
+              y = _this$getLayerPositio2[1];
+
+          if ((_layerData$position9 = layerData.position) === null || _layerData$position9 === void 0 ? void 0 : _layerData$position9.tiling) {
+            var _layerData$position10;
+
+            if (((_layerData$position10 = layerData.position) === null || _layerData$position10 === void 0 ? void 0 : _layerData$position10.boundTo) === 'screen') {
+              layer.origin.x = $gameMap.displayX() * $gameMap.tileWidth() + layerData.extraX;
+              layer.origin.y = $gameMap.displayY() * $gameMap.tileHeight() + layerData.extraY;
+            } else {
+              layer.origin.x = layerData.extraX;
+              layer.origin.y = layerData.extraY;
+            }
+
+            layer.x = x;
+            layer.y = y;
+          } else {
+            layer.x = x + layerData.extraX;
+            layer.y = y + layerData.extraY;
+          }
+
+          this.updateLayerOpacity(layer, layerData);
+
+          if (layerData.changed) {
+            layer.bitmap = this.loadOverlayBitmap(layerData);
+            layerData.changed = false;
+          }
+
+          this[layerData.id] = layer;
+        }
+      }, {
+        key: "updateOverlayLayers",
+        value: function updateOverlayLayers() {
+          var _iterator14 = _createForOfIteratorHelper(CycloneAdvancedMaps.layers),
+              _step14;
+
+          try {
+            for (_iterator14.s(); !(_step14 = _iterator14.n()).done;) {
+              var layer = _step14.value;
+
+              if (this.isLayerAllowed(layer, layer.changed)) {
+                this.updateOverlayLayer(layer);
+              }
+            }
+          } catch (err) {
+            _iterator14.e(err);
+          } finally {
+            _iterator14.f();
+          }
         }
       }, {
         key: "updateLayerOpacity",
-        value: function updateLayerOpacity(layer, maxOpacity, opacityChange) {
-          var newOpacity = (layer.opacity + opacityChange).clamp(0, maxOpacity);
+        value: function updateLayerOpacity(layer, layerData) {
+          var _layerData$opacity;
+
+          var opacity = this.isLayerEnabled(layerData) ? (_layerData$opacity = layerData.opacity) !== null && _layerData$opacity !== void 0 ? _layerData$opacity : 255 : 0;
+
+          if (layer.opacity === opacity) {
+            return;
+          }
+
+          if (layerData.oneTimeOpacityDuration) {
+            layerData.oneTimeOpacityChange = Math.ceil(Math.abs(layer.opacity - layerData.opacity) / layerData.oneTimeOpacityDuration);
+            CycloneAdvancedMaps.params.debug && console.log('Single use opacity change calculated: ', layerData.oneTimeOpacityChange);
+            layerData.oneTimeOpacityDuration = undefined;
+          }
+
+          var opacityChange = (layerData.oneTimeOpacityChange || layerData.opacityChange || 10) * (opacity > layer.opacity ? 1 : -1); // If the opacity is decreasing, the minimum is the target, otherwise it's 0
+
+          var min = opacityChange > 0 ? 0 : opacity; // If the opacity is increasing, the maximum is the target, otherwise it's 255
+
+          var max = opacityChange > 0 ? opacity : 255;
+          var newOpacity = (layer.opacity + opacityChange).clamp(min, max);
 
           if (layer.opacity !== newOpacity) {
             layer.opacity = newOpacity;
           }
-        }
-      }, {
-        key: "updateLayer",
-        value: function updateLayer(layerName, update, folderName, fileNamePrefix, tagName, zValue, switchId) {
-          var maxOpacity = arguments.length > 7 && arguments[7] !== undefined ? arguments[7] : 255;
-          var opacityChange = arguments.length > 8 && arguments[8] !== undefined ? arguments[8] : 10;
-          update && CycloneMaps.params.debug && console.log('UPDATE layer ', layerName, folderName, fileNamePrefix, tagName);
-          var layer = this[layerName];
 
-          if (!layer) {
-            layer = this.createOverlayLayer(folderName, fileNamePrefix, tagName, zValue, switchId, maxOpacity);
-            update = false;
+          if (newOpacity === opacity && layerData.oneTimeOpacityChange) {
+            delete layerData.oneTimeOpacityChange;
           }
-
-          if (!layer) {
-            return;
-          }
-
-          layer.x = $gameMap.displayX() * (0 - $gameMap.tileWidth());
-          layer.y = $gameMap.displayY() * (0 - $gameMap.tileHeight());
-
-          if (switchId > 0) {
-            this.updateLayerOpacity(layer, maxOpacity, opacityChange * ($gameSwitches.value(switchId) ? 1 : -1));
-          }
-
-          if (update) {
-            layer.bitmap = this.loadOverlayBitmap(folderName, fileNamePrefix + $gameMap._mapId);
-          }
-
-          this[layerName] = layer;
-        }
-      }, {
-        key: "updateGroundLayer",
-        value: function updateGroundLayer() {
-          var groundLayerFileName = CycloneMaps.params.groundLayerFileName;
-          this.updateLayer('_groundLayer', CycloneMaps.changedGroundFileName, 'grounds', CycloneMaps.groundName || groundLayerFileName, 'ground', CycloneMaps.groundZ, 0);
-          CycloneMaps.changedGroundFileName = false;
-        }
-      }, {
-        key: "updateParallaxLayer",
-        value: function updateParallaxLayer() {
-          var _CycloneMaps$params5 = CycloneMaps.params,
-              parallaxLayerFileName = _CycloneMaps$params5.parallaxLayerFileName,
-              parallaxSwitchId = _CycloneMaps$params5.parallaxSwitchId;
-          this.updateLayer('_parallaxLayer', CycloneMaps.changedParallaxFileName, 'pars', CycloneMaps.parallaxName || parallaxLayerFileName, 'par', CycloneMaps.parallaxZ, parallaxSwitchId);
-          CycloneMaps.changedParallaxFileName = false;
-        }
-      }, {
-        key: "updateShadowLayer",
-        value: function updateShadowLayer() {
-          var _CycloneMaps$params6 = CycloneMaps.params,
-              shadowLayerFileName = _CycloneMaps$params6.shadowLayerFileName,
-              shadowSwitchId = _CycloneMaps$params6.shadowSwitchId;
-          this.updateLayer('_shadowLayer', CycloneMaps.changedShadowFileName, 'shadows', CycloneMaps.shadowName || shadowLayerFileName, 'shadow', CycloneMaps.shadowZ, shadowSwitchId);
-          CycloneMaps.changedShadowFileName = false;
-        }
-      }, {
-        key: "stepFogLayerOpacity",
-        value: function stepFogLayerOpacity() {
-          var stepSize = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : -10;
-          var maxOpacity = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : 255;
-          this._fogLayer.opacity = (this._fogLayer.opacity + stepSize).clamp(0, maxOpacity);
-        }
-      }, {
-        key: "isFogEnabled",
-        value: function isFogEnabled() {
-          var fogSwitchId = CycloneMaps.params.fogSwitchId;
-          return fogSwitchId > 0 && $gameSwitches.value(fogSwitchId);
-        }
-      }, {
-        key: "fadeOutOpacity",
-        value: function fadeOutOpacity() {
-          // if a manual fade out was triggered
-          if (CycloneMaps.needsFogFadeOut) {
-            // If there's a new opacity level set by a plugin command, use that instead of the map's default
-            var targetOpacity = CycloneMaps.newFogOpacity || CycloneMaps.fogOpacity;
-            var transition = targetOpacity / (CycloneMaps.fogFadeOutDuration || 1);
-
-            if (this._fogLayer.opacity > 0) {
-              this.stepFogLayerOpacity(0 - transition, this._fogLayer.opacity);
-              return;
-            } // When the manual fade out is complete, we reset the temporary data and deactivate the fog switch
-
-
-            CycloneMaps.needsFogFadeOut = false;
-            CycloneMaps.newFogOpacity = false;
-            CycloneMaps.newFogOpacityDuration = 0;
-            CycloneMaps.currentOpacityTarget = 0;
-            var fogSwitchId = CycloneMaps.params.fogSwitchId;
-
-            if (fogSwitchId > 0) {
-              $gameSwitches.setValue(fogSwitchId, false);
-            }
-
-            return;
-          } // If there's no manual fade out requested, then the switch was turned off - so use the default fade out
-
-
-          if (this._fogLayer.opacity > 0) {
-            this.stepFogLayerOpacity(-10, this._fogLayer.opacity);
-          }
-        }
-      }, {
-        key: "updateFogOpacity",
-        value: function updateFogOpacity() {
-          if (!this.isFogEnabled() || CycloneMaps.needsFogFadeOut) {
-            this.fadeOutOpacity();
-            return;
-          } // If there's a new opacity level set by a plugin command, use that instead of the map's default
-
-
-          var targetOpacity = CycloneMaps.newFogOpacity || CycloneMaps.fogOpacity;
-          var duration = CycloneMaps.newFogOpacityDuration || CycloneMaps.fogDuration;
-          var transition = targetOpacity / duration; // If the opacity is not at the desired level yet, fade it in
-
-          if (this._fogLayer.opacity < targetOpacity) {
-            this.stepFogLayerOpacity(transition, targetOpacity);
-          } else if (this._fogLayer.opacity > targetOpacity) {
-            this._fogLayer.opacity = targetOpacity;
-          }
-        }
-      }, {
-        key: "updateFogLayer",
-        value: function updateFogLayer() {
-          if (!this._fogLayer) {
-            this.createFogLayer();
-
-            if (!this._fogLayer) {
-              return;
-            }
-          }
-
-          this._fogLayer.blendMode = CycloneMaps.fogBlendMode;
-          CycloneMaps.fogNewX += CycloneMaps.fogMoveX;
-          CycloneMaps.fogNewY += CycloneMaps.fogMoveY;
-          this._fogLayer.origin.x = $gameMap.displayX() * $gameMap.tileWidth() - CycloneMaps.fogNewX;
-          this._fogLayer.origin.y = $gameMap.displayY() * $gameMap.tileHeight() - CycloneMaps.fogNewY;
-          this.updateFogOpacity();
-
-          if (CycloneMaps.changedFogFileName && CycloneMaps.fogFileName) {
-            this._fogLayer.bitmap = this.loadOverlayBitmap('fogs', CycloneMaps.fogFileName);
-            CycloneMaps.changedFogFileName = false;
-          }
-        }
-      }, {
-        key: "updateLightLayer",
-        value: function updateLightLayer() {
-          var _CycloneMaps$params7 = CycloneMaps.params,
-              lightLayerFileName = _CycloneMaps$params7.lightLayerFileName,
-              lightSwitchId = _CycloneMaps$params7.lightSwitchId,
-              lightOpacity = _CycloneMaps$params7.lightOpacity;
-          this.updateLayer('_lightLayer', CycloneMaps.changedLightFileName, 'lights', CycloneMaps.lightName || lightLayerFileName, 'light', CycloneMaps.lightZ, lightSwitchId, lightOpacity, 1);
-          CycloneMaps.changedLightFileName = false;
         }
       }, {
         key: "updateTilemap",
         value: function updateTilemap() {
-          if (CycloneMaps.params.enableOverlays) {
-            this.updateGroundLayer();
-            this.updateParallaxLayer();
-            this.updateShadowLayer();
-            this.updateFogLayer();
-            this.updateLightLayer();
+          if (CycloneAdvancedMaps.params.overlayEnabled) {
+            this.updateOverlayLayers();
           }
 
           $super.updateTilemap.call(this);
@@ -2247,7 +2356,7 @@ function _createClass(Constructor, protoProps, staticProps) { if (protoProps) _d
       return _class14;
     }();
   });
-  CycloneMaps.patchClass(Tilemap, function ($super) {
+  CycloneAdvancedMaps.patchClass(Tilemap, function ($super) {
     return /*#__PURE__*/function () {
       function _class15() {
         _classCallCheck(this, _class15);
@@ -2263,7 +2372,7 @@ function _createClass(Constructor, protoProps, staticProps) { if (protoProps) _d
       }, {
         key: "updateTransform",
         value: function updateTransform() {
-          if (CycloneMaps.params.disableTilemap && CycloneMaps.params.enableOverlays) {
+          if (CycloneAdvancedMaps.params.disableTilemap) {
             this._sortChildren();
 
             PIXI.Container.prototype.updateTransform.call(this);
@@ -2277,12 +2386,12 @@ function _createClass(Constructor, protoProps, staticProps) { if (protoProps) _d
         value: function _addShadow() {
           var _$super$_addShadow;
 
-          if (CycloneMaps.disableAutoShadows) {
+          if (CycloneAdvancedMaps.params.disableAutoShadows) {
             return;
           }
 
-          for (var _len2 = arguments.length, args = new Array(_len2), _key2 = 0; _key2 < _len2; _key2++) {
-            args[_key2] = arguments[_key2];
+          for (var _len3 = arguments.length, args = new Array(_len3), _key3 = 0; _key3 < _len3; _key3++) {
+            args[_key3] = arguments[_key3];
           }
 
           return (_$super$_addShadow = $super._addShadow).call.apply(_$super$_addShadow, [this].concat(args));
@@ -2292,7 +2401,7 @@ function _createClass(Constructor, protoProps, staticProps) { if (protoProps) _d
       return _class15;
     }();
   });
-  CycloneMaps.patchClass(ShaderTilemap, function ($super) {
+  CycloneAdvancedMaps.patchClass(ShaderTilemap, function ($super) {
     return /*#__PURE__*/function () {
       function _class16() {
         _classCallCheck(this, _class16);
@@ -2301,7 +2410,7 @@ function _createClass(Constructor, protoProps, staticProps) { if (protoProps) _d
       _createClass(_class16, [{
         key: "updateTransform",
         value: function updateTransform() {
-          if (CycloneMaps.params.disableTilemap && CycloneMaps.params.enableOverlays) {
+          if (CycloneAdvancedMaps.params.disableTilemap) {
             this._sortChildren();
 
             PIXI.Container.prototype.updateTransform.call(this);
@@ -2315,12 +2424,12 @@ function _createClass(Constructor, protoProps, staticProps) { if (protoProps) _d
         value: function _drawShadow() {
           var _$super$_drawShadow;
 
-          if (CycloneMaps.disableAutoShadows) {
+          if (CycloneAdvancedMaps.params.disableAutoShadows) {
             return;
           }
 
-          for (var _len3 = arguments.length, args = new Array(_len3), _key3 = 0; _key3 < _len3; _key3++) {
-            args[_key3] = arguments[_key3];
+          for (var _len4 = arguments.length, args = new Array(_len4), _key4 = 0; _key4 < _len4; _key4++) {
+            args[_key4] = arguments[_key4];
           }
 
           return (_$super$_drawShadow = $super._drawShadow).call.apply(_$super$_drawShadow, [this].concat(args));

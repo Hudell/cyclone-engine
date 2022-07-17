@@ -14,7 +14,7 @@ CycloneMaps.patchClass(Game_Event, $super => class {
         }
 
         if (regionId === unblockRegionId) {
-          return false;
+          return true;
         }
       }
     }

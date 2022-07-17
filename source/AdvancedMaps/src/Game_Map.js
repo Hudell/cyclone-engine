@@ -1,4 +1,11 @@
 CycloneAdvancedMaps.patchClass(Game_Map, $super => class {
+  setup(...args) {
+    $super.setup.call(this, ...args);
+    if (CycloneAdvancedMaps.params.overlayEnabled) {
+      CycloneAdvancedMaps.loadMapCustomLayers();
+    }
+  }
+
   tileWidth() {
     const customWidth = CycloneAdvancedMaps.params.tileWidth;
     if (typeof customWidth === 'number' && customWidth > 0) {
@@ -35,8 +42,8 @@ CycloneAdvancedMaps.patchClass(Game_Map, $super => class {
   }
 
   checkRegionPassability(x, y) {
-    const blockRegionId = CycloneAdvancedMaps.blockRegionId;
-    const unblockRegionId = CycloneAdvancedMaps.unblockRegionId;
+    const blockRegionId = CycloneAdvancedMaps.params.blockRegionId;
+    const unblockRegionId = CycloneAdvancedMaps.params.unblockRegionId;
 
     if (blockRegionId > 0 || unblockRegionId > 0) {
       const regionId = this.regionId(x, y);

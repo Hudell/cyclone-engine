@@ -6,7 +6,7 @@ CycloneAdvancedMaps.patchClass(Tilemap, $super => class {
   }
 
   updateTransform() {
-    if (CycloneAdvancedMaps.params.disableTilemap && CycloneAdvancedMaps.params.enableOverlays) {
+    if (CycloneAdvancedMaps.params.disableTilemap) {
       this._sortChildren();
       PIXI.Container.prototype.updateTransform.call(this);
       return;
@@ -16,7 +16,7 @@ CycloneAdvancedMaps.patchClass(Tilemap, $super => class {
   }
 
   _addShadow(...args) {
-    if (CycloneAdvancedMaps.disableAutoShadows) {
+    if (CycloneAdvancedMaps.params.disableAutoShadows) {
       return;
     }
 

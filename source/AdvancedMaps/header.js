@@ -8,7 +8,7 @@
  *
  * <pluginName:CycloneAdvancedMaps>
  * @author Hudell
- * @url https://makerdevs.com/plugin/cyclone-maps
+ * @url
  *
  * @help
  * ===========================================================================
@@ -27,92 +27,60 @@
  * Terms of Use
  * ===========================================================================
  * 1. For support, feature requests or bug reports, you may contact me through
- *  any of the following channels (in order of preference):
+ *  any of the following channels:
  *
  *   1.a. Opening an issue on the plugin's GitHub repository:
  *      https://github.com/Hudell/cyclone-engine
  *   1.b. Opening threads on the plugin's itch.io page
  *   1.c. Tagging my user on Rpg Maker related sub-reddits, such as r/rpgmaker
  *
- * 2. Do not send me Direct Messages asking for support or bug reports.
- * You may only send me direct messages when none of the above platforms are
- * appropiate for it, or when you want to share pictures of cute dogs.
+ * 2. This plugin is released under the Apache License 2.0 (Apache-2.0).
  *
- * 3. Sending plugin related questions on channels related to any of my other
- * projects (such as my game's Discord server) may result in an immediate ban
- * from such platforms and I may also choose to ignore your future requests.
- *
- * 4. This plugin is released under the Apache License 2.0 (Apache-2.0).
- *
- * 5. You can send me your own changes to this plugin if you wish to see them
+ * 3. You can send me your own changes to this plugin if you wish to see them
  * included in an update, by registering a Pull Request on the plugin's GitHub
  * repository.
  *
- * 6. This plugin is provided as is. While I'll often read feedback and offer
+ * 4. This plugin is provided as is. While I'll often read feedback and offer
  * updates to my plugins, I am in no obligation to do so.
  *
- * 7. I'm not responsible for anything created with this plugin.
+ * 5. I'm not responsible for anything created with this plugin.
  * ===========================================================================
  * Change Log
  * ===========================================================================
- * 2020-08-30 - Version 1.01.00
- *   * Fixed issue with fog opacity not going down
- *   * Removed Cyclone Core Dependency
+ * 2022-07-17 - Version 1.00.00
  *
- *
- * 2020-08-23 - Version 1.00.00
  * ===========================================================================
- * Instructions
- * ===========================================================================
- * You can use this plugin to add overlay images to your maps
- * You can keep the images either on the img/parallaxes folder
- * or (if you set the Organized Folders param to true) on separate
- * folders like this:
  *
- * img/overlays/grounds
- * img/overlays/pars
- * img/overlays/shadows
- * img/overlays/lights
- * img/overlays/fogs
+ * @param debug
+ * @text Debug
+ * @desc Generate debug logs to help identify problems
+ * @type boolean
+ * @default false
  *
- * All image filenames must end with the number of the map
- *
- * Map notetags:
- *
- * <all> : Display all overlays
- * <ground> : Display ground overlay
- * <par> : Display parallax overlay
- * <light> : Display light overlay
- * <shadow> : Display shadow overlay
- * <fogName:filename> : Display the specified fog image
- * <fogOpacity:number> : Change the opacity level of the fog image (0 to 255)
- * <fogBlend:number> : Changes the blend type of the fog image
- * <fogDuration:number> : Changes the duration of the opacity transition
- * <xMove:number> : Changes the horizontal speed of the fog
- * <yMove:number> : Changes the vertical speed of the fog
- *
- * Go to https://makerdevs.com/plugin/cyclone-maps for more instructions
- *
- * @param Map Change Event Id
+ * @param mapChangeEventId
+ * @text Map Change Event Id
  * @desc Select a Common Event to be called every time the map changes
  * @type common_event
  * @default 0
  *
  * @param Change Tile Size
  *
- * @param Tile Width
+ * @param tileWidth
+ * @text Tile Width
  * @parent Change Tile Size
  * @desc The width of each tile, in pixels
  * @type number
  * @default 48
  *
- * @param Tile Height
+ * @param tileHeight
+ * @text Tile Height
  * @parent Change Tile Size
  * @desc The height of each tile, in pixels
  * @type number
  * @default 48
  *
- * @param Tileset Path
+ * @param tilesetPath
+ * @text Tileset Path
  * @parent Change Tile Size
  * @desc You can define an alternate path for loading the tilesets
  * @type string
@@ -127,133 +95,64 @@
  * @type boolean
  * @default false
  *
- * @param Overlay
- *
- * @param enableOverlays
- * @text Enable Overlays
- * @parent Overlay
- * @desc Change this to on to enable the overlay features
- * @type boolean
- * @default false
- *
  * @param disableTilemap
  * @text Disable Tilemap
- * @parent Overlay
+ * @parent Map Settings
  * @desc If your entire game uses only parallax mapping, you can disable the tilemap to improve performance
  * @type boolean
  * @default false
  *
- * @param Overlay Path
- * @parent Overlay
- * @desc You can define an alternate path for loading the overlays
- * @type string
- * @default img/overlays/
- *
- * @param Organized Folders
- * @parent Overlay
- * @desc Use different folders for each type of parallax
- * @type boolean
- * @default false
- *
- * @param Parallax Layer Filename
- * @parent Overlay
- * @desc The base name of the files for the parallax layer. Must have the mapId appended at the end
- * @default par
- *
- * @param Ground Layer Filename
- * @parent Overlay
- * @desc The base name of the files for the ground layer. Must have the mapId appended at the end
- * @default ground
- *
- * @param Light Layer Filename
- * @parent Overlay
- * @desc The base name of the files for the light layer. Must have the mapId appended at the end
- * @default light
- *
- * @param Shadow Layer Filename
- * @parent Overlay
- * @desc The base name of the files for the shadow layer. Must have the mapId appended at the end
- * @default shadow
- *
- * @param Light Opacity
- * @parent Overlay
- * @type number
- * @desc The opacity level of the light layer
- * @default 185
- *
- * @param Quick Start
- * @parent Overlay
- * @type boolean
- * @desc If this param is on, the fog, light, parallax and shadow switches will start new games turned on.
- * @default true
- *
- * @param Fog Switch ID
- * @parent Overlay
- * @type switch
- * @desc A switch to control if fog should be enabled or not
- * @default 0
- *
- * @param Light Switch ID
- * @parent Overlay
- * @type switch
- * @desc A switch to control if light should be enabled or not
- * @default 0
- *
- * @param Parallax Switch ID
- * @parent Overlay
- * @type switch
- * @desc A switch to control if parallax should be enabled or not
- * @default 0
- *
- * @param Shadow Switch ID
- * @parent Overlay
- * @type switch
- * @desc A switch to control if shadow should be enabled or not
- * @default 0
- *
- * @param Fog Z
- * @parent Overlay
- * @type number
- * @desc What should be the Z value of the fog layer?
- * @default 22
- *
- * @param Light Z
- * @parent Overlay
- * @type number
- * @desc What should be the Z value of the light layer?
- * @default 23
- *
- * @param Parallax Z
- * @parent Overlay
- * @type number
- * @desc What should be the Z value of the overlay layer?
- * @default 20
- *
- * @param Shadow Z
- * @parent Overlay
- * @type number
- * @desc What should be the Z value of the shadow layer?
- * @default 21
- *
- * @param Ground Z
- * @parent Overlay
- * @type number
- * @desc What should be the Z value of the ground layer?
- * @default 1
- *
- * @param Balloon Z
- * @parent Overlay
+ * @param balloonZ
+ * @text Balloon Z
+ * @parent Map Settings
  * @type number
  * @desc Use this to change the balloon Z value when using parallaxes.
  * Recomended default = 7, with parallaxes = 30
  * @default 7
  *
- * @param Animations Z
- * @parent Overlay
+ * @param animationZ
+ * @text Animations Z
+ * @parent Map Settings
  * @type number
  * @desc Use this to change the animations Z value when using parallaxes.
  * Recomended default = 8, with parallaxes = 31
  * @default 8
+ *
+ * @param Overlays
+ * @text Overlays
+ *
+ * @param overlayEnabled
+ * @text Enabled
+ * @parent Overlays
+ * @type boolean
+ * @desc Enable the overlay features
+ * @default false
+ *
+ * @param overlayPath
+ * @text Overlay Path
+ * @parent Overlays
+ * @desc You can define an alternate path for loading the overlays
+ * @type string
+ * @default img/overlays/
+ *
+ * @param folders
+ * @text Folders
+ * @parent Overlays
+ * @desc How overlay files are organized
+ * @type select
+ * @default none
+ * @option No Folders
+ * @value none
+ * @option One Per Layer
+ * @value perLayer
+ * @option One Per Map
+ * @value perMap
+ *
+ * @param layers
+ * @text Layers
+ * @parent Overlays
+ * @type struct<OverlayItem>[]
+ * @default ["{\"layerName\":\"Ground\",\"fileName\":\"ground\",\"tagName\":\"ground\",\"appendMapId\":\"true\",\"switchId\":\"0\",\"quickStart\":\"true\",\"z\":\"1\"}","{\"layerName\":\"Parallax\",\"fileName\":\"par\",\"tagName\":\"par\",\"appendMapId\":\"true\",\"switchId\":\"0\",\"quickStart\":\"true\",\"z\":\"20\"}","{\"layerName\":\"Shadow\",\"fileName\":\"shadow\",\"tagName\":\"shadow\",\"appendMapId\":\"true\",\"switchId\":\"0\",\"quickStart\":\"true\",\"z\":\"21\"}","{\"layerName\":\"Fog\",\"fileName\":\"fog\",\"tagName\":\"fog\",\"appendMapId\":\"true\",\"switchId\":\"0\",\"quickStart\":\"true\",\"z\":\"22\"}","{\"layerName\":\"Light\",\"fileName\":\"light\",\"tagName\":\"light\",\"appendMapId\":\"true\",\"switchId\":\"0\",\"quickStart\":\"true\",\"z\":\"23\",\"opacity\":\"185\",\"opacitySpeed\":\"180\",\"blendMode\":\"1\"}"]
  *
  * @param Regions
  *
@@ -331,14 +230,19 @@
  * @type boolean
  * @default false
  *
- * @command newFogOpacity
- * @text Change Fog Opacity
+ * @command newLayerOpacity
+ * @text Change Layer Opacity
  * @desc
+ *
+ * @arg layerName
+ * @text Layer Name
+ * @type string
+ * @desc The name of the layer that you want to change the opacity of
  *
  * @arg opacity
  * @text Opacity
  * @type number
- * @desc The new value for the fog opacity: 1 - 255
+ * @desc The new value for the layer opacity: 1 - 255
  *
  * @arg duration
  * @text Duration
@@ -346,90 +250,211 @@
  * @desc How long should the opacity transition last? Leave it at zero to use the map's default.
  * @default 0
  *
- * @command fogFadeout
- * @text Fog fade out
- * @desc Fade out and deactivate the fog layer
+ * @command layer
+ * @text Change layer file name
+ * @desc
  *
- * @arg duration
- * @text Duration
+ * @arg layerName
+ * @text Layer Name
+ * @type string
+ * @desc The name of the layer that you want to change the file
+ *
+ * @arg fileName
+ * @text File Name
+ * @type string
+ * @desc The new file name for this layer
+ *
+ * @command customLayer
+ * @text Create a custom layer only for this map
+ * @desc
+ *
+ * @arg layerName
+ * @text Layer Name
+ * @type string
+ * @desc A name to identify this custom layer
+ *
+ * @arg fileName
+ * @text File Name
+ * @type string
+ * @desc The file name for this layer
+ *
+ * @arg z
+ * @text Z Index
  * @type number
- * @desc How long should the fade out last?
+ * @desc The Z index for this layer
+ *
+ * @arg switchId
+ * @text Switch
+ * @type switch
+ * @desc The switch that controls this layer's visibility
+ *
+ * @arg x
+ * @text X Position
+ * @type number
+ * @desc The X position of this layer
+ *
+ * @arg y
+ * @text Y Position
+ * @type number
+ * @desc The Y position of this layer
+ *
+ * @arg unit
+ * @text Position Unit
+ * @type select
+ * @desc The type of position
+ * @option Pixels
+ * @value pixels
+ * @options Tiles
+ * @value tiles
+ *
+ * @arg invertSwitch
+ * @text Invert Switch Value?
+ * @type boolean
+ * @desc Should this layer be visible only when the switch is off?
+ * @on Visible when switch is off
+ * @off Visible when switch is on
+ **/
+/*~struct~OverlayItem:
+ * @param layerName
+ * @text Layer Name
+ * @desc Name used to identify this layer on plugin commands
+ * @default
+ *
+ * @param fileName
+ * @text Layer Filename
+ * @desc The base name of the files for this layer.
+ * @default
+ *
+ * @param tagName
+ * @text Tag Name
+ * @desc If specified, this layer will only be loaded in maps that include this notetag
+ * @default
+ *
+ * @param appendMapId
+ * @text Append Map Id
+ * @desc Determine if the map id should be appended to the file names
+ * @type boolean
+ * @default true
+ *
+ * @param switchId
+ * @text Switch ID
+ * @type switch
+ * @desc A switch to control if this layer should be enabled or not
  * @default 0
  *
- * @command moveFog
- * @text Move Fog
- * @desc Change the speed at which the fog moves
+ * @param invertSwitch
+ * @text Invert Switch
+ * @type boolean
+ * @desc Display this layer when the switch is off instead of on.
+ * @default 0
  *
- * @arg moveX
+ * @param quickStart
+ * @text Enable Automatically
+ * @type boolean
+ * @desc If this param is on, the layer switch will be turned on automatically on new game.
+ * @default true
+ *
+ * @param z
+ * @text Z value
+ * @type number
+ * @desc What should be the Z value of this layer?
+ * @default 0
+ *
+ * @param opacity
+ * @text Opacity
+ * @type number
+ * @desc The opacity level for this layer
+ * @min 1
+ * @max 255
+ * @default 255
+ *
+ * @param opacitySpeed
+ * @text Opacity Speed
+ * @type number
+ * @desc How many frames should it take for this layer to change from completely hidden to completely visible.
+ * @min 1
+ * @max 255
+ * @default 25
+ *
+ * @param mapList
+ * @text Map List
+ * @type number[]
+ * @desc A list of map ids where this layer will be active without needing tags
+ * @default []
+ *
+ * @param blendMode
+ * @text Blend Mode
+ * @type number
+ * @desc The blend type you want to use in this layer. Default is 0 for most layers, or 1 for lights.
+ * @default 0
+ *
+ * @param position
+ * @text Position
+ * @type Struct<LayerPosition>
+ * @desc The top left position of this layer.
+ * @default {}
+ *
+ * @param fadeIn
+ * @text Fade In
+ * @type boolean
+ * @desc Should this layer be made visible with a fade effect or instantly?
+ * @on Fade In
+ * @off Instantly
+ * @default false
+ *
+*/
+/*~struct~LayerPosition:
+ * @param x
+ * @text X Position
+ * @type number
+ * @default 0
+ *
+ * @param y
+ * @text Y Position
+ * @type number
+ * @default 0
+ *
+ * @param unit
+ * @text Position Unit
+ * @desc Is this layer's position set in pixels or tiles?
+ * @type select
+ * @default tiles
+ * @option Tiles
+ * @value tiles
+ * @option Pixels
+ * @value pixels
+ *
+ * @param boundTo
+ * @text Bound To
+ * @desc Is this layer's position bound to the map or the screen?
+ * @type select
+ * @default map
+ * @option Map
+ * @value map
+ * @option Screen
+ * @value screen
+ *
+ * @param moveX
  * @text X Speed
  * @type number
- * @desc how many pixels the fog should move horizontally at a time. Use a negative value to move left.
+ * @desc how many pixels the layer should move horizontally at a time. Use a negative value to move left.
+ * @default 0
  *
- * @arg moveY
+ * @param moveY
  * @text Y Speed
  * @type number
- * @desc how many pixels the fog should move vertically at a time. Use a negative value to move up.
- *
- * @command fogBlendMode
- * @text Change Fog Blend Mode
- * @desc
- *
- * @arg blend
- * @text Blend Type
- * @type select
- * @desc The blend type you want to use in the fog layer
+ * @desc how many pixels the layer should move vertically at a time. Use a negative value to move up.
  * @default 0
- * @option Normal
- * @value 0
- * @option Additive
- * @value 1
  *
- * @command fog
- * @text Change Fog
- * @desc
+ * @param tiling
+ * @text Tiling
+ * @type boolean
+ * @desc Should this layer use a tiling sprite? (Usually only enabled for fog layer)
+ * @on Tiled
+ * @off Not Tiled
+ * @default false
  *
- * @arg fileName
- * @text File Name
- * @type string
- * @desc The file name of the new fog
- *
- * @command light
- * @text Change Light
- * @desc
- *
- * @arg fileName
- * @text File Name
- * @type string
- * @desc The file name of the new light
- *
- * @command shadow
- * @text Change Shadow
- * @desc
- *
- * @arg fileName
- * @text File Name
- * @type string
- * @desc The file name of the new shadow
- *
- * @command par
- * @text Change Parallax
- * @desc
- *
- * @arg fileName
- * @text File Name
- * @type string
- * @desc The file name of the new parallax
- *
- * @command ground
- * @text Change Ground
- * @desc
- *
- * @arg fileName
- * @text File Name
- * @type string
- * @desc The file name of the new ground
- *
- **/
+ */
 /*~struct~CommonEventRegion:
  * @param regionId
  * @text Region Id

@@ -1,7 +1,7 @@
 CycloneAdvancedMaps.patchClass(Game_Event, $super => class {
   isMapPassable(x, y, d) {
-    const blockRegionId = CycloneAdvancedMaps.blockEventRegionId;
-    const unblockRegionId = CycloneAdvancedMaps.unblockEventRegionId;
+    const blockRegionId = CycloneAdvancedMaps.params.blockEventRegionId;
+    const unblockRegionId = CycloneAdvancedMaps.params.unblockEventRegionId;
 
     if (blockRegionId > 0 || unblockRegionId > 0) {
       const newX = $gameMap.roundXWithDirection(x, d);
@@ -14,7 +14,7 @@ CycloneAdvancedMaps.patchClass(Game_Event, $super => class {
         }
 
         if (regionId === unblockRegionId) {
-          return false;
+          return true;
         }
       }
     }
