@@ -15,7 +15,6 @@
     "extra-mv": "cd source/ExtraTilesets-MV & rollup -cw",
     "magic": "cd source/Magic & rollup -cw",
     "magic-mv": "cd source/Magic-MV & rollup -cw",
-    "maps": "cd source/Maps & rollup -cw",
     "movement": "cd source/Movement & rollup -cw",
     "movement-mv": "cd source/Movement-MV & rollup -cw",
     "online": "cd source/Online & rollup -cw",
