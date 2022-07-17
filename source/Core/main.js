@@ -391,7 +391,7 @@ class CyclonePlugin extends CyclonePatcher {
     return data;
   }
 
-  static parseList(data, mapper) {
+  static parseList(data, mapper, separator = ',') {
     let str = data;
     if (str.startsWith('[')) {
       str = str.substr(1);
@@ -400,7 +400,7 @@ class CyclonePlugin extends CyclonePatcher {
       str = str.substr(0, str.length -1);
     }
 
-    const list = str.split(',');
+    const list = str.split(separator || ',');
 
     if (mapper) {
       return list.map(item => mapper(item));
@@ -428,7 +428,7 @@ class CyclonePlugin extends CyclonePatcher {
     return data;
   }
 
-  static registerCommand(commandName, params, fn) {
+  static registerCommand(commandName, params, fn, mvParamOrder = []) {
     if (typeof params === 'function') {
       return PluginManager.registerCommand(this.getPluginFileName(), commandName, params);
     }
