@@ -47,7 +47,10 @@ class CycloneAdvancedMaps extends CyclonePlugin {
       },
       blendMode: 'int',
       mapList: 'int[]',
-      position: 'struct<CycloneLayerPosition>',
+      position: {
+        type: 'struct<CycloneLayerPosition>',
+        defaultValue: '{}',
+      },
       fadeIn: 'boolean',
     });
     this.structs.set('CycloneCustomLayer', {
