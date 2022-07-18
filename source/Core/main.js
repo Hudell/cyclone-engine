@@ -253,28 +253,33 @@ class CyclonePlugin extends CyclonePatcher {
     });
   }
 
-  static getParam({ value, defaultValue, type }) {
-    if (type.endsWith('[]')) {
-      return this.parseArrayParam({ value, type });
-    }
+  static getParam({ key, value, defaultValue, type }) {
+    try {
+      if (type.endsWith('[]')) {
+        return this.parseArrayParam({ key, value, type });
+      }
 
-    if (type.startsWith('struct<')) {
-      return this.parseStructParam({ value, defaultValue, type });
-    }
+      if (type.startsWith('struct<')) {
+        return this.parseStructParam({ key, value, defaultValue, type });
+      }
 
-    if (value === undefined) {
-      return defaultValue;
-    }
+      if (value === undefined) {
+        return defaultValue;
+      }
 
-    switch(type) {
-      case 'int':
-        return this.getIntParam({value, defaultValue });
-      case 'float':
-        return this.getFloatParam({ value, defaultValue });
-      case 'boolean':
-        return (typeof value === 'boolean') ? value : this.isTrue(String(value).trim());
-      default:
-        return value;
+      switch(type) {
+        case 'int':
+          return this.getIntParam({value, defaultValue });
+        case 'float':
+          return this.getFloatParam({ value, defaultValue });
+        case 'boolean':
+          return (typeof value === 'boolean') ? value : this.isTrue(String(value).trim());
+        default:
+          return value;
+      }
+    } catch (e) {
+      key && console.error(key);
+      throw e;
     }
   }
 
@@ -313,6 +318,7 @@ class CyclonePlugin extends CyclonePatcher {
       value = data.value ?? defaultValue;
     }
     return this.getParam({
+      key,
       value,
       defaultValue,
       type
@@ -358,6 +364,7 @@ class CyclonePlugin extends CyclonePatcher {
       }
 
       data[key] = this.getParam({
+        key,
         value: data[key],
         defaultValue: dataType.defaultValue,
         type: dataType.type,
@@ -367,30 +374,35 @@ class CyclonePlugin extends CyclonePatcher {
     return data;
   }
 
-  static parseStructParam({ value, defaultValue, type }) {
+  static parseStructParam({ key, value, defaultValue, type }) {
     let data;
     if (value) {
       try {
         data = JSON.parse(value);
       } catch (e) {
-        console.error('Cyclone Engine failed to parse param structure: ', value);
+        console.error('Cyclone Engine failed to parse param structure: ', key, value);
         console.error(e);
       }
     }
 
     if (!data) {
-      data = JSON.parse(defaultValue);
+      try {
+        data = JSON.parse(defaultValue);
+      } catch (e) {
+        console.error('Cyclone Engine failed to parse default value: ', key, defaultValue);
+        throw e;
+      }
     }
 
     const structTypeName = this.getRegexMatch(type, /struct<(.*)>/i, 1);
     if (!structTypeName) {
-      console.error(`Unknown plugin param type: ${ type }`); //`
+      console.error(`Unknown plugin param type: ${ type } (${ key || ''})`); //`
       return data;
     }
 
     const structType = this.structs.get(structTypeName);
     if (!structType) {
-      console.error(`Unknown param structure type: ${ structTypeName }`); //`
+      console.error(`Unknown param structure type: ${ structTypeName } (${ key || ''})`); //`
       return data;
     }
 

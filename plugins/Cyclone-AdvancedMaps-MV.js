@@ -873,38 +873,46 @@ function _createClass(Constructor, protoProps, staticProps) { if (protoProps) _d
     }, {
       key: "getParam",
       value: function getParam(_ref8) {
-        var t = _ref8.value,
-            e = _ref8.defaultValue,
-            r = _ref8.type;
-        if (r.endsWith("[]")) return this.parseArrayParam({
-          value: t,
-          type: r
-        });
-        if (r.startsWith("struct<")) return this.parseStructParam({
-          value: t,
-          defaultValue: e,
-          type: r
-        });
-        if (void 0 === t) return e;
+        var t = _ref8.key,
+            e = _ref8.value,
+            r = _ref8.defaultValue,
+            s = _ref8.type;
 
-        switch (r) {
-          case "int":
-            return this.getIntParam({
-              value: t,
-              defaultValue: e
-            });
+        try {
+          if (s.endsWith("[]")) return this.parseArrayParam({
+            key: t,
+            value: e,
+            type: s
+          });
+          if (s.startsWith("struct<")) return this.parseStructParam({
+            key: t,
+            value: e,
+            defaultValue: r,
+            type: s
+          });
+          if (void 0 === e) return r;
 
-          case "float":
-            return this.getFloatParam({
-              value: t,
-              defaultValue: e
-            });
+          switch (s) {
+            case "int":
+              return this.getIntParam({
+                value: e,
+                defaultValue: r
+              });
 
-          case "boolean":
-            return "boolean" == typeof t ? t : this.isTrue(String(t).trim());
+            case "float":
+              return this.getFloatParam({
+                value: e,
+                defaultValue: r
+              });
 
-          default:
-            return t;
+            case "boolean":
+              return "boolean" == typeof e ? e : this.isTrue(String(e).trim());
+
+            default:
+              return e;
+          }
+        } catch (e) {
+          throw t && console.error(t), e;
         }
       }
     }, {
@@ -950,6 +958,7 @@ function _createClass(Constructor, protoProps, staticProps) { if (protoProps) _d
           o = (_value = (this.getPluginParam(a) || {}).value) !== null && _value !== void 0 ? _value : i;
         }
         return this.getParam({
+          key: t,
           value: o,
           defaultValue: i,
           type: n
@@ -1004,6 +1013,7 @@ function _createClass(Constructor, protoProps, staticProps) { if (protoProps) _d
             type: s,
             defaultValue: this.defaultValueForType(s)
           }), e[r] = this.getParam({
+            key: r,
             value: e[r],
             defaultValue: s.defaultValue,
             type: s.type
@@ -1015,20 +1025,25 @@ function _createClass(Constructor, protoProps, staticProps) { if (protoProps) _d
     }, {
       key: "parseStructParam",
       value: function parseStructParam(_ref10) {
-        var t = _ref10.value,
-            e = _ref10.defaultValue,
-            r = _ref10.type;
-        var s;
-        if (t) try {
-          s = JSON.parse(t);
-        } catch (e) {
-          console.error("Cyclone Engine failed to parse param structure: ", t), console.error(e);
+        var t = _ref10.key,
+            e = _ref10.value,
+            r = _ref10.defaultValue,
+            s = _ref10.type;
+        var a;
+        if (e) try {
+          a = JSON.parse(e);
+        } catch (r) {
+          console.error("Cyclone Engine failed to parse param structure: ", t, e), console.error(r);
         }
-        s || (s = JSON.parse(e));
-        var a = this.getRegexMatch(r, /struct<(.*)>/i, 1);
-        if (!a) return console.error("Unknown plugin param type: ".concat(r)), s;
-        var n = this.structs.get(a);
-        return n ? this.parseStructData(n, s) : (console.error("Unknown param structure type: ".concat(a)), s);
+        if (!a) try {
+          a = JSON.parse(r);
+        } catch (e) {
+          throw console.error("Cyclone Engine failed to parse default value: ", t, r), e;
+        }
+        var n = this.getRegexMatch(s, /struct<(.*)>/i, 1);
+        if (!n) return console.error("Unknown plugin param type: ".concat(s, " (").concat(t || "", ")")), a;
+        var i = this.structs.get(n);
+        return i ? this.parseStructData(i, a) : (console.error("Unknown param structure type: ".concat(n, " (").concat(t || "", ")")), a);
       }
     }, {
       key: "parseList",
