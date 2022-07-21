@@ -7,7 +7,7 @@ export class WindowRegionName extends Window_MapName {
       return;
     }
 
-    const regionName = CycloneMaps.namedRegions.get(regionId);
+    const regionName = CycloneAdvancedMaps.namedRegions.get(regionId);
     if (!regionName) {
       return;
     }
@@ -28,7 +28,7 @@ export class WindowRegionName extends Window_MapName {
 
     const shouldUpdate = regionId > 0 || !this._showCount;
 
-    if (shouldUpdate && (CycloneMaps.params.regionNamesStay || regionId !== this._currentRegionId)) {
+    if (shouldUpdate && (CycloneAdvancedMaps.params.regionNamesStay || regionId !== this._currentRegionId)) {
       this._currentRegionId = regionId;
       this.open();
       return;

@@ -1,6 +1,4 @@
-import {
-  CyclonePlugin
-} from '../../Core/main';
+import '../../Core/main.min';
 
 let client;
 

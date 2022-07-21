@@ -1,4 +1,4 @@
-CycloneMaps.patchClass(Tilemap, $super => class {
+CycloneAdvancedMaps.patchClass(Tilemap, $super => class {
   initialize() {
     $super.initialize.call(this);
     this._tileWidth = $gameMap.tileWidth();
@@ -6,7 +6,7 @@ CycloneMaps.patchClass(Tilemap, $super => class {
   }
 
   updateTransform() {
-    if (CycloneMaps.params.disableTilemap && CycloneMaps.params.enableOverlays) {
+    if (CycloneAdvancedMaps.params.disableTilemap) {
       this._sortChildren();
       PIXI.Container.prototype.updateTransform.call(this);
       return;
@@ -16,7 +16,7 @@ CycloneMaps.patchClass(Tilemap, $super => class {
   }
 
   _addShadow(...args) {
-    if (CycloneMaps.disableAutoShadows) {
+    if (CycloneAdvancedMaps.params.disableAutoShadows) {
       return;
     }
 

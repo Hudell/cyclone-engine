@@ -1,6 +1,6 @@
 function _typeof(obj) { "@babel/helpers - typeof"; if (typeof Symbol === "function" && typeof Symbol.iterator === "symbol") { _typeof = function _typeof(obj) { return typeof obj; }; } else { _typeof = function _typeof(obj) { return obj && typeof Symbol === "function" && obj.constructor === Symbol && obj !== Symbol.prototype ? "symbol" : typeof obj; }; } return _typeof(obj); }
 
-function _createForOfIteratorHelper(o, allowArrayLike) { var it; if (typeof Symbol === "undefined" || o[Symbol.iterator] == null) { if (Array.isArray(o) || (it = _unsupportedIterableToArray(o)) || allowArrayLike && o && typeof o.length === "number") { if (it) o = it; var i = 0; var F = function F() {}; return { s: F, n: function n() { if (i >= o.length) return { done: true }; return { done: false, value: o[i++] }; }, e: function e(_e) { throw _e; }, f: F }; } throw new TypeError("Invalid attempt to iterate non-iterable instance.\nIn order to be iterable, non-array objects must have a [Symbol.iterator]() method."); } var normalCompletion = true, didErr = false, err; return { s: function s() { it = o[Symbol.iterator](); }, n: function n() { var step = it.next(); normalCompletion = step.done; return step; }, e: function e(_e2) { didErr = true; err = _e2; }, f: function f() { try { if (!normalCompletion && it["return"] != null) it["return"](); } finally { if (didErr) throw err; } } }; }
+function _createForOfIteratorHelper(o, allowArrayLike) { var it; if (typeof Symbol === "undefined" || o[Symbol.iterator] == null) { if (Array.isArray(o) || (it = _unsupportedIterableToArray(o)) || allowArrayLike && o && typeof o.length === "number") { if (it) o = it; var i = 0; var F = function F() {}; return { s: F, n: function n() { if (i >= o.length) return { done: true }; return { done: false, value: o[i++] }; }, e: function e(_e8) { throw _e8; }, f: F }; } throw new TypeError("Invalid attempt to iterate non-iterable instance.\nIn order to be iterable, non-array objects must have a [Symbol.iterator]() method."); } var normalCompletion = true, didErr = false, err; return { s: function s() { it = o[Symbol.iterator](); }, n: function n() { var step = it.next(); normalCompletion = step.done; return step; }, e: function e(_e9) { didErr = true; err = _e9; }, f: function f() { try { if (!normalCompletion && it["return"] != null) it["return"](); } finally { if (didErr) throw err; } } }; }
 
 function _unsupportedIterableToArray(o, minLen) { if (!o) return; if (typeof o === "string") return _arrayLikeToArray(o, minLen); var n = Object.prototype.toString.call(o).slice(8, -1); if (n === "Object" && o.constructor) n = o.constructor.name; if (n === "Map" || n === "Set") return Array.from(o); if (n === "Arguments" || /^(?:Ui|I)nt(?:8|16|32)(?:Clamped)?Array$/.test(n)) return _arrayLikeToArray(o, minLen); }
 
@@ -180,192 +180,162 @@ function _createClass(Constructor, protoProps, staticProps) { if (protoProps) _d
     };
   }
 
-  var CyclonePatcher = /*#__PURE__*/function () {
-    function CyclonePatcher() {
-      _classCallCheck(this, CyclonePatcher);
+  globalThis.CyclonePatcher = /*#__PURE__*/function () {
+    function _class() {
+      _classCallCheck(this, _class);
     }
 
-    _createClass(CyclonePatcher, null, [{
+    _createClass(_class, null, [{
       key: "initialize",
-      value: function initialize(pluginName) {
-        this.pluginName = pluginName;
-        this.superClasses = new Map();
+      value: function initialize(t) {
+        this.pluginName = t, this.superClasses = new Map();
       }
     }, {
       key: "_descriptorIsProperty",
-      value: function _descriptorIsProperty(descriptor) {
-        return descriptor.get || descriptor.set || !descriptor.value || typeof descriptor.value !== 'function';
+      value: function _descriptorIsProperty(t) {
+        return t.get || t.set || !t.value || "function" != typeof t.value;
       }
     }, {
       key: "_getAllClassDescriptors",
-      value: function _getAllClassDescriptors(classObj) {
-        var usePrototype = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : false;
+      value: function _getAllClassDescriptors(t) {
+        var e = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : !1;
+        if (t === Object) return {};
+        var r = Object.getOwnPropertyDescriptors(e ? t.prototype : t);
+        var s = {};
 
-        if (classObj === Object) {
-          return {};
+        if (t.prototype) {
+          var _r = Object.getPrototypeOf(t.prototype).constructor;
+          _r !== Object && (s = this._getAllClassDescriptors(_r, e));
         }
 
-        var descriptors = Object.getOwnPropertyDescriptors(usePrototype ? classObj.prototype : classObj);
-        var parentDescriptors = {};
-
-        if (classObj.prototype) {
-          var parentClass = Object.getPrototypeOf(classObj.prototype).constructor;
-
-          if (parentClass !== Object) {
-            parentDescriptors = this._getAllClassDescriptors(parentClass, usePrototype);
-          }
-        }
-
-        return Object.assign({}, parentDescriptors, descriptors);
+        return Object.assign({}, s, r);
       }
     }, {
       key: "_assignDescriptor",
-      value: function _assignDescriptor(receiver, giver, descriptor, descriptorName) {
-        var autoRename = arguments.length > 4 && arguments[4] !== undefined ? arguments[4] : false;
-
-        if (this._descriptorIsProperty(descriptor)) {
-          if (descriptor.get || descriptor.set) {
-            Object.defineProperty(receiver, descriptorName, {
-              get: descriptor.get,
-              set: descriptor.set,
-              enumerable: descriptor.enumerable,
-              configurable: descriptor.configurable
-            });
-          } else {
-            Object.defineProperty(receiver, descriptorName, {
-              value: descriptor.value,
-              enumerable: descriptor.enumerable,
-              configurable: descriptor.configurable
-            });
+      value: function _assignDescriptor(t, e, r, s) {
+        var a = arguments.length > 4 && arguments[4] !== undefined ? arguments[4] : !1;
+        if (this._descriptorIsProperty(r)) r.get || r.set ? Object.defineProperty(t, s, {
+          get: r.get,
+          set: r.set,
+          enumerable: r.enumerable,
+          configurable: r.configurable
+        }) : Object.defineProperty(t, s, {
+          value: r.value,
+          enumerable: r.enumerable,
+          configurable: r.configurable
+        });else {
+          var _r2 = s;
+          if (a) for (; (_r2 in t);) {
+            _r2 = "_".concat(_r2);
           }
-        } else {
-          var newName = descriptorName;
-
-          if (autoRename) {
-            while (newName in receiver) {
-              newName = "_".concat(newName);
-            }
-          }
-
-          receiver[newName] = giver[descriptorName];
+          t[_r2] = e[s];
         }
       }
     }, {
       key: "_applyPatch",
-      value: function _applyPatch(baseClass, patchClass, $super, ignoredNames) {
-        var usePrototype = arguments.length > 4 && arguments[4] !== undefined ? arguments[4] : false;
+      value: function _applyPatch(t, e, r, s) {
+        var a = arguments.length > 4 && arguments[4] !== undefined ? arguments[4] : !1;
 
-        var baseMethods = this._getAllClassDescriptors(baseClass, usePrototype);
+        var n = this._getAllClassDescriptors(t, a),
+            i = a ? t.prototype : t,
+            o = a ? e.prototype : e,
+            l = Object.getOwnPropertyDescriptors(o);
 
-        var baseClassOrPrototype = usePrototype ? baseClass.prototype : baseClass;
-        var patchClassOrPrototype = usePrototype ? patchClass.prototype : patchClass;
-        var descriptors = Object.getOwnPropertyDescriptors(patchClassOrPrototype);
-        var anyOverride = false;
+        var u = !1;
 
-        for (var methodName in descriptors) {
-          if (ignoredNames.includes(methodName)) {
-            continue;
+        for (var _t in l) {
+          if (s.includes(_t)) continue;
+
+          if (_t in n) {
+            u = !0;
+            var _e2 = n[_t];
+
+            this._assignDescriptor(r, i, _e2, _t, !0);
           }
 
-          if (methodName in baseMethods) {
-            anyOverride = true;
-            var baseDescriptor = baseMethods[methodName];
+          var _e = l[_t];
 
-            this._assignDescriptor($super, baseClassOrPrototype, baseDescriptor, methodName, true);
-          }
-
-          var descriptor = descriptors[methodName];
-
-          this._assignDescriptor(baseClassOrPrototype, patchClassOrPrototype, descriptor, methodName);
+          this._assignDescriptor(i, o, _e, _t);
         }
 
-        return anyOverride;
+        return u;
       }
     }, {
       key: "patchClass",
-      value: function patchClass(baseClass, patchFn) {
-        var $super = this.superClasses && this.superClasses[baseClass.name] || {};
-        var $prototype = {};
-        var $dynamicSuper = {};
-        var patchClass = patchFn($dynamicSuper, $prototype);
+      value: function patchClass(t, e) {
+        var r = this.superClasses && this.superClasses[t.name] || {},
+            s = {},
+            a = {},
+            n = e(a, s);
+        if ("function" != typeof n) throw new Error("Invalid class patch for ".concat(t.name));
 
-        if (typeof patchClass !== 'function') {
-          throw new Error("Invalid class patch for ".concat(baseClass.name)); //`
-        }
-
-        var ignoredStaticNames = Object.getOwnPropertyNames(function Test() {
-          _classCallCheck(this, Test);
-        });
-        var ignoredNames = Object.getOwnPropertyNames(function Test() {
-          _classCallCheck(this, Test);
-        }.prototype);
-
-        var anyStaticOverride = this._applyPatch(baseClass, patchClass, $super, ignoredStaticNames);
-
-        var anyNonStaticOverride = this._applyPatch(baseClass, patchClass, $prototype, ignoredNames, true);
-
-        if (anyStaticOverride) {
-          var descriptors = Object.getOwnPropertyDescriptors($super);
-
-          for (var descriptorName in descriptors) {
-            this._assignDescriptor($dynamicSuper, $super, descriptors[descriptorName], descriptorName);
+        var i = Object.getOwnPropertyNames( /*#__PURE__*/function () {
+          function _class2() {
+            _classCallCheck(this, _class2);
           }
 
-          if (anyNonStaticOverride) {
-            $dynamicSuper.$prototype = $prototype;
+          return _class2;
+        }()),
+            o = Object.getOwnPropertyNames( /*#__PURE__*/function () {
+          function _class3() {
+            _classCallCheck(this, _class3);
           }
-        } else {
-          Object.assign($dynamicSuper, $prototype);
-        }
 
-        if (this.superClasses) {
-          this.superClasses[baseClass.name] = $dynamicSuper;
-        }
+          return _class3;
+        }().prototype),
+            l = this._applyPatch(t, n, r, i),
+            u = this._applyPatch(t, n, s, o, !0);
+
+        if (l) {
+          var _t2 = Object.getOwnPropertyDescriptors(r);
+
+          for (var _e3 in _t2) {
+            this._assignDescriptor(a, r, _t2[_e3], _e3);
+          }
+
+          u && (a.$prototype = s);
+        } else Object.assign(a, s);
+
+        this.superClasses && (this.superClasses[t.name] = a);
       }
     }]);
 
-    return CyclonePatcher;
+    return _class;
   }();
 
-  var trueStrings = Object.freeze(['TRUE', 'ON', '1', 'YES', 'T', 'V']);
+  var t = Object.freeze(["TRUE", "ON", "1", "YES", "T", "V"]);
 
-  var CyclonePlugin = /*#__PURE__*/function (_CyclonePatcher) {
-    _inherits(CyclonePlugin, _CyclonePatcher);
+  var e = /*#__PURE__*/function (_CyclonePatcher) {
+    _inherits(e, _CyclonePatcher);
 
-    var _super = _createSuper(CyclonePlugin);
+    var _super = _createSuper(e);
 
-    function CyclonePlugin() {
-      _classCallCheck(this, CyclonePlugin);
+    function e() {
+      _classCallCheck(this, e);
 
       return _super.apply(this, arguments);
     }
 
-    _createClass(CyclonePlugin, null, [{
+    _createClass(e, null, [{
       key: "initialize",
-      value: function initialize(pluginName) {
-        _get(_getPrototypeOf(CyclonePlugin), "initialize", this).call(this, pluginName);
-
-        this.fileName = undefined;
-        this.params = {};
-        this.structs = new Map();
-        this.eventListeners = new Map();
-        this.structs.set('Dictionary', {
+      value: function initialize(t) {
+        _get(_getPrototypeOf(e), "initialize", this).call(this, t), this.fileName = void 0, this.params = {}, this.structs = new Map(), this.eventListeners = new Map(), this.structs.set("Dictionary", {
           name: {
-            type: 'string',
-            defaultValue: ''
+            type: "string",
+            defaultValue: ""
           },
           value: {
-            type: 'string',
-            defaultValue: ''
+            type: "string",
+            defaultValue: ""
           }
         });
       }
     }, {
       key: "register",
       value: function register() {
-        var paramMap = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : {};
-        var dataMap = this.loadAllParams();
-        this.params = this.loadParamMap(paramMap, dataMap);
+        var t = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : {};
+        var e = this.loadAllParams();
+        this.params = this.loadParamMap(t, e);
       }
     }, {
       key: "loadAllParams",
@@ -375,29 +345,18 @@ function _createClass(Constructor, protoProps, staticProps) { if (protoProps) _d
 
         try {
           for (_iterator.s(); !(_step = _iterator.n()).done;) {
-            var plugin = _step.value;
+            var _t3 = _step.value;
+            if (!_t3 || !_t3.status) continue;
+            if (!_t3.description || !_t3.description.includes("<pluginName:".concat(this.pluginName))) continue;
+            this.fileName = _t3.name;
 
-            if (!plugin || !plugin.status) {
-              continue;
+            var _e4 = new Map();
+
+            for (var r in _t3.parameters) {
+              r && !r.startsWith("-") && _e4.set(r, _t3.parameters[r]);
             }
 
-            if (!plugin.description || !plugin.description.includes("<pluginName:".concat(this.pluginName))) {
-              //`
-              continue;
-            }
-
-            this.fileName = plugin.name;
-            var pluginParams = new Map();
-
-            for (var paramName in plugin.parameters) {
-              if (!paramName || paramName.startsWith('-')) {
-                continue;
-              }
-
-              pluginParams.set(paramName, plugin.parameters[paramName]);
-            }
-
-            return pluginParams;
+            return _e4;
           }
         } catch (err) {
           _iterator.e(err);
@@ -407,115 +366,81 @@ function _createClass(Constructor, protoProps, staticProps) { if (protoProps) _d
       }
     }, {
       key: "loadParamMap",
-      value: function loadParamMap(paramMap) {
-        var dataMap = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : undefined;
-        var params = {};
+      value: function loadParamMap(t, e) {
+        var r = {};
 
-        for (var key in paramMap) {
-          if (!paramMap.hasOwnProperty(key)) {
-            continue;
-          }
-
-          try {
-            params[key] = this.parseParam(key, paramMap, dataMap);
-          } catch (e) {
-            console.error("CycloneEngine crashed while trying to parse a parameter value (".concat(key, "). Please report the following error to Hudell:")); //`
-
-            console.log(e);
+        for (var s in t) {
+          if (t.hasOwnProperty(s)) try {
+            r[s] = this.parseParam(s, t, e);
+          } catch (t) {
+            console.error("CycloneEngine crashed while trying to parse a parameter value (".concat(s, "). Please report the following error to Hudell:")), console.log(t);
           }
         }
 
-        return params;
+        return r;
       }
     }, {
       key: "registerEvent",
-      value: function registerEvent(eventName, callback) {
-        if (!this.eventListeners.has(eventName)) {
-          this.eventListeners.set(eventName, new Set());
-        }
-
-        var listeners = this.eventListeners.get(eventName);
-        listeners.add(callback);
+      value: function registerEvent(t, e) {
+        this.eventListeners.has(t) || this.eventListeners.set(t, new Set());
+        this.eventListeners.get(t).add(e);
       }
     }, {
       key: "removeEventListener",
-      value: function removeEventListener(eventName, callback) {
-        if (!this.eventListeners.has(eventName)) {
-          return;
-        }
-
-        var listeners = this.eventListeners.get(eventName);
-        listeners["delete"](callback);
+      value: function removeEventListener(t, e) {
+        if (!this.eventListeners.has(t)) return;
+        this.eventListeners.get(t)["delete"](e);
       }
     }, {
       key: "shouldReturnCallbackResult",
-      value: function shouldReturnCallbackResult(result, _ref) {
-        var abortOnTrue = _ref.abortOnTrue,
-            abortOnFalse = _ref.abortOnFalse,
-            returnOnValue = _ref.returnOnValue;
-
-        if (result === false && abortOnFalse) {
-          return true;
-        }
-
-        if (result === true && abortOnTrue) {
-          return true;
-        }
-
-        if (result !== undefined && returnOnValue) {
-          return true;
-        }
-
-        return false;
+      value: function shouldReturnCallbackResult(t, _ref) {
+        var e = _ref.abortOnTrue,
+            r = _ref.abortOnFalse,
+            s = _ref.returnOnValue;
+        return !(!1 !== t || !r) || !(!0 !== t || !e) || !(void 0 === t || !s);
       }
     }, {
       key: "runEvent",
-      value: function runEvent(eventName) {
+      value: function runEvent(t) {
         var _ref2 = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : {},
             _ref2$abortOnTrue = _ref2.abortOnTrue,
-            abortOnTrue = _ref2$abortOnTrue === void 0 ? false : _ref2$abortOnTrue,
+            e = _ref2$abortOnTrue === void 0 ? !1 : _ref2$abortOnTrue,
             _ref2$abortOnFalse = _ref2.abortOnFalse,
-            abortOnFalse = _ref2$abortOnFalse === void 0 ? false : _ref2$abortOnFalse,
+            r = _ref2$abortOnFalse === void 0 ? !1 : _ref2$abortOnFalse,
             _ref2$returnOnValue = _ref2.returnOnValue,
-            returnOnValue = _ref2$returnOnValue === void 0 ? false : _ref2$returnOnValue;
+            s = _ref2$returnOnValue === void 0 ? !1 : _ref2$returnOnValue;
 
-        if (!this.eventListeners.has(eventName)) {
-          return;
+        if (!this.eventListeners.has(t)) return;
+        var n = this.eventListeners.get(t);
+
+        for (var _len = arguments.length, a = new Array(_len > 2 ? _len - 2 : 0), _key = 2; _key < _len; _key++) {
+          a[_key - 2] = arguments[_key];
         }
 
-        var listeners = this.eventListeners.get(eventName);
-
-        for (var _len = arguments.length, args = new Array(_len > 2 ? _len - 2 : 0), _key = 2; _key < _len; _key++) {
-          args[_key - 2] = arguments[_key];
-        }
-
-        var _iterator2 = _createForOfIteratorHelper(listeners),
+        var _iterator2 = _createForOfIteratorHelper(n),
             _step2;
 
         try {
           for (_iterator2.s(); !(_step2 = _iterator2.n()).done;) {
-            var callback = _step2.value;
+            var _t4 = _step2.value;
 
-            if (typeof callback === 'number') {
-              this.runCommonEvent(callback);
+            if ("number" == typeof _t4) {
+              this.runCommonEvent(_t4);
               continue;
             }
 
-            if (typeof callback !== 'function') {
-              console.error('CycloneEngine: Invalid callback type:');
-              console.log(callback);
+            if ("function" != typeof _t4) {
+              console.error("CycloneEngine: Invalid callback type:"), console.log(_t4);
               continue;
             }
 
-            var result = callback.apply(void 0, args);
+            var _n = _t4.apply(void 0, a);
 
-            if (this.shouldReturnCallbackResult(result, {
-              abortOnTrue: abortOnTrue,
-              abortOnFalse: abortOnFalse,
-              returnOnValue: returnOnValue
-            })) {
-              return result;
-            }
+            if (this.shouldReturnCallbackResult(_n, {
+              abortOnTrue: e,
+              abortOnFalse: r,
+              returnOnValue: s
+            })) return _n;
           }
         } catch (err) {
           _iterator2.e(err);
@@ -525,55 +450,41 @@ function _createClass(Constructor, protoProps, staticProps) { if (protoProps) _d
       }
     }, {
       key: "runCommonEvent",
-      value: function runCommonEvent(eventId) {
+      value: function runCommonEvent(t) {
         var _this = this;
 
-        var commonEvent = globalThis.$dataCommonEvents[eventId];
+        var e = globalThis.$dataCommonEvents[t];
+        if (!e) return;
+        var r = new Game_Interpreter(1);
 
-        if (!commonEvent) {
-          return;
-        }
-
-        var interpreter = new Game_Interpreter(1);
-        interpreter.setup(commonEvent.list, 0);
-
-        if (!this._interpreters) {
-          this._interpreters = new Set(); // Tap into rpg maker core so we can update our interpreters in sync with the engine
-
-          var oldUpdateMain = SceneManager.updateMain;
+        if (r.setup(e.list, 0), !this._interpreters) {
+          this._interpreters = new Set();
+          var _t5 = SceneManager.updateMain;
 
           SceneManager.updateMain = function () {
-            oldUpdateMain.call(SceneManager);
-
-            _this.update();
+            _t5.call(SceneManager), _this.update();
           };
         }
 
-        this._interpreters.add(interpreter);
+        this._interpreters.add(r);
       }
     }, {
       key: "update",
       value: function update() {
-        if (!this._interpreters) {
-          return;
-        }
+        if (this._interpreters) {
+          var _iterator3 = _createForOfIteratorHelper(this._interpreters),
+              _step3;
 
-        var _iterator3 = _createForOfIteratorHelper(this._interpreters),
-            _step3;
-
-        try {
-          for (_iterator3.s(); !(_step3 = _iterator3.n()).done;) {
-            var interpreter = _step3.value;
-            interpreter.update();
-
-            if (!interpreter.isRunning()) {
-              this._interpreters["delete"](interpreter);
+          try {
+            for (_iterator3.s(); !(_step3 = _iterator3.n()).done;) {
+              var _t6 = _step3.value;
+              _t6.update(), _t6.isRunning() || this._interpreters["delete"](_t6);
             }
+          } catch (err) {
+            _iterator3.e(err);
+          } finally {
+            _iterator3.f();
           }
-        } catch (err) {
-          _iterator3.e(err);
-        } finally {
-          _iterator3.f();
         }
       }
     }, {
@@ -585,60 +496,38 @@ function _createClass(Constructor, protoProps, staticProps) { if (protoProps) _d
       }
     }, {
       key: "isTrue",
-      value: function isTrue(value) {
-        if (typeof value !== 'string') {
-          return Boolean(value);
-        }
-
-        return trueStrings.includes(value.toUpperCase());
+      value: function isTrue(e) {
+        return "string" != typeof e ? Boolean(e) : t.includes(e.toUpperCase());
       }
     }, {
       key: "isFalse",
-      value: function isFalse(value) {
-        return !this.isTrue(value);
+      value: function isFalse(t) {
+        return !this.isTrue(t);
       }
     }, {
       key: "getIntParam",
       value: function getIntParam(_ref3) {
-        var value = _ref3.value,
-            defaultValue = _ref3.defaultValue;
+        var t = _ref3.value,
+            e = _ref3.defaultValue;
 
         try {
-          var result = parseInt(value);
-
-          if (isNaN(result)) {
-            return defaultValue;
-          }
-
-          return result;
-        } catch (e) {
-          if (value !== '') {
-            console.error("Cyclone Engine plugin ".concat(this.pluginName, ": Param is expected to be an integer number, but the received value was '").concat(value, "'.")); //`
-          }
-
-          return defaultValue;
+          var r = parseInt(t);
+          return isNaN(r) ? e : r;
+        } catch (r) {
+          return "" !== t && console.error("Cyclone Engine plugin ".concat(this.pluginName, ": Param is expected to be an integer number, but the received value was '").concat(t, "'.")), e;
         }
       }
     }, {
       key: "getFloatParam",
       value: function getFloatParam(_ref4) {
-        var value = _ref4.value,
-            defaultValue = _ref4.defaultValue;
+        var t = _ref4.value,
+            e = _ref4.defaultValue;
 
         try {
-          var result = parseFloat(value.replace(',', '.'));
-
-          if (isNaN(result)) {
-            return defaultValue;
-          }
-
-          return result;
-        } catch (e) {
-          if (value !== '') {
-            console.error("Cyclone Engine plugin ".concat(this.pluginName, ": Param is expected to be a number, but the received value was '").concat(value, "'.")); //`
-          }
-
-          return defaultValue;
+          var r = parseFloat(t.replace(",", "."));
+          return isNaN(r) ? e : r;
+        } catch (r) {
+          return "" !== t && console.error("Cyclone Engine plugin ".concat(this.pluginName, ": Param is expected to be a number, but the received value was '").concat(t, "'.")), e;
         }
       }
     }, {
@@ -646,41 +535,36 @@ function _createClass(Constructor, protoProps, staticProps) { if (protoProps) _d
       value: function getIntListParam(_ref5) {
         var _this2 = this;
 
-        var value = _ref5.value;
-        return this.parseArray((value !== null && value !== void 0 ? value : '').trim(), function (item) {
+        var t = _ref5.value;
+        return this.parseArray((t !== null && t !== void 0 ? t : "").trim(), function (t) {
           try {
-            return parseInt(item.trim());
+            return parseInt(t.trim());
           } catch (e) {
-            if (item !== '') {
-              console.error("Cyclone Engine plugin ".concat(_this2.pluginName, ": Param is expected to be a list of integer numbers, but one of the items was '").concat(item, "'.")); //`
-            }
-
-            return 0;
+            return "" !== t && console.error("Cyclone Engine plugin ".concat(_this2.pluginName, ": Param is expected to be a list of integer numbers, but one of the items was '").concat(t, "'.")), 0;
           }
         });
       }
     }, {
       key: "parseStructArrayParam",
       value: function parseStructArrayParam(_ref6) {
-        var data = _ref6.data,
-            type = _ref6.type;
-        var newData = [];
+        var t = _ref6.data,
+            e = _ref6.type;
+        var r = [];
 
-        var _iterator4 = _createForOfIteratorHelper(data),
+        var _iterator4 = _createForOfIteratorHelper(t),
             _step4;
 
         try {
           for (_iterator4.s(); !(_step4 = _iterator4.n()).done;) {
-            var json = _step4.value;
-            var itemData = this.parseStructParam({
-              value: json,
-              defaultValue: '',
-              type: type
+            var s = _step4.value;
+
+            var _t7 = this.parseStructParam({
+              value: s,
+              defaultValue: "",
+              type: e
             });
 
-            if (itemData) {
-              newData.push(itemData);
-            }
+            _t7 && r.push(_t7);
           }
         } catch (err) {
           _iterator4.e(err);
@@ -688,154 +572,129 @@ function _createClass(Constructor, protoProps, staticProps) { if (protoProps) _d
           _iterator4.f();
         }
 
-        return newData;
+        return r;
       }
     }, {
       key: "getFloatListParam",
       value: function getFloatListParam(_ref7) {
         var _this3 = this;
 
-        var value = _ref7.value;
-        return this.parseArray((value || '').trim(), function (item) {
+        var t = _ref7.value;
+        return this.parseArray((t || "").trim(), function (t) {
           try {
-            return parseFloat(item.trim());
+            return parseFloat(t.trim());
           } catch (e) {
-            if (item !== '') {
-              console.error("Cyclone Engine plugin ".concat(_this3.pluginName, ": Param ").concat(name, " is expected to be a list of numbers, but one of the items was '").concat(item, "'.")); //`
-            }
-
-            return 0;
+            return "" !== t && console.error("Cyclone Engine plugin ".concat(_this3.pluginName, ": Param ").concat(name, " is expected to be a list of numbers, but one of the items was '").concat(t, "'.")), 0;
           }
         });
       }
     }, {
       key: "getParam",
       value: function getParam(_ref8) {
-        var value = _ref8.value,
-            defaultValue = _ref8.defaultValue,
-            type = _ref8.type;
+        var t = _ref8.value,
+            e = _ref8.defaultValue,
+            r = _ref8.type;
+        if (r.endsWith("[]")) return this.parseArrayParam({
+          value: t,
+          type: r
+        });
+        if (r.startsWith("struct<")) return this.parseStructParam({
+          value: t,
+          defaultValue: e,
+          type: r
+        });
+        if (void 0 === t) return e;
 
-        if (type.endsWith('[]')) {
-          return this.parseArrayParam({
-            value: value,
-            type: type
-          });
-        }
-
-        if (type.startsWith('struct<')) {
-          return this.parseStructParam({
-            value: value,
-            defaultValue: defaultValue,
-            type: type
-          });
-        }
-
-        if (value === undefined) {
-          return defaultValue;
-        }
-
-        switch (type) {
-          case 'int':
+        switch (r) {
+          case "int":
             return this.getIntParam({
-              value: value,
-              defaultValue: defaultValue
+              value: t,
+              defaultValue: e
             });
 
-          case 'float':
+          case "float":
             return this.getFloatParam({
-              value: value,
-              defaultValue: defaultValue
+              value: t,
+              defaultValue: e
             });
 
-          case 'boolean':
-            return typeof value === 'boolean' ? value : this.isTrue(String(value).trim());
+          case "boolean":
+            return "boolean" == typeof t ? t : this.isTrue(String(t).trim());
 
           default:
-            return value;
+            return t;
         }
       }
     }, {
       key: "getPluginParam",
-      value: function getPluginParam(paramName) {
-        return this.params.get(paramName);
+      value: function getPluginParam(t) {
+        return this.params.get(t);
       }
     }, {
       key: "defaultValueForType",
-      value: function defaultValueForType(typeName) {
-        switch (typeName) {
-          case 'int':
+      value: function defaultValueForType(t) {
+        switch (t) {
+          case "int":
             return 0;
 
-          case 'boolean':
-            return false;
+          case "boolean":
+            return !1;
         }
 
-        return '';
+        return "";
       }
     }, {
       key: "parseParam",
-      value: function parseParam(key, paramMap) {
-        var dataMap = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : undefined;
-        var paramData = paramMap[key];
+      value: function parseParam(t, e, r) {
+        var _r$get;
 
-        if (paramData && typeof paramData === 'string') {
-          paramData = {
-            type: paramData,
-            defaultValue: this.defaultValueForType(paramData)
-          };
+        var s = e[t];
+        s && "string" == typeof s && (s = {
+          type: s,
+          defaultValue: this.defaultValueForType(s)
+        });
+        var _s = s,
+            _s$name = _s.name,
+            a = _s$name === void 0 ? t : _s$name,
+            _s$type = _s.type,
+            n = _s$type === void 0 ? "string" : _s$type,
+            _s$defaultValue = _s.defaultValue,
+            i = _s$defaultValue === void 0 ? "" : _s$defaultValue;
+        var o;
+        if (r) o = (_r$get = r.get(a)) !== null && _r$get !== void 0 ? _r$get : i;else {
+          var _value;
+
+          o = (_value = (this.getPluginParam(a) || {}).value) !== null && _value !== void 0 ? _value : i;
         }
-
-        var _paramData = paramData,
-            _paramData$name = _paramData.name,
-            name = _paramData$name === void 0 ? key : _paramData$name,
-            _paramData$type = _paramData.type,
-            type = _paramData$type === void 0 ? 'string' : _paramData$type,
-            _paramData$defaultVal = _paramData.defaultValue,
-            defaultValue = _paramData$defaultVal === void 0 ? '' : _paramData$defaultVal;
-        var value;
-
-        if (dataMap) {
-          var _dataMap$get;
-
-          value = (_dataMap$get = dataMap.get(name)) !== null && _dataMap$get !== void 0 ? _dataMap$get : defaultValue;
-        } else {
-          var _data$value;
-
-          var data = this.getPluginParam(name) || {};
-          value = (_data$value = data.value) !== null && _data$value !== void 0 ? _data$value : defaultValue;
-        }
-
         return this.getParam({
-          value: value,
-          defaultValue: defaultValue,
-          type: type
+          value: o,
+          defaultValue: i,
+          type: n
         });
       }
     }, {
       key: "parseArrayParam",
       value: function parseArrayParam(_ref9) {
-        var value = _ref9.value,
-            type = _ref9.type;
-        var data = this.parseArray(value);
+        var t = _ref9.value,
+            e = _ref9.type;
+        var r = this.parseArray(t);
+        if (!r || !r.length) return r;
+        var s = e.substr(0, e.length - 2),
+            a = [];
 
-        if (!data || !data.length) {
-          return data;
-        }
-
-        var itemType = type.substr(0, type.length - 2);
-        var newData = [];
-
-        var _iterator5 = _createForOfIteratorHelper(data),
+        var _iterator5 = _createForOfIteratorHelper(r),
             _step5;
 
         try {
           for (_iterator5.s(); !(_step5 = _iterator5.n()).done;) {
-            var _value = _step5.value;
-            var defaultValue = this.defaultValueForType(itemType);
-            newData.push(this.getParam({
-              value: _value,
-              type: itemType,
-              defaultValue: defaultValue
+            var _t8 = _step5.value;
+
+            var _e5 = this.defaultValueForType(s);
+
+            a.push(this.getParam({
+              value: _t8,
+              type: s,
+              defaultValue: _e5
             }));
           }
         } catch (err) {
@@ -844,153 +703,95 @@ function _createClass(Constructor, protoProps, staticProps) { if (protoProps) _d
           _iterator5.f();
         }
 
-        return newData;
+        return a;
       }
     }, {
       key: "getRegexMatch",
-      value: function getRegexMatch(text, regex, matchIndex) {
-        var matches = text.match(regex);
-
-        if (matches) {
-          return matches[matchIndex];
-        }
+      value: function getRegexMatch(t, e, r) {
+        var s = t.match(e);
+        if (s) return s[r];
       }
     }, {
       key: "parseStructParam",
       value: function parseStructParam(_ref10) {
-        var value = _ref10.value,
-            defaultValue = _ref10.defaultValue,
-            type = _ref10.type;
-        var data;
-
-        if (value) {
-          try {
-            data = JSON.parse(value);
-          } catch (e) {
-            console.error('Cyclone Engine failed to parse param structure: ', value);
-            console.error(e);
-          }
+        var t = _ref10.value,
+            e = _ref10.defaultValue,
+            r = _ref10.type;
+        var s;
+        if (t) try {
+          s = JSON.parse(t);
+        } catch (e) {
+          console.error("Cyclone Engine failed to parse param structure: ", t), console.error(e);
         }
+        s || (s = JSON.parse(e));
+        var a = this.getRegexMatch(r, /struct<(.*)>/i, 1);
+        if (!a) return console.error("Unknown plugin param type: ".concat(r)), s;
+        var n = this.structs.get(a);
+        if (!n) return console.error("Unknown param structure type: ".concat(a)), s;
 
-        if (!data) {
-          data = JSON.parse(defaultValue);
-        }
-
-        var structTypeName = this.getRegexMatch(type, /struct<(.*)>/i, 1);
-
-        if (!structTypeName) {
-          console.error("Unknown plugin param type: ".concat(type)); //`
-
-          return data;
-        }
-
-        var structType = this.structs.get(structTypeName);
-
-        if (!structType) {
-          console.error("Unknown param structure type: ".concat(structTypeName)); //`
-
-          return data;
-        }
-
-        for (var key in structType) {
-          if (!structType.hasOwnProperty(key)) {
-            continue;
-          }
-
-          var dataType = structType[key];
-
-          if (typeof dataType === 'string') {
-            dataType = {
-              type: dataType,
-              defaultValue: this.defaultValueForType(dataType)
-            };
-          }
-
-          data[key] = this.getParam({
-            value: data[key],
-            defaultValue: dataType.defaultValue,
-            type: dataType.type
+        for (var _t9 in n) {
+          if (!n.hasOwnProperty(_t9)) continue;
+          var _e6 = n[_t9];
+          "string" == typeof _e6 && (_e6 = {
+            type: _e6,
+            defaultValue: this.defaultValueForType(_e6)
+          }), s[_t9] = this.getParam({
+            value: s[_t9],
+            defaultValue: _e6.defaultValue,
+            type: _e6.type
           });
         }
 
-        return data;
+        return s;
       }
     }, {
       key: "parseList",
-      value: function parseList(data, mapper) {
-        var str = data;
-
-        if (str.startsWith('[')) {
-          str = str.substr(1);
-        }
-
-        if (str.endsWith(']')) {
-          str = str.substr(0, str.length - 1);
-        }
-
-        var list = str.split(',');
-
-        if (mapper) {
-          return list.map(function (item) {
-            return mapper(item);
-          });
-        }
-
-        return list;
+      value: function parseList(t, e) {
+        var r = t;
+        r.startsWith("[") && (r = r.substr(1)), r.endsWith("]") && (r = r.substr(0, r.length - 1));
+        var s = r.split(",");
+        return e ? s.map(function (t) {
+          return e(t);
+        }) : s;
       }
     }, {
       key: "parseArray",
-      value: function parseArray(value, mapper) {
-        var data;
+      value: function parseArray(t, e) {
+        var r;
 
         try {
-          data = JSON.parse(value);
-        } catch (e) {
+          r = JSON.parse(t);
+        } catch (t) {
           return [];
         }
 
-        if (!data || !data.length) {
-          return [];
-        }
-
-        if (mapper) {
-          return data.map(function (item) {
-            return mapper(item);
-          });
-        }
-
-        return data;
+        return r && r.length ? e ? r.map(function (t) {
+          return e(t);
+        }) : r : [];
       }
     }, {
       key: "registerCommand",
-      value: function registerCommand(commandName, params, fn) {
+      value: function registerCommand(t, e, r) {
         var _this4 = this;
 
-        if (typeof params === 'function') {
-          return PluginManager.registerCommand(this.getPluginFileName(), commandName, params);
-        }
+        return "function" == typeof e ? PluginManager.registerCommand(this.getPluginFileName(), t, e) : PluginManager.registerCommand(this.getPluginFileName(), t, function (t) {
+          var s = new Map();
 
-        return PluginManager.registerCommand(this.getPluginFileName(), commandName, function (receivedArgs) {
-          var dataMap = new Map();
-
-          for (var key in receivedArgs) {
-            if (!receivedArgs.hasOwnProperty(key)) {
-              continue;
-            }
-
-            dataMap.set(key, receivedArgs[key]);
+          for (var _e7 in t) {
+            t.hasOwnProperty(_e7) && s.set(_e7, t[_e7]);
           }
 
-          var parsedArgs = _this4.loadParamMap(params, dataMap);
+          var a = _this4.loadParamMap(e, s);
 
-          Object.assign(receivedArgs, parsedArgs);
-          return fn(receivedArgs);
+          return Object.assign(t, a), r(t);
         });
       }
     }]);
 
-    return CyclonePlugin;
+    return e;
   }(CyclonePatcher);
+
+  globalThis.CyclonePlugin = e;
 
   var LZString = function () {
     function o(o, r) {
@@ -1379,11 +1180,11 @@ function _createClass(Constructor, protoProps, staticProps) { if (protoProps) _d
   var _addPixelMovementToClass = function addPixelMovementToClass(classRef) {
     CycloneMovement.patchClass(classRef, function ($super) {
       return /*#__PURE__*/function () {
-        function _class() {
-          _classCallCheck(this, _class);
+        function _class4() {
+          _classCallCheck(this, _class4);
         }
 
-        _createClass(_class, [{
+        _createClass(_class4, [{
           key: "getWidth",
           value: function getWidth() {
             return 1;
@@ -2619,7 +2420,7 @@ function _createClass(Constructor, protoProps, staticProps) { if (protoProps) _d
           }
         }]);
 
-        return _class;
+        return _class4;
       }();
     });
   };
@@ -3247,11 +3048,11 @@ function _createClass(Constructor, protoProps, staticProps) { if (protoProps) _d
   CycloneMovement$1.register();
   CycloneMovement.patchClass(Game_Map, function ($super) {
     return /*#__PURE__*/function () {
-      function _class2() {
-        _classCallCheck(this, _class2);
+      function _class5() {
+        _classCallCheck(this, _class5);
       }
 
-      _createClass(_class2, [{
+      _createClass(_class5, [{
         key: "isValid",
         value: function isValid(x, y) {
           return x >= 0 && y >= 0 && Math.floor(x) < this.width() && Math.floor(y) < this.height();
@@ -3305,17 +3106,17 @@ function _createClass(Constructor, protoProps, staticProps) { if (protoProps) _d
         }
       }]);
 
-      return _class2;
+      return _class5;
     }();
   });
   var tryToLeaveVehicleDelay = 0;
   CycloneMovement.patchClass(Game_Player, function ($super) {
     return /*#__PURE__*/function () {
-      function _class3() {
-        _classCallCheck(this, _class3);
+      function _class6() {
+        _classCallCheck(this, _class6);
       }
 
-      _createClass(_class3, [{
+      _createClass(_class6, [{
         key: "getWidth",
         value: function getWidth() {
           if (this.isInAnyVehicle()) {
@@ -3708,10 +3509,10 @@ function _createClass(Constructor, protoProps, staticProps) { if (protoProps) _d
 
           try {
             for (_iterator8.s(); !(_step8 = _iterator8.n()).done;) {
-              var t = _step8.value;
+              var _t10 = _step8.value;
 
-              if (t !== 1 && t !== 2) {
-                newTriggers.push(t);
+              if (_t10 !== 1 && _t10 !== 2) {
+                newTriggers.push(_t10);
               }
             }
           } catch (err) {
@@ -4300,16 +4101,16 @@ function _createClass(Constructor, protoProps, staticProps) { if (protoProps) _d
         }
       }]);
 
-      return _class3;
+      return _class6;
     }();
   });
   CycloneMovement.patchClass(Game_Follower, function ($super) {
     return /*#__PURE__*/function () {
-      function _class4() {
-        _classCallCheck(this, _class4);
+      function _class7() {
+        _classCallCheck(this, _class7);
       }
 
-      _createClass(_class4, [{
+      _createClass(_class7, [{
         key: "getWidth",
         value: function getWidth() {
           return 0.75;
@@ -4348,16 +4149,16 @@ function _createClass(Constructor, protoProps, staticProps) { if (protoProps) _d
         }
       }]);
 
-      return _class4;
+      return _class7;
     }();
   });
   CycloneMovement.patchClass(Game_Vehicle, function ($super) {
     return /*#__PURE__*/function () {
-      function _class5() {
-        _classCallCheck(this, _class5);
+      function _class8() {
+        _classCallCheck(this, _class8);
       }
 
-      _createClass(_class5, [{
+      _createClass(_class8, [{
         key: "checkPassage",
         value: function checkPassage(x, y) {
           if (this.isBoat()) {
@@ -4418,7 +4219,7 @@ function _createClass(Constructor, protoProps, staticProps) { if (protoProps) _d
         }
       }]);
 
-      return _class5;
+      return _class8;
     }();
   });
   var uselessCommands = Object.freeze([// comments
@@ -4427,11 +4228,11 @@ function _createClass(Constructor, protoProps, staticProps) { if (protoProps) _d
   0]);
   CycloneMovement.patchClass(Game_Event, function ($super) {
     return /*#__PURE__*/function () {
-      function _class6() {
-        _classCallCheck(this, _class6);
+      function _class9() {
+        _classCallCheck(this, _class9);
       }
 
-      _createClass(_class6, [{
+      _createClass(_class9, [{
         key: "turnTowardPlayer",
         value: function turnTowardPlayer() {
           var sx = this.deltaXFrom($gamePlayer.x);
@@ -4505,7 +4306,7 @@ function _createClass(Constructor, protoProps, staticProps) { if (protoProps) _d
         }
       }]);
 
-      return _class6;
+      return _class9;
     }();
   });
   var timeout;
@@ -4514,11 +4315,11 @@ function _createClass(Constructor, protoProps, staticProps) { if (protoProps) _d
   var needsCalling = false;
   CycloneMovement.patchClass(Game_Temp, function ($super) {
     return /*#__PURE__*/function () {
-      function _class7() {
-        _classCallCheck(this, _class7);
+      function _class10() {
+        _classCallCheck(this, _class10);
       }
 
-      _createClass(_class7, [{
+      _createClass(_class10, [{
         key: "_setDestination",
         value: function _setDestination(x, y) {
           var _this6 = this;
@@ -4582,16 +4383,16 @@ function _createClass(Constructor, protoProps, staticProps) { if (protoProps) _d
         }
       }]);
 
-      return _class7;
+      return _class10;
     }();
   });
   CycloneMovement.patchClass(Game_Party, function ($super) {
     return /*#__PURE__*/function () {
-      function _class8() {
-        _classCallCheck(this, _class8);
+      function _class11() {
+        _classCallCheck(this, _class11);
       }
 
-      _createClass(_class8, [{
+      _createClass(_class11, [{
         key: "steps",
         value: function steps() {
           return Math.floor(this._steps);
@@ -4603,16 +4404,16 @@ function _createClass(Constructor, protoProps, staticProps) { if (protoProps) _d
         }
       }]);
 
-      return _class8;
+      return _class11;
     }();
   });
   CycloneMovement.patchClass(Scene_Map, function ($super) {
     return /*#__PURE__*/function () {
-      function _class9() {
-        _classCallCheck(this, _class9);
+      function _class12() {
+        _classCallCheck(this, _class12);
       }
 
-      _createClass(_class9, [{
+      _createClass(_class12, [{
         key: "onMapTouch",
         value: function onMapTouch() {
           var _$super$onMapTouch;
@@ -4629,16 +4430,16 @@ function _createClass(Constructor, protoProps, staticProps) { if (protoProps) _d
         }
       }]);
 
-      return _class9;
+      return _class12;
     }();
   });
   CycloneMovement.patchClass(DataManager, function ($super) {
     return /*#__PURE__*/function () {
-      function _class10() {
-        _classCallCheck(this, _class10);
+      function _class13() {
+        _classCallCheck(this, _class13);
       }
 
-      _createClass(_class10, null, [{
+      _createClass(_class13, null, [{
         key: "onLoad",
         value: function onLoad(object) {
           $super.onLoad.call(this, object);
@@ -4649,7 +4450,7 @@ function _createClass(Constructor, protoProps, staticProps) { if (protoProps) _d
         }
       }]);
 
-      return _class10;
+      return _class13;
     }();
   });
 })();

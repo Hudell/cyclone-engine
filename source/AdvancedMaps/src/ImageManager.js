@@ -1,6 +1,6 @@
-CycloneMaps.patchClass(ImageManager, $super => class {
+CycloneAdvancedMaps.patchClass(ImageManager, $super => class {
   static loadTileset(filename) {
-    const customPath = CycloneMaps.params.tilesetPath;
+    const customPath = CycloneAdvancedMaps.params.tilesetPath;
     if (customPath) {
       return this.loadBitmap(customPath, filename);
     }

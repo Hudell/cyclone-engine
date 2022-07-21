@@ -1,6 +1,6 @@
 import { WindowRegionName } from './WindowRegionName';
 
-CycloneMaps.patchClass(Scene_Map, $super => class {
+CycloneAdvancedMaps.patchClass(Scene_Map, $super => class {
   createRegionNameWindow() {
     const rect = this.mapNameWindowRect();
     this._regionNameWindow = new WindowRegionName(rect);

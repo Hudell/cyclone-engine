@@ -1,6 +1,13 @@
-CycloneMaps.patchClass(Game_Map, $super => class {
+CycloneAdvancedMaps.patchClass(Game_Map, $super => class {
+  setup(...args) {
+    $super.setup.call(this, ...args);
+    if (CycloneAdvancedMaps.params.overlayEnabled) {
+      CycloneAdvancedMaps.loadMapCustomLayers();
+    }
+  }
+
   tileWidth() {
-    const customWidth = CycloneMaps.params.tileWidth;
+    const customWidth = CycloneAdvancedMaps.params.tileWidth;
     if (typeof customWidth === 'number' && customWidth > 0) {
       return customWidth;
     }
@@ -9,7 +16,7 @@ CycloneMaps.patchClass(Game_Map, $super => class {
   }
 
   tileHeight() {
-    const customHeight = CycloneMaps.params.tileHeight;
+    const customHeight = CycloneAdvancedMaps.params.tileHeight;
     if (typeof customHeight === 'number' && customHeight > 0) {
       return customHeight;
     }
@@ -22,7 +29,7 @@ CycloneMaps.patchClass(Game_Map, $super => class {
       return true;
     }
 
-    const bushRegionId = CycloneMaps.params.bushRegionId;
+    const bushRegionId = CycloneAdvancedMaps.params.bushRegionId;
     if (!bushRegionId) {
       return false;
     }
@@ -35,8 +42,8 @@ CycloneMaps.patchClass(Game_Map, $super => class {
   }
 
   checkRegionPassability(x, y) {
-    const blockRegionId = CycloneMaps.blockRegionId;
-    const unblockRegionId = CycloneMaps.unblockRegionId;
+    const blockRegionId = CycloneAdvancedMaps.params.blockRegionId;
+    const unblockRegionId = CycloneAdvancedMaps.params.unblockRegionId;
 
     if (blockRegionId > 0 || unblockRegionId > 0) {
       const regionId = this.regionId(x, y);

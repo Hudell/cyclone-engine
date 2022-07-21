@@ -1,4 +1,4 @@
-import { CyclonePlugin } from '../../Core/main';
+import '../../Core/main.min';
 
 const cycloneWeatherTypes = Object.freeze(['none', 'rain', 'storm', 'snow', 'custom1', 'custom2', 'custom3', 'custom4', 'custom5']);
 

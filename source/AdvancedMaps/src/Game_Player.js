@@ -1,8 +1,8 @@
-CycloneMaps.patchClass(Game_Player, $super => class {
+CycloneAdvancedMaps.patchClass(Game_Player, $super => class {
   performTransfer() {
     if (this.isTransferring()) {
-      if (CycloneMaps.params.commonEventId > 0) {
-        $gameTemp.reserveCommonEvent(CycloneMaps.params.commonEventId);
+      if (CycloneAdvancedMaps.params.commonEventId > 0) {
+        $gameTemp.reserveCommonEvent(CycloneAdvancedMaps.params.commonEventId);
       }
     }
 
@@ -10,8 +10,8 @@ CycloneMaps.patchClass(Game_Player, $super => class {
   }
 
   isMapPassable(x, y, d) {
-    const blockRegionId = CycloneMaps.blockPlayerRegionId;
-    const unblockRegionId = CycloneMaps.unblockPlayerRegionId;
+    const blockRegionId = CycloneAdvancedMaps.params.blockPlayerRegionId;
+    const unblockRegionId = CycloneAdvancedMaps.params.unblockPlayerRegionId;
 
     if (blockRegionId > 0 || unblockRegionId > 0) {
       const newX = $gameMap.roundXWithDirection(x, d);
@@ -24,7 +24,7 @@ CycloneMaps.patchClass(Game_Player, $super => class {
         }
 
         if (regionId === unblockRegionId) {
-          return false;
+          return true;
         }
       }
     }

@@ -1,4 +1,4 @@
-export class CyclonePatcher {
+class CyclonePatcher {
   static initialize(pluginName) {
     this.pluginName = pluginName;
     this.superClasses = new Map();
@@ -112,3 +112,5 @@ export class CyclonePatcher {
     }
   }
 }
+
+globalThis.CyclonePatcher = CyclonePatcher;

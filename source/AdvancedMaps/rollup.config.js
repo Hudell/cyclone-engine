@@ -9,14 +9,8 @@ const header = readFileSync('header.js', 'utf-8');
 export default [{
   input: 'src/main.js',
   output: [{
-    file: `${__dirname}/../../plugins/Cyclone-Maps.js`,
+    file: `${__dirname}/../../plugins/Cyclone-AdvancedMaps.js`,
     format: 'cjs',
-    sourcemap: false,
-    banner: header,
-  }, {
-    file: `${__dirname}/../../../RMMZ/Cyclone/js/plugins/Cyclone-Maps.js`,
-    format: 'cjs',
-
     sourcemap: false,
     banner: header,
   }],
