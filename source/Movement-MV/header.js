@@ -23,41 +23,32 @@
  * Terms of Use
  * ===========================================================================
  * 1. For support, feature requests or bug reports, you may contact me through
- *  any of the following channels (in order of preference):
+ *  any of the following channels:
  *
  *   1.a. Opening an issue on the plugin's GitHub repository:
  *      https://github.com/Hudell/cyclone-engine
- *   1.b. Tagging me on threads on Rpg Maker related Forums, such as:
- *      rpgmakerweb.com (English)
- *      centrorpg.com (Portuguese)
- *      condadobraveheart.com (Portuguese)
- *   1.c. Opening threads on the plugin's itch.io page
- *   1.d. Tagging my user on Rpg Maker related sub-reddits, such as r/rpgmaker
+ *   1.b. Opening threads on the plugin's itch.io page
+ *   1.c. Tagging my user on Rpg Maker related sub-reddits, such as r/rpgmaker
  *
- * 2. Do not send me Direct Messages asking for support or bug reports.
- * You may only send me direct messages when none of the above platforms are
- * appropiate for it, or when you want to share pictures of cute dogs.
+ * 2. This plugin is released under the Apache License 2.0 (Apache-2.0).
  *
- * 3. A special exception is created for patreon users who get access to my
- * priority support discord server.
- *
- * 4. Sending plugin related questions on channels related to any of my other
- * projects (such as my game's Discord server) may result in an immediate ban
- * from such platforms and I may also choose to ignore your future requests.
- *
- * 5. This plugin is released under the Apache License 2.0 (Apache-2.0).
- *
- * 6. You can send me your own changes to this plugin if you wish to see them
+ * 3. You can send me your own changes to this plugin if you wish to see them
  * included in an update, by registering a Pull Request on the plugin's GitHub
  * repository.
  *
- * 7. This plugin is provided as is. While I'll often read feedback and offer
+ * 4. This plugin is provided as is. While I'll often read feedback and offer
  * updates to my plugins, I am in no obligation to do so.
  *
- * 8. I'm not responsible for anything created with this plugin.
- * ===========================================================================
+ * 5. I'm not responsible for anything created with this plugin.
+ * * ===========================================================================
  * Change Log
  * ===========================================================================
+ * 2022-07-29 - Version 1.02.00
+ *   * Prevent character from avoiding an object in the opposite direction
+ *   of the diagonal direction the player is pressing. (Fixes sprite flicker)
+ *   * Fixed issue with custom hitboxes
+ *   * Implemented pixel movement for events
+ *
  * 2020-09-18 - Version 1.01.01
  *   * Added .terrainTag method to character class.
  *
@@ -66,8 +57,25 @@
  *   * New settings to control the sidestep feature.
  * 2020-09-14 - Version 1.00.00
  * ===========================================================================
+ * @param General
+ *
+ * @param Player
+ *
+ * @param Followers
+ *
+ * @param Events
+ *
+ * @param Event Triggering
+ * @parent Events
+ *
+ * @param Event Movement
+ * @parent Events
+ *
+ * @param AI
+ *
  * @param stepCount
  * @text Steps per Tile
+ * @parent General
  * @desc How many steps the player will need to take to move an entire tile?
  * @type select
  * @default 1
@@ -77,6 +85,7 @@
  *
  * @param collisionStepCount
  * @text Collision Blocks per Tile
+ * @parent General
  * @desc You can customize the map collision with the Cyclone Map Editor plugin
  * @type select
  * @default 1
@@ -86,6 +95,7 @@
  *
  * @param followerStepsBehind
  * @text Follower Distance
+ * @parent Followers
  * @desc How many steps behind should the followers be? Min = 1 step, Max = 1 tile
  * @type number
  * @min 1
@@ -94,6 +104,7 @@
  *
  * @param triggerAllEvents
  * @text Trigger All Events
+ * @parent Event Triggering
  * @desc If true, the player may trigger multiple events when you press a button if there are more than one event in front of you
  * @type boolean
  * @on Trigger
@@ -102,6 +113,7 @@
  *
  * @param ignoreEmptyEvents
  * @text Ignore Empty Events
+ * @parent Event Triggering
  * @desc if true, the game won't try to trigger events that have no commands
  * @type boolean
  * @on Ignore
@@ -110,6 +122,7 @@
  *
  * @param autoLeaveVehicles
  * @text Leave Vehicles Automatically
+ * @parent Player
  * @desc If true, the player will leave boats and ships automatically when they reach land
  * @type boolean
  * @on Leave
@@ -118,6 +131,7 @@
  *
  * @param diagonalPathfinding
  * @text Diagonal Pathfinding
+ * @parent Player
  * @type boolean
  * @on Enable
  * @off Disable
@@ -126,10 +140,86 @@
  *
  * @param disableMouseMovement
  * @text Disable Mouse Movement
+ * @parent Player
  * @type boolean
  * @on Disable
  * @off Don't Disable
  * @desc
  * @default false
+  *
+ * @param maxOffset
+ * @text Max Slide Distance
+ * @parent Player
+ * @type number
+ * @desc How many tiles should the player be able to sidestep when trying to avoid map obstacles?
+ * @default 0.75
+ * @decimals 2
+ *
+ * @param sidestepEvents
+ * @text Sidestep Events?
+ * @parent Player
+ * @type boolean
+ * @desc Should the player also sidestep to avoid events?
+ * @default false
+ *
+ * @param playerHitbox
+ * @text Player Hitbox
+ * @parent Player
+ * @type struct<Hitbox>
+ * @default {"x":"6","y":"24","width":"36","height":"18"}
+ *
+ * @param applyToEvents
+ * @text Apply Pixel Movement
+ * @parent Event Movement
+ * @desc Should the events also use pixel movement?
+ * @type boolean
+ * @default false
+ *
+ *
+ * @param Move Toward Character
+ * @parent AI
+ *
+ * @param enableMoveTowardCharacter
+ * @text Enable Changes
+ * @parent Move Toward Character
+ * @desc If you don't want to change this behavior, you can disable it completely to avoid plugin conflicts.
+ * @default true
+ * @type boolean
+ *
+ * @param minDistanceToChangeDirection
+ * @text Min Distance to Change Direction
+ * @parent Move Toward Character
+ * @desc Adds a distance buffer so the character doesn't change directions too often
+ * @type number
+ * @default 2
+ * @decimals 2
+ *
+ * @param approachDiagonally
+ * @text Allow Diagonal Movement
+ * @parent Move Toward Character
+ * @desc Change this to allow events to move diagonally when moving towards the player or another event
+ * @default false
+ * @type boolean
  *
  **/
+/*~struct~Hitbox:
+ * @param x
+ * @type number
+ * @default 0
+ * @desc The hitbox X offset
+ *
+ * @param y
+ * @type number
+ * @default 0
+ * @desc The hitbox Y offset
+ *
+ * @param width
+ * @type number
+ * @default 48
+ * @desc The hitbox width
+ *
+ * @param height
+ * @type number
+ * @default 48
+ * @desc The hitbox height
+ */

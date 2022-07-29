@@ -61,6 +61,16 @@ class CycloneMovement extends CyclonePlugin {
         type: 'struct<CycloneHitbox>',
         defaultValue: '{"x":6,"y":24,"width":36,"height":18}',
       },
+      applyToEvents: 'boolean',
+      minDistanceToChangeDirection: {
+        type: 'float',
+        defaultValue: 1,
+      },
+      enableMoveTowardCharacter: {
+        type: 'boolean',
+        defaultValue: true,
+      },
+      approachDiagonally: 'boolean'
     });
 
     this.stepCount = [1, 2, 4].includes(this.params.stepCount) ? this.params.stepCount : 1;
@@ -76,6 +86,10 @@ class CycloneMovement extends CyclonePlugin {
 
     addPixelMovementToClass(Game_Player);
     addPixelMovementToClass(Game_Follower);
+
+    if (this.params.applyToEvents) {
+      addPixelMovementToClass(Game_Event);
+    }
   }
 
   static get currentMapCollisionTable() {

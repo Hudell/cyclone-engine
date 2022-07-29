@@ -83,10 +83,9 @@ globals:
   $dataSystem: false
   $dataTilesets: false
 
-  CyclonePlugin: true
   CycloneMapEditor: true
   CycloneMapEditorPro: true
-  CycloneMaps: true
+  CycloneAdvancedMaps: true
   CycloneTime: true
   CycloneMovement: true
   CycloneTilePriority: true

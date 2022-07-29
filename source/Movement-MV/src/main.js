@@ -6,6 +6,7 @@ import '../../Movement/src/plugin';
 
 import '../../Movement/src/Game_Map';
 import '../../Movement/src/CharacterOverride';
+import '../../Movement/src/Game_Character';
 import '../../Movement/src/Game_Player';
 import '../../Movement/src/Game_Follower';
 import '../../Movement/src/Game_Vehicle';

@@ -4,16 +4,25 @@ let tryToLeaveVehicleDelay = 0;
 
 CycloneMovement.patchClass(Game_Player, $super => class {
   get defaultWidth() {
-    return 0.75;
+    return this._defaultWidth;
   }
   get defaultHeight() {
-    return 0.375;
+    return this._defaultHeight;
   }
   get defaultHitboxX() {
-    return 0.125;
+    return this._defaultHitboxX;
   }
   get defaultHitboxY() {
-    return 0.5;
+    return this._defaultHitboxY;
+  }
+
+  refresh() {
+    $super.refresh.call(this);
+
+    this._defaultWidth = Math.floor(CycloneMovement.params.playerHitbox.width / $gameMap.tileWidth() * 8) / 8;
+    this._defaultHeight = Math.floor(CycloneMovement.params.playerHitbox.height / $gameMap.tileHeight() * 8) / 8;
+    this._defaultHitboxX = Math.floor(CycloneMovement.params.playerHitbox.x / $gameMap.tileWidth() * 8) / 8;
+    this._defaultHitboxY = Math.floor(CycloneMovement.params.playerHitbox.y / $gameMap.tileWidth() * 8) / 8;
   }
 
   getWidth() {
@@ -80,7 +89,7 @@ CycloneMovement.patchClass(Game_Player, $super => class {
     this.tryMoving(direction, alternativeD, diagonalDirection);
 
     if (!this.isMoving()) {
-      if (this.tryOtherMovementOptions(direction)) {
+      if (this.tryOtherMovementOptions(direction, diagonalDirection)) {
         return;
       }
 
@@ -119,7 +128,7 @@ CycloneMovement.patchClass(Game_Player, $super => class {
     tryToLeaveVehicleDelay = 20;
   }
 
-  tryOtherMovementOptions(direction) {
+  tryOtherMovementOptions(direction, diagonalDirection) {
     if (this.tryToLeaveVehicle(direction)) {
       return true;
     }
@@ -128,7 +137,7 @@ CycloneMovement.patchClass(Game_Player, $super => class {
       return false;
     }
 
-    if (this.tryToAvoid(direction, CycloneMovement.params.maxOffset)) {
+    if (this.tryToAvoid(direction, CycloneMovement.params.maxOffset, diagonalDirection)) {
       return true;
     }
 
@@ -152,7 +161,7 @@ CycloneMovement.patchClass(Game_Player, $super => class {
     return this.getOffVehicle(direction);
   }
 
-  tryToAvoid(direction, maxOffset) {
+  tryToAvoid(direction, maxOffset, diagonalDirection) {
     if (!CycloneMovement.params.sidestepEvents) {
       if (this._blockingReason === 'characters') {
         return false;
@@ -160,13 +169,13 @@ CycloneMovement.patchClass(Game_Player, $super => class {
     }
 
     if (direction === 4 || direction === 6) {
-      if (this.tryToAvoidVertically(direction, maxOffset)) {
+      if (this.tryToAvoidVertically(direction, maxOffset, diagonalDirection)) {
         return true;
       }
     }
 
     if (direction === 2 || direction === 8) {
-      if (this.tryToAvoidHorizontally(direction, maxOffset)) {
+      if (this.tryToAvoidHorizontally(direction, maxOffset, diagonalDirection)) {
         return true;
       }
     }
@@ -184,12 +193,12 @@ CycloneMovement.patchClass(Game_Player, $super => class {
     return false;
   }
 
-  tryToAvoidVertically(direction, maxOffset) {
+  tryToAvoidVertically(direction, maxOffset, diagonalDirection) {
     let previousOffset = 0;
     let offset = CycloneMovement.stepSize;
 
-    let downEnabled = true;
-    let upEnabled = true;
+    let downEnabled = !CycloneMovement.goesUp(diagonalDirection);
+    let upEnabled = !CycloneMovement.goesDown(diagonalDirection);
 
     while (offset <= maxOffset) {
       if (downEnabled) {
@@ -217,11 +226,11 @@ CycloneMovement.patchClass(Game_Player, $super => class {
     }
   }
 
-  tryToAvoidHorizontally(direction, maxOffset) {
+  tryToAvoidHorizontally(direction, maxOffset, diagonalDirection) {
     let previousOffset = 0;
     let offset = CycloneMovement.stepSize;
-    let leftEnabled = true;
-    let rightEnabled = true;
+    let leftEnabled = !CycloneMovement.goesRight(diagonalDirection);
+    let rightEnabled = !CycloneMovement.goesLeft(diagonalDirection);
 
     while (offset <= maxOffset) {
       if (leftEnabled) {

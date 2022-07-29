@@ -22,7 +22,7 @@ function _isNativeReflectConstruct() { if (typeof Reflect === "undefined" || !Re
 
 function _getPrototypeOf(o) { _getPrototypeOf = Object.setPrototypeOf ? Object.getPrototypeOf : function _getPrototypeOf(o) { return o.__proto__ || Object.getPrototypeOf(o); }; return _getPrototypeOf(o); }
 
-function _createForOfIteratorHelper(o, allowArrayLike) { var it; if (typeof Symbol === "undefined" || o[Symbol.iterator] == null) { if (Array.isArray(o) || (it = _unsupportedIterableToArray(o)) || allowArrayLike && o && typeof o.length === "number") { if (it) o = it; var i = 0; var F = function F() {}; return { s: F, n: function n() { if (i >= o.length) return { done: true }; return { done: false, value: o[i++] }; }, e: function e(_e) { throw _e; }, f: F }; } throw new TypeError("Invalid attempt to iterate non-iterable instance.\nIn order to be iterable, non-array objects must have a [Symbol.iterator]() method."); } var normalCompletion = true, didErr = false, err; return { s: function s() { it = o[Symbol.iterator](); }, n: function n() { var step = it.next(); normalCompletion = step.done; return step; }, e: function e(_e2) { didErr = true; err = _e2; }, f: function f() { try { if (!normalCompletion && it["return"] != null) it["return"](); } finally { if (didErr) throw err; } } }; }
+function _createForOfIteratorHelper(o, allowArrayLike) { var it; if (typeof Symbol === "undefined" || o[Symbol.iterator] == null) { if (Array.isArray(o) || (it = _unsupportedIterableToArray(o)) || allowArrayLike && o && typeof o.length === "number") { if (it) o = it; var i = 0; var F = function F() {}; return { s: F, n: function n() { if (i >= o.length) return { done: true }; return { done: false, value: o[i++] }; }, e: function e(_e4) { throw _e4; }, f: F }; } throw new TypeError("Invalid attempt to iterate non-iterable instance.\nIn order to be iterable, non-array objects must have a [Symbol.iterator]() method."); } var normalCompletion = true, didErr = false, err; return { s: function s() { it = o[Symbol.iterator](); }, n: function n() { var step = it.next(); normalCompletion = step.done; return step; }, e: function e(_e5) { didErr = true; err = _e5; }, f: function f() { try { if (!normalCompletion && it["return"] != null) it["return"](); } finally { if (didErr) throw err; } } }; }
 
 function _unsupportedIterableToArray(o, minLen) { if (!o) return; if (typeof o === "string") return _arrayLikeToArray(o, minLen); var n = Object.prototype.toString.call(o).slice(8, -1); if (n === "Object" && o.constructor) n = o.constructor.name; if (n === "Map" || n === "Set") return Array.from(o); if (n === "Arguments" || /^(?:Ui|I)nt(?:8|16|32)(?:Clamped)?Array$/.test(n)) return _arrayLikeToArray(o, minLen); }
 
@@ -124,149 +124,127 @@ function _createClass(Constructor, protoProps, staticProps) { if (protoProps) _d
     };
   }
 
-  var CyclonePatcher = /*#__PURE__*/function () {
-    function CyclonePatcher() {
-      _classCallCheck(this, CyclonePatcher);
+  globalThis.CyclonePatcher = /*#__PURE__*/function () {
+    function _class() {
+      _classCallCheck(this, _class);
     }
 
-    _createClass(CyclonePatcher, null, [{
+    _createClass(_class, null, [{
       key: "initialize",
-      value: function initialize(pluginName) {
-        this.pluginName = pluginName;
-        this.superClasses = new Map();
+      value: function initialize(t) {
+        this.pluginName = t, this.superClasses = new Map();
       }
     }, {
       key: "_descriptorIsProperty",
-      value: function _descriptorIsProperty(descriptor) {
-        return descriptor.get || descriptor.set || !descriptor.value || typeof descriptor.value !== 'function';
+      value: function _descriptorIsProperty(t) {
+        return t.get || t.set || !t.value || "function" != typeof t.value;
       }
     }, {
       key: "_getAllClassDescriptors",
-      value: function _getAllClassDescriptors(classObj) {
-        var usePrototype = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : false;
+      value: function _getAllClassDescriptors(t) {
+        var e = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : !1;
+        if (t === Object) return {};
+        var s = Object.getOwnPropertyDescriptors(e ? t.prototype : t);
+        var r = {};
 
-        if (classObj === Object) {
-          return {};
+        if (t.prototype) {
+          var _s = Object.getPrototypeOf(t.prototype).constructor;
+          _s !== Object && (r = this._getAllClassDescriptors(_s, e));
         }
 
-        var descriptors = Object.getOwnPropertyDescriptors(usePrototype ? classObj.prototype : classObj);
-        var parentDescriptors = {};
-
-        if (classObj.prototype) {
-          var parentClass = Object.getPrototypeOf(classObj.prototype).constructor;
-
-          if (parentClass !== Object) {
-            parentDescriptors = this._getAllClassDescriptors(parentClass, usePrototype);
-          }
-        }
-
-        return Object.assign({}, parentDescriptors, descriptors);
+        return Object.assign({}, r, s);
       }
     }, {
       key: "_assignDescriptor",
-      value: function _assignDescriptor(receiver, giver, descriptor, descriptorName) {
-        var autoRename = arguments.length > 4 && arguments[4] !== undefined ? arguments[4] : false;
-
-        if (this._descriptorIsProperty(descriptor)) {
-          if (descriptor.get || descriptor.set) {
-            Object.defineProperty(receiver, descriptorName, {
-              get: descriptor.get,
-              set: descriptor.set,
-              enumerable: descriptor.enumerable,
-              configurable: descriptor.configurable
-            });
-          } else {
-            Object.defineProperty(receiver, descriptorName, {
-              value: descriptor.value,
-              enumerable: descriptor.enumerable,
-              configurable: descriptor.configurable
-            });
+      value: function _assignDescriptor(t, e, s, r) {
+        var i = arguments.length > 4 && arguments[4] !== undefined ? arguments[4] : !1;
+        if (this._descriptorIsProperty(s)) s.get || s.set ? Object.defineProperty(t, r, {
+          get: s.get,
+          set: s.set,
+          enumerable: s.enumerable,
+          configurable: s.configurable
+        }) : Object.defineProperty(t, r, {
+          value: s.value,
+          enumerable: s.enumerable,
+          configurable: s.configurable
+        });else {
+          var _s2 = r;
+          if (i) for (; (_s2 in t);) {
+            _s2 = "_".concat(_s2);
           }
-        } else {
-          var newName = descriptorName;
-
-          if (autoRename) {
-            while (newName in receiver) {
-              newName = "_".concat(newName);
-            }
-          }
-
-          receiver[newName] = giver[descriptorName];
+          t[_s2] = e[r];
         }
       }
     }, {
       key: "_applyPatch",
-      value: function _applyPatch(baseClass, patchClass, $super, ignoredNames) {
-        var usePrototype = arguments.length > 4 && arguments[4] !== undefined ? arguments[4] : false;
+      value: function _applyPatch(t, e, s, r) {
+        var i = arguments.length > 4 && arguments[4] !== undefined ? arguments[4] : !1;
 
-        var baseMethods = this._getAllClassDescriptors(baseClass, usePrototype);
+        var o = this._getAllClassDescriptors(t, i),
+            c = i ? t.prototype : t,
+            a = i ? e.prototype : e,
+            n = Object.getOwnPropertyDescriptors(a);
 
-        var baseClassOrPrototype = usePrototype ? baseClass.prototype : baseClass;
-        var patchClassOrPrototype = usePrototype ? patchClass.prototype : patchClass;
-        var descriptors = Object.getOwnPropertyDescriptors(patchClassOrPrototype);
-        var anyOverride = false;
+        var p = !1;
 
-        for (var methodName in descriptors) {
-          if (ignoredNames.includes(methodName)) {
-            continue;
+        for (var _t in n) {
+          if (r.includes(_t)) continue;
+
+          if (_t in o) {
+            p = !0;
+            var _e2 = o[_t];
+
+            this._assignDescriptor(s, c, _e2, _t, !0);
           }
 
-          if (methodName in baseMethods) {
-            anyOverride = true;
-            var baseDescriptor = baseMethods[methodName];
+          var _e = n[_t];
 
-            this._assignDescriptor($super, baseClassOrPrototype, baseDescriptor, methodName, true);
-          }
-
-          var descriptor = descriptors[methodName];
-
-          this._assignDescriptor(baseClassOrPrototype, patchClassOrPrototype, descriptor, methodName);
+          this._assignDescriptor(c, a, _e, _t);
         }
 
-        return anyOverride;
+        return p;
       }
     }, {
       key: "patchClass",
-      value: function patchClass(baseClass, patchFn) {
-        var $super = this.superClasses[baseClass.name] || {};
-        var $prototype = {};
-        var $dynamicSuper = {};
-        var patchClass = patchFn($dynamicSuper, $prototype);
+      value: function patchClass(t, e) {
+        var s = this.superClasses && this.superClasses[t.name] || {},
+            r = {},
+            i = {},
+            o = e(i, r);
+        if ("function" != typeof o) throw new Error("Invalid class patch for ".concat(t.name));
 
-        if (typeof patchClass !== 'function') {
-          throw new Error("Invalid class patch for ".concat(baseClass.name)); //`
-        }
-
-        var ignoredStaticNames = Object.getOwnPropertyNames(function Test() {
-          _classCallCheck(this, Test);
-        });
-        var ignoredNames = Object.getOwnPropertyNames(function Test() {
-          _classCallCheck(this, Test);
-        }.prototype);
-
-        var anyStaticOverride = this._applyPatch(baseClass, patchClass, $super, ignoredStaticNames);
-
-        var anyNonStaticOverride = this._applyPatch(baseClass, patchClass, $prototype, ignoredNames, true);
-
-        if (anyStaticOverride) {
-          var descriptors = Object.getOwnPropertyDescriptors($super);
-
-          for (var descriptorName in descriptors) {
-            this._assignDescriptor($dynamicSuper, $super, descriptors[descriptorName], descriptorName);
+        var c = Object.getOwnPropertyNames( /*#__PURE__*/function () {
+          function _class2() {
+            _classCallCheck(this, _class2);
           }
 
-          if (anyNonStaticOverride) {
-            $dynamicSuper.$prototype = $prototype;
+          return _class2;
+        }()),
+            a = Object.getOwnPropertyNames( /*#__PURE__*/function () {
+          function _class3() {
+            _classCallCheck(this, _class3);
           }
-        } else {
-          Object.assign($dynamicSuper, $prototype);
-        }
 
-        this.superClasses[baseClass.name] = $dynamicSuper;
+          return _class3;
+        }().prototype),
+            n = this._applyPatch(t, o, s, c),
+            p = this._applyPatch(t, o, r, a, !0);
+
+        if (n) {
+          var _t2 = Object.getOwnPropertyDescriptors(s);
+
+          for (var _e3 in _t2) {
+            this._assignDescriptor(i, s, _t2[_e3], _e3);
+          }
+
+          p && (i.$prototype = r);
+        } else Object.assign(i, r);
+
+        this.superClasses && (this.superClasses[t.name] = i);
       }
     }]);
 
-    return CyclonePatcher;
+    return _class;
   }();
 
   var LZString = function () {
@@ -455,8 +433,7 @@ function _createClass(Constructor, protoProps, staticProps) { if (protoProps) _d
         });
       },
       _decompress: function _decompress(o, n, e) {
-        var t,
-            i,
+        var i,
             s,
             p,
             u,
@@ -483,7 +460,7 @@ function _createClass(Constructor, protoProps, staticProps) { if (protoProps) _d
           u = A.val & A.position, A.position >>= 1, 0 == A.position && (A.position = n, A.val = e(A.index++)), p |= (u > 0 ? 1 : 0) * a, a <<= 1;
         }
 
-        switch (t = p) {
+        switch (p) {
           case 0:
             for (p = 0, c = Math.pow(2, 8), a = 1; a != c;) {
               u = A.val & A.position, A.position >>= 1, 0 == A.position && (A.position = n, A.val = e(A.index++)), p |= (u > 0 ? 1 : 0) * a, a <<= 1;
@@ -692,16 +669,16 @@ function _createClass(Constructor, protoProps, staticProps) { if (protoProps) _d
   CycloneExtraTilesets$1.register();
   CycloneExtraTilesets.patchClass(Game_Map, function ($super) {
     return /*#__PURE__*/function () {
-      function _class() {
-        _classCallCheck(this, _class);
+      function _class4() {
+        _classCallCheck(this, _class4);
       }
 
-      _createClass(_class, [{
+      _createClass(_class4, [{
         key: "setup",
         value: function setup(mapId) {
           $super.setup.call(this, mapId);
           this._extraTilesetId = 0;
-          CycloneExtraTilesets.loadExtraTilesets();
+          CycloneExtraTilesets.loadExtraTilesets(window.$dataMap);
           this.buildTilesetFlags();
         }
       }, {
@@ -755,16 +732,16 @@ function _createClass(Constructor, protoProps, staticProps) { if (protoProps) _d
         }
       }]);
 
-      return _class;
+      return _class4;
     }();
   });
   CycloneExtraTilesets.patchClass(DataManager, function ($super) {
     return /*#__PURE__*/function () {
-      function _class2() {
-        _classCallCheck(this, _class2);
+      function _class5() {
+        _classCallCheck(this, _class5);
       }
 
-      _createClass(_class2, null, [{
+      _createClass(_class5, null, [{
         key: "onLoad",
         value: function onLoad(object) {
           $super.onLoad.call(this, object);
@@ -775,16 +752,16 @@ function _createClass(Constructor, protoProps, staticProps) { if (protoProps) _d
         }
       }]);
 
-      return _class2;
+      return _class5;
     }();
   });
   CycloneExtraTilesets.patchClass(Tilemap, function ($super) {
     return /*#__PURE__*/function () {
-      function _class3() {
-        _classCallCheck(this, _class3);
+      function _class6() {
+        _classCallCheck(this, _class6);
       }
 
-      _createClass(_class3, [{
+      _createClass(_class6, [{
         key: "isTileA5",
         value: function isTileA5(tileId) {
           return tileId >= Tilemap.TILE_ID_A5 && tileId < Tilemap.TILE_ID_A5 + 128;
@@ -811,16 +788,16 @@ function _createClass(Constructor, protoProps, staticProps) { if (protoProps) _d
         }
       }]);
 
-      return _class3;
+      return _class6;
     }();
   });
   CycloneExtraTilesets.patchClass(ShaderTilemap, function ($super) {
     return /*#__PURE__*/function () {
-      function _class4() {
-        _classCallCheck(this, _class4);
+      function _class7() {
+        _classCallCheck(this, _class7);
       }
 
-      _createClass(_class4, [{
+      _createClass(_class7, [{
         key: "_drawNormalTile",
         value: function _drawNormalTile(layer, tileId, dx, dy) {
           if (tileId >= Tilemap.TILE_ID_A5 + 256 && tileId < Tilemap.TILE_ID_A1) {
@@ -837,16 +814,16 @@ function _createClass(Constructor, protoProps, staticProps) { if (protoProps) _d
         }
       }]);
 
-      return _class4;
+      return _class7;
     }();
   });
   CycloneExtraTilesets.patchClass(Spriteset_Map, function ($super) {
     return /*#__PURE__*/function () {
-      function _class5() {
-        _classCallCheck(this, _class5);
+      function _class8() {
+        _classCallCheck(this, _class8);
       }
 
-      _createClass(_class5, [{
+      _createClass(_class8, [{
         key: "loadTileset",
         value: function loadTileset() {
           this._tileset = $gameMap.tileset();
@@ -889,7 +866,7 @@ function _createClass(Constructor, protoProps, staticProps) { if (protoProps) _d
         }
       }]);
 
-      return _class5;
+      return _class8;
     }();
   });
 })();

@@ -1,5 +1,5 @@
 /*:
- * @plugindesc Live Map Editor - 1.12.01
+ * @plugindesc Live Map Editor - 1.12.02
  *
  * <pluginName:CycloneMapEditor>
  * @author Hudell
@@ -22,45 +22,28 @@
  * Terms of Use
  * ===========================================================================
  * 1. For support, feature requests or bug reports, you may contact me through
- *  any of the following channels (in order of preference):
+ *  any of the following channels:
  *
  *   1.a. Opening an issue on the plugin's GitHub repository:
  *      https://github.com/Hudell/cyclone-engine
- *   1.b. Tagging me on threads on Rpg Maker related Forums, such as:
- *      rpgmakerweb.com (English)
- *      centrorpg.com (Portuguese)
- *      condadobraveheart.com (Portuguese)
- *   1.c. Opening threads on the plugin's itch.io page
- *   1.d. Tagging my user on Rpg Maker related sub-reddits, such as r/rpgmaker
+ *   1.b. Opening threads on the plugin's itch.io page
+ *   1.c. Tagging my user on Rpg Maker related sub-reddits, such as r/rpgmaker
  *
- * 2. Do not send me Direct Messages asking for support or bug reports.
- * You may only send me direct messages when none of the above platforms are
- * appropiate for it, or when you want to share pictures of cute dogs.
+ * 2. This plugin is released under the Apache License 2.0 (Apache-2.0).
  *
- * 3. A special exception is created for patreon users who get access to my
- * priority support discord server.
- *
- * 4. Sending plugin related questions on channels related to any of my other
- * projects (such as my game's Discord server) may result in an immediate ban
- * from such platforms and I may also choose to ignore your future requests.
- *
- * 5. This plugin is released under the Apache License 2.0 (Apache-2.0).
- *
- * 6. You can send me your own changes to this plugin if you wish to see them
+ * 3. You can send me your own changes to this plugin if you wish to see them
  * included in an update, by registering a Pull Request on the plugin's GitHub
  * repository.
  *
- * 7. This plugin is provided as is. While I'll often read feedback and offer
+ * 4. This plugin is provided as is. While I'll often read feedback and offer
  * updates to my plugins, I am in no obligation to do so.
  *
- * 8. I'm not responsible for anything created with this plugin.
- * ===========================================================================
- * Did you know?
- * Early map makers used to include fake towns on their maps to identify
- * copies of their work.
+ * 5. I'm not responsible for anything created with this plugin.
  * ===========================================================================
  * Change Log
  * ===========================================================================
+ * 2022-07-29 - Version 1.12.02
+ *   * Added support for custom event hitboxes
  * 2021-01-27 - Version 1.12.00
  *   * Added option to generate 48x48 tilesets when using other sizes.
  * 2020-11-05 - Version 1.11.00

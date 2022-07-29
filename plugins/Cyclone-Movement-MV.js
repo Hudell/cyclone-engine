@@ -1,6 +1,6 @@
 function _typeof(obj) { "@babel/helpers - typeof"; if (typeof Symbol === "function" && typeof Symbol.iterator === "symbol") { _typeof = function _typeof(obj) { return typeof obj; }; } else { _typeof = function _typeof(obj) { return obj && typeof Symbol === "function" && obj.constructor === Symbol && obj !== Symbol.prototype ? "symbol" : typeof obj; }; } return _typeof(obj); }
 
-function _createForOfIteratorHelper(o, allowArrayLike) { var it; if (typeof Symbol === "undefined" || o[Symbol.iterator] == null) { if (Array.isArray(o) || (it = _unsupportedIterableToArray(o)) || allowArrayLike && o && typeof o.length === "number") { if (it) o = it; var i = 0; var F = function F() {}; return { s: F, n: function n() { if (i >= o.length) return { done: true }; return { done: false, value: o[i++] }; }, e: function e(_e8) { throw _e8; }, f: F }; } throw new TypeError("Invalid attempt to iterate non-iterable instance.\nIn order to be iterable, non-array objects must have a [Symbol.iterator]() method."); } var normalCompletion = true, didErr = false, err; return { s: function s() { it = o[Symbol.iterator](); }, n: function n() { var step = it.next(); normalCompletion = step.done; return step; }, e: function e(_e9) { didErr = true; err = _e9; }, f: function f() { try { if (!normalCompletion && it["return"] != null) it["return"](); } finally { if (didErr) throw err; } } }; }
+function _createForOfIteratorHelper(o, allowArrayLike) { var it; if (typeof Symbol === "undefined" || o[Symbol.iterator] == null) { if (Array.isArray(o) || (it = _unsupportedIterableToArray(o)) || allowArrayLike && o && typeof o.length === "number") { if (it) o = it; var i = 0; var F = function F() {}; return { s: F, n: function n() { if (i >= o.length) return { done: true }; return { done: false, value: o[i++] }; }, e: function e(_e7) { throw _e7; }, f: F }; } throw new TypeError("Invalid attempt to iterate non-iterable instance.\nIn order to be iterable, non-array objects must have a [Symbol.iterator]() method."); } var normalCompletion = true, didErr = false, err; return { s: function s() { it = o[Symbol.iterator](); }, n: function n() { var step = it.next(); normalCompletion = step.done; return step; }, e: function e(_e8) { didErr = true; err = _e8; }, f: function f() { try { if (!normalCompletion && it["return"] != null) it["return"](); } finally { if (didErr) throw err; } } }; }
 
 function _unsupportedIterableToArray(o, minLen) { if (!o) return; if (typeof o === "string") return _arrayLikeToArray(o, minLen); var n = Object.prototype.toString.call(o).slice(8, -1); if (n === "Object" && o.constructor) n = o.constructor.name; if (n === "Map" || n === "Set") return Array.from(o); if (n === "Arguments" || /^(?:Ui|I)nt(?:8|16|32)(?:Clamped)?Array$/.test(n)) return _arrayLikeToArray(o, minLen); }
 
@@ -55,41 +55,32 @@ function _createClass(Constructor, protoProps, staticProps) { if (protoProps) _d
  * Terms of Use
  * ===========================================================================
  * 1. For support, feature requests or bug reports, you may contact me through
- *  any of the following channels (in order of preference):
+ *  any of the following channels:
  *
  *   1.a. Opening an issue on the plugin's GitHub repository:
  *      https://github.com/Hudell/cyclone-engine
- *   1.b. Tagging me on threads on Rpg Maker related Forums, such as:
- *      rpgmakerweb.com (English)
- *      centrorpg.com (Portuguese)
- *      condadobraveheart.com (Portuguese)
- *   1.c. Opening threads on the plugin's itch.io page
- *   1.d. Tagging my user on Rpg Maker related sub-reddits, such as r/rpgmaker
+ *   1.b. Opening threads on the plugin's itch.io page
+ *   1.c. Tagging my user on Rpg Maker related sub-reddits, such as r/rpgmaker
  *
- * 2. Do not send me Direct Messages asking for support or bug reports.
- * You may only send me direct messages when none of the above platforms are
- * appropiate for it, or when you want to share pictures of cute dogs.
+ * 2. This plugin is released under the Apache License 2.0 (Apache-2.0).
  *
- * 3. A special exception is created for patreon users who get access to my
- * priority support discord server.
- *
- * 4. Sending plugin related questions on channels related to any of my other
- * projects (such as my game's Discord server) may result in an immediate ban
- * from such platforms and I may also choose to ignore your future requests.
- *
- * 5. This plugin is released under the Apache License 2.0 (Apache-2.0).
- *
- * 6. You can send me your own changes to this plugin if you wish to see them
+ * 3. You can send me your own changes to this plugin if you wish to see them
  * included in an update, by registering a Pull Request on the plugin's GitHub
  * repository.
  *
- * 7. This plugin is provided as is. While I'll often read feedback and offer
+ * 4. This plugin is provided as is. While I'll often read feedback and offer
  * updates to my plugins, I am in no obligation to do so.
  *
- * 8. I'm not responsible for anything created with this plugin.
- * ===========================================================================
+ * 5. I'm not responsible for anything created with this plugin.
+ * * ===========================================================================
  * Change Log
  * ===========================================================================
+ * 2022-07-29 - Version 1.02.00
+ *   * Prevent character from avoiding an object in the opposite direction
+ *   of the diagonal direction the player is pressing. (Fixes sprite flicker)
+ *   * Fixed issue with custom hitboxes
+ *   * Implemented pixel movement for events
+ *
  * 2020-09-18 - Version 1.01.01
  *   * Added .terrainTag method to character class.
  *
@@ -98,8 +89,25 @@ function _createClass(Constructor, protoProps, staticProps) { if (protoProps) _d
  *   * New settings to control the sidestep feature.
  * 2020-09-14 - Version 1.00.00
  * ===========================================================================
+ * @param General
+ *
+ * @param Player
+ *
+ * @param Followers
+ *
+ * @param Events
+ *
+ * @param Event Triggering
+ * @parent Events
+ *
+ * @param Event Movement
+ * @parent Events
+ *
+ * @param AI
+ *
  * @param stepCount
  * @text Steps per Tile
+ * @parent General
  * @desc How many steps the player will need to take to move an entire tile?
  * @type select
  * @default 1
@@ -109,6 +117,7 @@ function _createClass(Constructor, protoProps, staticProps) { if (protoProps) _d
  *
  * @param collisionStepCount
  * @text Collision Blocks per Tile
+ * @parent General
  * @desc You can customize the map collision with the Cyclone Map Editor plugin
  * @type select
  * @default 1
@@ -118,6 +127,7 @@ function _createClass(Constructor, protoProps, staticProps) { if (protoProps) _d
  *
  * @param followerStepsBehind
  * @text Follower Distance
+ * @parent Followers
  * @desc How many steps behind should the followers be? Min = 1 step, Max = 1 tile
  * @type number
  * @min 1
@@ -126,6 +136,7 @@ function _createClass(Constructor, protoProps, staticProps) { if (protoProps) _d
  *
  * @param triggerAllEvents
  * @text Trigger All Events
+ * @parent Event Triggering
  * @desc If true, the player may trigger multiple events when you press a button if there are more than one event in front of you
  * @type boolean
  * @on Trigger
@@ -134,6 +145,7 @@ function _createClass(Constructor, protoProps, staticProps) { if (protoProps) _d
  *
  * @param ignoreEmptyEvents
  * @text Ignore Empty Events
+ * @parent Event Triggering
  * @desc if true, the game won't try to trigger events that have no commands
  * @type boolean
  * @on Ignore
@@ -142,6 +154,7 @@ function _createClass(Constructor, protoProps, staticProps) { if (protoProps) _d
  *
  * @param autoLeaveVehicles
  * @text Leave Vehicles Automatically
+ * @parent Player
  * @desc If true, the player will leave boats and ships automatically when they reach land
  * @type boolean
  * @on Leave
@@ -150,6 +163,7 @@ function _createClass(Constructor, protoProps, staticProps) { if (protoProps) _d
  *
  * @param diagonalPathfinding
  * @text Diagonal Pathfinding
+ * @parent Player
  * @type boolean
  * @on Enable
  * @off Disable
@@ -158,13 +172,90 @@ function _createClass(Constructor, protoProps, staticProps) { if (protoProps) _d
  *
  * @param disableMouseMovement
  * @text Disable Mouse Movement
+ * @parent Player
  * @type boolean
  * @on Disable
  * @off Don't Disable
  * @desc
  * @default false
+  *
+ * @param maxOffset
+ * @text Max Slide Distance
+ * @parent Player
+ * @type number
+ * @desc How many tiles should the player be able to sidestep when trying to avoid map obstacles?
+ * @default 0.75
+ * @decimals 2
+ *
+ * @param sidestepEvents
+ * @text Sidestep Events?
+ * @parent Player
+ * @type boolean
+ * @desc Should the player also sidestep to avoid events?
+ * @default false
+ *
+ * @param playerHitbox
+ * @text Player Hitbox
+ * @parent Player
+ * @type struct<Hitbox>
+ * @default {"x":"6","y":"24","width":"36","height":"18"}
+ *
+ * @param applyToEvents
+ * @text Apply Pixel Movement
+ * @parent Event Movement
+ * @desc Should the events also use pixel movement?
+ * @type boolean
+ * @default false
+ *
+ *
+ * @param Move Toward Character
+ * @parent AI
+ *
+ * @param enableMoveTowardCharacter
+ * @text Enable Changes
+ * @parent Move Toward Character
+ * @desc If you don't want to change this behavior, you can disable it completely to avoid plugin conflicts.
+ * @default true
+ * @type boolean
+ *
+ * @param minDistanceToChangeDirection
+ * @text Min Distance to Change Direction
+ * @parent Move Toward Character
+ * @desc Adds a distance buffer so the character doesn't change directions too often
+ * @type number
+ * @default 2
+ * @decimals 2
+ *
+ * @param approachDiagonally
+ * @text Allow Diagonal Movement
+ * @parent Move Toward Character
+ * @desc Change this to allow events to move diagonally when moving towards the player or another event
+ * @default false
+ * @type boolean
  *
  **/
+
+/*~struct~Hitbox:
+ * @param x
+ * @type number
+ * @default 0
+ * @desc The hitbox X offset
+ *
+ * @param y
+ * @type number
+ * @default 0
+ * @desc The hitbox Y offset
+ *
+ * @param width
+ * @type number
+ * @default 48
+ * @desc The hitbox width
+ *
+ * @param height
+ * @type number
+ * @default 48
+ * @desc The hitbox height
+ */
 (function () {
   if (Utils.RPGMAKER_NAME === 'MV') {
     window.globalThis = window;
@@ -591,38 +682,46 @@ function _createClass(Constructor, protoProps, staticProps) { if (protoProps) _d
     }, {
       key: "getParam",
       value: function getParam(_ref8) {
-        var t = _ref8.value,
-            e = _ref8.defaultValue,
-            r = _ref8.type;
-        if (r.endsWith("[]")) return this.parseArrayParam({
-          value: t,
-          type: r
-        });
-        if (r.startsWith("struct<")) return this.parseStructParam({
-          value: t,
-          defaultValue: e,
-          type: r
-        });
-        if (void 0 === t) return e;
+        var t = _ref8.key,
+            e = _ref8.value,
+            r = _ref8.defaultValue,
+            s = _ref8.type;
 
-        switch (r) {
-          case "int":
-            return this.getIntParam({
-              value: t,
-              defaultValue: e
-            });
+        try {
+          if (s.endsWith("[]")) return this.parseArrayParam({
+            key: t,
+            value: e,
+            type: s
+          });
+          if (s.startsWith("struct<")) return this.parseStructParam({
+            key: t,
+            value: e,
+            defaultValue: r,
+            type: s
+          });
+          if (void 0 === e) return r;
 
-          case "float":
-            return this.getFloatParam({
-              value: t,
-              defaultValue: e
-            });
+          switch (s) {
+            case "int":
+              return this.getIntParam({
+                value: e,
+                defaultValue: r
+              });
 
-          case "boolean":
-            return "boolean" == typeof t ? t : this.isTrue(String(t).trim());
+            case "float":
+              return this.getFloatParam({
+                value: e,
+                defaultValue: r
+              });
 
-          default:
-            return t;
+            case "boolean":
+              return "boolean" == typeof e ? e : this.isTrue(String(e).trim());
+
+            default:
+              return e;
+          }
+        } catch (e) {
+          throw t && console.error(t), e;
         }
       }
     }, {
@@ -635,6 +734,7 @@ function _createClass(Constructor, protoProps, staticProps) { if (protoProps) _d
       value: function defaultValueForType(t) {
         switch (t) {
           case "int":
+          case "float":
             return 0;
 
           case "boolean":
@@ -667,6 +767,7 @@ function _createClass(Constructor, protoProps, staticProps) { if (protoProps) _d
           o = (_value = (this.getPluginParam(a) || {}).value) !== null && _value !== void 0 ? _value : i;
         }
         return this.getParam({
+          key: t,
           value: o,
           defaultValue: i,
           type: n
@@ -712,47 +813,57 @@ function _createClass(Constructor, protoProps, staticProps) { if (protoProps) _d
         if (s) return s[r];
       }
     }, {
-      key: "parseStructParam",
-      value: function parseStructParam(_ref10) {
-        var t = _ref10.value,
-            e = _ref10.defaultValue,
-            r = _ref10.type;
-        var s;
-        if (t) try {
-          s = JSON.parse(t);
-        } catch (e) {
-          console.error("Cyclone Engine failed to parse param structure: ", t), console.error(e);
-        }
-        s || (s = JSON.parse(e));
-        var a = this.getRegexMatch(r, /struct<(.*)>/i, 1);
-        if (!a) return console.error("Unknown plugin param type: ".concat(r)), s;
-        var n = this.structs.get(a);
-        if (!n) return console.error("Unknown param structure type: ".concat(a)), s;
-
-        for (var _t9 in n) {
-          if (!n.hasOwnProperty(_t9)) continue;
-          var _e6 = n[_t9];
-          "string" == typeof _e6 && (_e6 = {
-            type: _e6,
-            defaultValue: this.defaultValueForType(_e6)
-          }), s[_t9] = this.getParam({
-            value: s[_t9],
-            defaultValue: _e6.defaultValue,
-            type: _e6.type
+      key: "parseStructData",
+      value: function parseStructData(t, e) {
+        for (var r in t) {
+          if (!t.hasOwnProperty(r)) continue;
+          var s = t[r];
+          "string" == typeof s && (s = {
+            type: s,
+            defaultValue: this.defaultValueForType(s)
+          }), e[r] = this.getParam({
+            key: r,
+            value: e[r],
+            defaultValue: s.defaultValue,
+            type: s.type
           });
         }
 
-        return s;
+        return e;
+      }
+    }, {
+      key: "parseStructParam",
+      value: function parseStructParam(_ref10) {
+        var t = _ref10.key,
+            e = _ref10.value,
+            r = _ref10.defaultValue,
+            s = _ref10.type;
+        var a;
+        if (e) try {
+          a = JSON.parse(e);
+        } catch (r) {
+          console.error("Cyclone Engine failed to parse param structure: ", t, e), console.error(r);
+        }
+        if (!a) try {
+          a = JSON.parse(r);
+        } catch (e) {
+          throw console.error("Cyclone Engine failed to parse default value: ", t, r), e;
+        }
+        var n = this.getRegexMatch(s, /struct<(.*)>/i, 1);
+        if (!n) return console.error("Unknown plugin param type: ".concat(s, " (").concat(t || "", ")")), a;
+        var i = this.structs.get(n);
+        return i ? this.parseStructData(i, a) : (console.error("Unknown param structure type: ".concat(n, " (").concat(t || "", ")")), a);
       }
     }, {
       key: "parseList",
       value: function parseList(t, e) {
-        var r = t;
-        r.startsWith("[") && (r = r.substr(1)), r.endsWith("]") && (r = r.substr(0, r.length - 1));
-        var s = r.split(",");
-        return e ? s.map(function (t) {
+        var r = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : ",";
+        var s = t;
+        s.startsWith("[") && (s = s.substr(1)), s.endsWith("]") && (s = s.substr(0, s.length - 1));
+        var a = s.split(r || ",");
+        return e ? a.map(function (t) {
           return e(t);
-        }) : s;
+        }) : a;
       }
     }, {
       key: "parseArray",
@@ -774,11 +885,12 @@ function _createClass(Constructor, protoProps, staticProps) { if (protoProps) _d
       value: function registerCommand(t, e, r) {
         var _this4 = this;
 
+        var s = arguments.length > 3 && arguments[3] !== undefined ? arguments[3] : [];
         return "function" == typeof e ? PluginManager.registerCommand(this.getPluginFileName(), t, e) : PluginManager.registerCommand(this.getPluginFileName(), t, function (t) {
           var s = new Map();
 
-          for (var _e7 in t) {
-            t.hasOwnProperty(_e7) && s.set(_e7, t[_e7]);
+          for (var _e6 in t) {
+            t.hasOwnProperty(_e6) && s.set(_e6, t[_e6]);
           }
 
           var a = _this4.loadParamMap(e, s);
@@ -979,8 +1091,7 @@ function _createClass(Constructor, protoProps, staticProps) { if (protoProps) _d
         });
       },
       _decompress: function _decompress(o, n, e) {
-        var t,
-            i,
+        var i,
             s,
             p,
             u,
@@ -1007,7 +1118,7 @@ function _createClass(Constructor, protoProps, staticProps) { if (protoProps) _d
           u = A.val & A.position, A.position >>= 1, 0 == A.position && (A.position = n, A.val = e(A.index++)), p |= (u > 0 ? 1 : 0) * a, a <<= 1;
         }
 
-        switch (t = p) {
+        switch (p) {
           case 0:
             for (p = 0, c = Math.pow(2, 8), a = 1; a != c;) {
               u = A.val & A.position, A.position >>= 1, 0 == A.position && (A.position = n, A.val = e(A.index++)), p |= (u > 0 ? 1 : 0) * a, a <<= 1;
@@ -1537,7 +1648,11 @@ function _createClass(Constructor, protoProps, staticProps) { if (protoProps) _d
             var lastX = this.lastCollisionXAt(right - this.width - this.hitboxX); // if we're entering a new right tile
 
             if (lastXDestination > lastX) {
-              // check if the current right-most tile allows moving right
+              if (!$gameMap.isValid(lastXDestination, y)) {
+                return false;
+              } // check if the current right-most tile allows moving right
+
+
               if (!this.isPositionPassable(lastX, y, 6)) {
                 return false;
               } // and check if the new right-most tile allows moving left
@@ -1650,7 +1765,11 @@ function _createClass(Constructor, protoProps, staticProps) { if (protoProps) _d
             var lastY = this.lastCollisionYAt(bottom - this.height - this.hitboxY); // if we're entering a new bottom tile
 
             if (lastYDestination > lastY) {
-              // check if the current bottom tile allows moving down
+              if (!$gameMap.isValid(x, lastYDestination)) {
+                return false;
+              } // check if the current bottom tile allows moving down
+
+
               if (!this.isPositionPassable(x, lastY, 2)) {
                 return false;
               } // and check if the new bottom tile allows moving up
@@ -2494,7 +2613,17 @@ function _createClass(Constructor, protoProps, staticProps) { if (protoProps) _d
           playerHitbox: {
             type: 'struct<CycloneHitbox>',
             defaultValue: '{"x":6,"y":24,"width":36,"height":18}'
-          }
+          },
+          applyToEvents: 'boolean',
+          minDistanceToChangeDirection: {
+            type: 'float',
+            defaultValue: 1
+          },
+          enableMoveTowardCharacter: {
+            type: 'boolean',
+            defaultValue: true
+          },
+          approachDiagonally: 'boolean'
         });
 
         this.stepCount = [1, 2, 4].includes(this.params.stepCount) ? this.params.stepCount : 1;
@@ -2511,6 +2640,10 @@ function _createClass(Constructor, protoProps, staticProps) { if (protoProps) _d
         _addPixelMovementToClass(Game_Player);
 
         _addPixelMovementToClass(Game_Follower);
+
+        if (this.params.applyToEvents) {
+          _addPixelMovementToClass(Game_Event);
+        }
       }
     }, {
       key: "isRoundNumber",
@@ -3109,14 +3242,76 @@ function _createClass(Constructor, protoProps, staticProps) { if (protoProps) _d
       return _class5;
     }();
   });
-  var tryToLeaveVehicleDelay = 0;
-  CycloneMovement.patchClass(Game_Player, function ($super) {
+  CycloneMovement.patchClass(Game_Character, function ($super) {
     return /*#__PURE__*/function () {
       function _class6() {
         _classCallCheck(this, _class6);
       }
 
       _createClass(_class6, [{
+        key: "moveTowardCharacter",
+        value: function moveTowardCharacter(character) {
+          if (!CycloneMovement.params.enableMoveTowardCharacter) {
+            return $super.moveTowardCharacter.call(this, character);
+          }
+
+          var sx = this.deltaXFrom(character.x);
+          var sy = this.deltaYFrom(character.y);
+          var horizontalDirection = sx > 0 ? 4 : 6;
+          var verticalDirection = sy > 0 ? 8 : 2;
+          var realHorizontalDistance = CycloneMovement.params.applyToEvents ? Math.abs(sx) : Math.floor(Math.abs(sx));
+          var realVerticalDistance = CycloneMovement.params.applyToEvents ? Math.abs(sy) : Math.floor(Math.abs(sy));
+
+          if (CycloneMovement.params.approachDiagonally && realVerticalDistance > 0 && realHorizontalDistance > 0) {
+            this.moveDiagonally(horizontalDirection, verticalDirection);
+
+            if (this.isMovementSucceeded()) {
+              return;
+            }
+          }
+
+          var minDistance = CycloneMovement.params.minDistanceToChangeDirection;
+          var horizontalDistance = realHorizontalDistance + (this._direction === horizontalDirection ? Math.min(minDistance, realVerticalDistance) : 0);
+          var verticalDistance = realVerticalDistance + (this._direction === verticalDirection ? Math.min(minDistance, realHorizontalDistance) : 0);
+
+          if (horizontalDistance > verticalDistance) {
+            this.moveStraight(horizontalDirection);
+
+            if (!this.isMovementSucceeded() && realVerticalDistance !== 0) {
+              this.moveStraight(verticalDirection);
+            }
+          } else if (realVerticalDistance !== 0) {
+            this.moveStraight(verticalDirection);
+
+            if (!this.isMovementSucceeded() && realHorizontalDistance !== 0) {
+              this.moveStraight(horizontalDirection);
+            }
+          } else if (realHorizontalDistance !== 0) {
+            this.moveStraight(horizontalDirection);
+          }
+        }
+      }]);
+
+      return _class6;
+    }();
+  });
+  var tryToLeaveVehicleDelay = 0;
+  CycloneMovement.patchClass(Game_Player, function ($super) {
+    return /*#__PURE__*/function () {
+      function _class7() {
+        _classCallCheck(this, _class7);
+      }
+
+      _createClass(_class7, [{
+        key: "refresh",
+        value: function refresh() {
+          $super.refresh.call(this);
+          this._defaultWidth = Math.floor(CycloneMovement.params.playerHitbox.width / $gameMap.tileWidth() * 8) / 8;
+          this._defaultHeight = Math.floor(CycloneMovement.params.playerHitbox.height / $gameMap.tileHeight() * 8) / 8;
+          this._defaultHitboxX = Math.floor(CycloneMovement.params.playerHitbox.x / $gameMap.tileWidth() * 8) / 8;
+          this._defaultHitboxY = Math.floor(CycloneMovement.params.playerHitbox.y / $gameMap.tileWidth() * 8) / 8;
+        }
+      }, {
         key: "getWidth",
         value: function getWidth() {
           if (this.isInAnyVehicle()) {
@@ -3188,7 +3383,7 @@ function _createClass(Constructor, protoProps, staticProps) { if (protoProps) _d
           this.tryMoving(direction, alternativeD, diagonalDirection);
 
           if (!this.isMoving()) {
-            if (this.tryOtherMovementOptions(direction)) {
+            if (this.tryOtherMovementOptions(direction, diagonalDirection)) {
               return;
             }
 
@@ -3230,7 +3425,7 @@ function _createClass(Constructor, protoProps, staticProps) { if (protoProps) _d
         }
       }, {
         key: "tryOtherMovementOptions",
-        value: function tryOtherMovementOptions(direction) {
+        value: function tryOtherMovementOptions(direction, diagonalDirection) {
           if (this.tryToLeaveVehicle(direction)) {
             return true;
           }
@@ -3239,7 +3434,7 @@ function _createClass(Constructor, protoProps, staticProps) { if (protoProps) _d
             return false;
           }
 
-          if (this.tryToAvoid(direction, CycloneMovement.params.maxOffset)) {
+          if (this.tryToAvoid(direction, CycloneMovement.params.maxOffset, diagonalDirection)) {
             return true;
           }
 
@@ -3265,7 +3460,7 @@ function _createClass(Constructor, protoProps, staticProps) { if (protoProps) _d
         }
       }, {
         key: "tryToAvoid",
-        value: function tryToAvoid(direction, maxOffset) {
+        value: function tryToAvoid(direction, maxOffset, diagonalDirection) {
           if (!CycloneMovement.params.sidestepEvents) {
             if (this._blockingReason === 'characters') {
               return false;
@@ -3273,13 +3468,13 @@ function _createClass(Constructor, protoProps, staticProps) { if (protoProps) _d
           }
 
           if (direction === 4 || direction === 6) {
-            if (this.tryToAvoidVertically(direction, maxOffset)) {
+            if (this.tryToAvoidVertically(direction, maxOffset, diagonalDirection)) {
               return true;
             }
           }
 
           if (direction === 2 || direction === 8) {
-            if (this.tryToAvoidHorizontally(direction, maxOffset)) {
+            if (this.tryToAvoidHorizontally(direction, maxOffset, diagonalDirection)) {
               return true;
             }
           }
@@ -3299,11 +3494,11 @@ function _createClass(Constructor, protoProps, staticProps) { if (protoProps) _d
         }
       }, {
         key: "tryToAvoidVertically",
-        value: function tryToAvoidVertically(direction, maxOffset) {
+        value: function tryToAvoidVertically(direction, maxOffset, diagonalDirection) {
           var previousOffset = 0;
           var offset = CycloneMovement.stepSize;
-          var downEnabled = true;
-          var upEnabled = true;
+          var downEnabled = !CycloneMovement.goesUp(diagonalDirection);
+          var upEnabled = !CycloneMovement.goesDown(diagonalDirection);
 
           while (offset <= maxOffset) {
             if (downEnabled) {
@@ -3332,11 +3527,11 @@ function _createClass(Constructor, protoProps, staticProps) { if (protoProps) _d
         }
       }, {
         key: "tryToAvoidHorizontally",
-        value: function tryToAvoidHorizontally(direction, maxOffset) {
+        value: function tryToAvoidHorizontally(direction, maxOffset, diagonalDirection) {
           var previousOffset = 0;
           var offset = CycloneMovement.stepSize;
-          var leftEnabled = true;
-          var rightEnabled = true;
+          var leftEnabled = !CycloneMovement.goesRight(diagonalDirection);
+          var rightEnabled = !CycloneMovement.goesLeft(diagonalDirection);
 
           while (offset <= maxOffset) {
             if (leftEnabled) {
@@ -3509,10 +3704,10 @@ function _createClass(Constructor, protoProps, staticProps) { if (protoProps) _d
 
           try {
             for (_iterator8.s(); !(_step8 = _iterator8.n()).done;) {
-              var _t10 = _step8.value;
+              var _t9 = _step8.value;
 
-              if (_t10 !== 1 && _t10 !== 2) {
-                newTriggers.push(_t10);
+              if (_t9 !== 1 && _t9 !== 2) {
+                newTriggers.push(_t9);
               }
             }
           } catch (err) {
@@ -4082,35 +4277,35 @@ function _createClass(Constructor, protoProps, staticProps) { if (protoProps) _d
       }, {
         key: "defaultWidth",
         get: function get() {
-          return 0.75;
+          return this._defaultWidth;
         }
       }, {
         key: "defaultHeight",
         get: function get() {
-          return 0.375;
+          return this._defaultHeight;
         }
       }, {
         key: "defaultHitboxX",
         get: function get() {
-          return 0.125;
+          return this._defaultHitboxX;
         }
       }, {
         key: "defaultHitboxY",
         get: function get() {
-          return 0.5;
+          return this._defaultHitboxY;
         }
       }]);
 
-      return _class6;
+      return _class7;
     }();
   });
   CycloneMovement.patchClass(Game_Follower, function ($super) {
     return /*#__PURE__*/function () {
-      function _class7() {
-        _classCallCheck(this, _class7);
+      function _class8() {
+        _classCallCheck(this, _class8);
       }
 
-      _createClass(_class7, [{
+      _createClass(_class8, [{
         key: "getWidth",
         value: function getWidth() {
           return 0.75;
@@ -4149,16 +4344,16 @@ function _createClass(Constructor, protoProps, staticProps) { if (protoProps) _d
         }
       }]);
 
-      return _class7;
+      return _class8;
     }();
   });
   CycloneMovement.patchClass(Game_Vehicle, function ($super) {
     return /*#__PURE__*/function () {
-      function _class8() {
-        _classCallCheck(this, _class8);
+      function _class9() {
+        _classCallCheck(this, _class9);
       }
 
-      _createClass(_class8, [{
+      _createClass(_class9, [{
         key: "checkPassage",
         value: function checkPassage(x, y) {
           if (this.isBoat()) {
@@ -4219,20 +4414,114 @@ function _createClass(Constructor, protoProps, staticProps) { if (protoProps) _d
         }
       }]);
 
-      return _class8;
+      return _class9;
     }();
   });
+
+  function buildEventPageMetadata(page) {
+    page.meta = page.meta || {};
+    var rgx = /<([^<>:]+)(:?)([^>]*)>/g;
+
+    var _iterator9 = _createForOfIteratorHelper(page.list),
+        _step9;
+
+    try {
+      for (_iterator9.s(); !(_step9 = _iterator9.n()).done;) {
+        var command = _step9.value;
+
+        if (!(command === null || command === void 0 ? void 0 : command.code) || command.code !== 108 && command.code !== 408) {
+          continue;
+        }
+
+        var comment = command.parameters[0];
+
+        while (true) {
+          var match = rgx.exec(comment);
+
+          if (match) {
+            if (match[2] === ':') {
+              page.meta[match[1]] = match[3];
+            } else {
+              page.meta[match[1]] = true;
+            }
+          } else {
+            break;
+          }
+        }
+      }
+    } catch (err) {
+      _iterator9.e(err);
+    } finally {
+      _iterator9.f();
+    }
+
+    return page.meta;
+  }
+
   var uselessCommands = Object.freeze([// comments
   108, 408, // label
   118, // end of list
   0]);
   CycloneMovement.patchClass(Game_Event, function ($super) {
     return /*#__PURE__*/function () {
-      function _class9() {
-        _classCallCheck(this, _class9);
+      function _class10() {
+        _classCallCheck(this, _class10);
       }
 
-      _createClass(_class9, [{
+      _createClass(_class10, [{
+        key: "refresh",
+        value: function refresh() {
+          $super.refresh.call(this);
+          this._defaultWidth = 1;
+          this._defaultHeight = 1;
+          this._defaultHitboxX = 0;
+          this._defaultHitboxY = 0;
+          var page = this.page();
+
+          if (!page) {
+            return;
+          }
+
+          buildEventPageMetadata(page);
+          this._defaultWidth = this.getHitboxValue(page.meta, 'hitboxWidth', this._defaultWidth, $gameMap.tileWidth());
+          this._defaultHeight = this.getHitboxValue(page.meta, 'hitboxHeight', this._defaultHeight, $gameMap.tileHeight());
+          this._defaultHitboxX = this.getHitboxValue(page.meta, 'hitboxX', this._defaultHitboxX, $gameMap.tileWidth());
+          this._defaultHitboxY = this.getHitboxValue(page.meta, 'hitboxY', this._defaultHitboxY, $gameMap.tileHeight());
+        }
+      }, {
+        key: "getWidth",
+        value: function getWidth() {
+          return this.defaultWidth;
+        }
+      }, {
+        key: "getHeight",
+        value: function getHeight() {
+          return this.defaultHeight;
+        }
+      }, {
+        key: "getHitboxX",
+        value: function getHitboxX() {
+          return this.defaultHitboxX;
+        }
+      }, {
+        key: "getHitboxY",
+        value: function getHitboxY() {
+          return this.defaultHitboxY;
+        }
+      }, {
+        key: "getHitboxValue",
+        value: function getHitboxValue(meta, tagName, defaultValue, tileSize) {
+          if (meta[tagName] && meta[tagName] !== '0') {
+            return Math.floor(meta[tagName] / tileSize * 8) / 8;
+          }
+
+          if (meta[tagName] === '0' || meta[tagName] === 0) {
+            return 0;
+          }
+
+          return defaultValue;
+        }
+      }, {
         key: "turnTowardPlayer",
         value: function turnTowardPlayer() {
           var sx = this.deltaXFrom($gamePlayer.x);
@@ -4283,12 +4572,12 @@ function _createClass(Constructor, protoProps, staticProps) { if (protoProps) _d
             return true;
           }
 
-          var _iterator9 = _createForOfIteratorHelper(this.list()),
-              _step9;
+          var _iterator10 = _createForOfIteratorHelper(this.list()),
+              _step10;
 
           try {
-            for (_iterator9.s(); !(_step9 = _iterator9.n()).done;) {
-              var command = _step9.value;
+            for (_iterator10.s(); !(_step10 = _iterator10.n()).done;) {
+              var command = _step10.value;
 
               if (uselessCommands.includes(Number(command.code))) {
                 continue;
@@ -4297,16 +4586,170 @@ function _createClass(Constructor, protoProps, staticProps) { if (protoProps) _d
               return true;
             }
           } catch (err) {
-            _iterator9.e(err);
+            _iterator10.e(err);
           } finally {
-            _iterator9.f();
+            _iterator10.f();
           }
 
           return false;
         }
+      }, {
+        key: "moveStraight",
+        value: function moveStraight(d) {
+          this._lastMove = d;
+          return $super.moveStraight.call(this, d);
+        }
+      }, {
+        key: "moveDiagonally",
+        value: function moveDiagonally(horz, vert) {
+          this._lastMove = {
+            horz: horz,
+            vert: vert
+          };
+          return $super.moveDiagonally.call(this, horz, vert);
+        }
+      }, {
+        key: "repeatMovement",
+        value: function repeatMovement() {
+          if (!this._repeatMovementCount) {
+            return false;
+          }
+
+          this._repeatMovementCount--;
+
+          if (!this._lastMove) {
+            return true;
+          }
+
+          if (typeof this._lastMove === 'number') {
+            this.moveStraight(this._lastMove);
+            return true;
+          }
+
+          if (_typeof(this._lastMove) === 'object') {
+            this.moveDiagonally(this._lastMove.horz, this._lastMove.vert);
+            return true;
+          }
+
+          return true;
+        }
+      }, {
+        key: "runMoveType",
+        value: function runMoveType(fn) {
+          if (this.repeatMovement()) {
+            return;
+          }
+
+          this._lastMove = 0;
+          fn.call(this);
+
+          if (!CycloneMovement.params.applyToEvents || CycloneMovement.params.stepCount === 1) {
+            return;
+          }
+
+          if (!this._lastMove) {
+            return;
+          }
+
+          this._repeatMovementCount = Math.max(CycloneMovement.params.stepCount - 1, 0);
+        }
+      }, {
+        key: "moveTypeRandom",
+        value: function moveTypeRandom() {
+          return this.runMoveType($super.moveTypeRandom);
+        }
+      }, {
+        key: "moveTypeTowardPlayer",
+        value: function moveTypeTowardPlayer() {
+          return this.runMoveType($super.moveTypeTowardPlayer);
+        }
+      }, {
+        key: "repeatCommand",
+        value: function repeatCommand() {
+          if (!this._repeatCommandCount) {
+            return false;
+          }
+
+          if (!this._lastCommand) {
+            return false;
+          }
+
+          this.setMovementSuccess(true);
+          this.processMoveCommand(this._lastCommand);
+
+          var _ref11 = this._moveRoute || {
+            skippable: true
+          },
+              skippable = _ref11.skippable;
+
+          if (this.isMovementSucceeded() || skippable) {
+            this._repeatCommandCount--;
+          }
+
+          return true;
+        }
+      }, {
+        key: "updateRoutineMove",
+        value: function updateRoutineMove() {
+          if (!CycloneMovement.params.applyToEvents || CycloneMovement.params.stepCount === 1) {
+            return $super.updateRoutineMove.call(this);
+          }
+
+          if (this.repeatCommand()) {
+            if (!this._repeatCommandCount) {
+              this.advanceMoveRouteIndex();
+            }
+
+            return;
+          }
+
+          if (this._waitCount > 0) {
+            this._waitCount--;
+            return;
+          }
+
+          this.setMovementSuccess(true);
+          var command = this._moveRoute.list[this._moveRouteIndex];
+
+          if (!command) {
+            return;
+          }
+
+          this._lastCommand = command;
+          this._repeatCommandCount = 0;
+          this.processMoveCommand(command);
+
+          if (command.code > 0 && command.code <= 13 && this.isMovementSucceeded()) {
+            this._repeatCommandCount = Math.max(CycloneMovement.params.stepCount - 1, 0);
+          }
+
+          if (!this._repeatCommandCount) {
+            this.advanceMoveRouteIndex();
+          }
+        }
+      }, {
+        key: "defaultWidth",
+        get: function get() {
+          return this._defaultWidth;
+        }
+      }, {
+        key: "defaultHeight",
+        get: function get() {
+          return this._defaultHeight;
+        }
+      }, {
+        key: "defaultHitboxX",
+        get: function get() {
+          return this._defaultHitboxX;
+        }
+      }, {
+        key: "defaultHitboxY",
+        get: function get() {
+          return this._defaultHitboxY;
+        }
       }]);
 
-      return _class9;
+      return _class10;
     }();
   });
   var timeout;
@@ -4315,11 +4758,11 @@ function _createClass(Constructor, protoProps, staticProps) { if (protoProps) _d
   var needsCalling = false;
   CycloneMovement.patchClass(Game_Temp, function ($super) {
     return /*#__PURE__*/function () {
-      function _class10() {
-        _classCallCheck(this, _class10);
+      function _class11() {
+        _classCallCheck(this, _class11);
       }
 
-      _createClass(_class10, [{
+      _createClass(_class11, [{
         key: "_setDestination",
         value: function _setDestination(x, y) {
           var _this6 = this;
@@ -4383,16 +4826,16 @@ function _createClass(Constructor, protoProps, staticProps) { if (protoProps) _d
         }
       }]);
 
-      return _class10;
+      return _class11;
     }();
   });
   CycloneMovement.patchClass(Game_Party, function ($super) {
     return /*#__PURE__*/function () {
-      function _class11() {
-        _classCallCheck(this, _class11);
+      function _class12() {
+        _classCallCheck(this, _class12);
       }
 
-      _createClass(_class11, [{
+      _createClass(_class12, [{
         key: "steps",
         value: function steps() {
           return Math.floor(this._steps);
@@ -4404,16 +4847,16 @@ function _createClass(Constructor, protoProps, staticProps) { if (protoProps) _d
         }
       }]);
 
-      return _class11;
+      return _class12;
     }();
   });
   CycloneMovement.patchClass(Scene_Map, function ($super) {
     return /*#__PURE__*/function () {
-      function _class12() {
-        _classCallCheck(this, _class12);
+      function _class13() {
+        _classCallCheck(this, _class13);
       }
 
-      _createClass(_class12, [{
+      _createClass(_class13, [{
         key: "onMapTouch",
         value: function onMapTouch() {
           var _$super$onMapTouch;
@@ -4430,16 +4873,16 @@ function _createClass(Constructor, protoProps, staticProps) { if (protoProps) _d
         }
       }]);
 
-      return _class12;
+      return _class13;
     }();
   });
   CycloneMovement.patchClass(DataManager, function ($super) {
     return /*#__PURE__*/function () {
-      function _class13() {
-        _classCallCheck(this, _class13);
+      function _class14() {
+        _classCallCheck(this, _class14);
       }
 
-      _createClass(_class13, null, [{
+      _createClass(_class14, null, [{
         key: "onLoad",
         value: function onLoad(object) {
           $super.onLoad.call(this, object);
@@ -4450,7 +4893,7 @@ function _createClass(Constructor, protoProps, staticProps) { if (protoProps) _d
         }
       }]);
 
-      return _class13;
+      return _class14;
     }();
   });
 })();

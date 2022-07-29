@@ -1,5 +1,6 @@
 import './plugin';
 import './Game_Map';
+import './Game_Character';
 import './Game_Player';
 import './Game_Follower';
 import './Game_Vehicle';

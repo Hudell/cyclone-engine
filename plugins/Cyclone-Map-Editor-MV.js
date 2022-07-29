@@ -14,7 +14,7 @@ function _iterableToArray(iter) { if (typeof Symbol !== "undefined" && Symbol.it
 
 function _arrayWithoutHoles(arr) { if (Array.isArray(arr)) return _arrayLikeToArray(arr); }
 
-function _createForOfIteratorHelper(o, allowArrayLike) { var it; if (typeof Symbol === "undefined" || o[Symbol.iterator] == null) { if (Array.isArray(o) || (it = _unsupportedIterableToArray(o)) || allowArrayLike && o && typeof o.length === "number") { if (it) o = it; var i = 0; var F = function F() {}; return { s: F, n: function n() { if (i >= o.length) return { done: true }; return { done: false, value: o[i++] }; }, e: function e(_e8) { throw _e8; }, f: F }; } throw new TypeError("Invalid attempt to iterate non-iterable instance.\nIn order to be iterable, non-array objects must have a [Symbol.iterator]() method."); } var normalCompletion = true, didErr = false, err; return { s: function s() { it = o[Symbol.iterator](); }, n: function n() { var step = it.next(); normalCompletion = step.done; return step; }, e: function e(_e9) { didErr = true; err = _e9; }, f: function f() { try { if (!normalCompletion && it["return"] != null) it["return"](); } finally { if (didErr) throw err; } } }; }
+function _createForOfIteratorHelper(o, allowArrayLike) { var it; if (typeof Symbol === "undefined" || o[Symbol.iterator] == null) { if (Array.isArray(o) || (it = _unsupportedIterableToArray(o)) || allowArrayLike && o && typeof o.length === "number") { if (it) o = it; var i = 0; var F = function F() {}; return { s: F, n: function n() { if (i >= o.length) return { done: true }; return { done: false, value: o[i++] }; }, e: function e(_e7) { throw _e7; }, f: F }; } throw new TypeError("Invalid attempt to iterate non-iterable instance.\nIn order to be iterable, non-array objects must have a [Symbol.iterator]() method."); } var normalCompletion = true, didErr = false, err; return { s: function s() { it = o[Symbol.iterator](); }, n: function n() { var step = it.next(); normalCompletion = step.done; return step; }, e: function e(_e8) { didErr = true; err = _e8; }, f: function f() { try { if (!normalCompletion && it["return"] != null) it["return"](); } finally { if (didErr) throw err; } } }; }
 
 function _unsupportedIterableToArray(o, minLen) { if (!o) return; if (typeof o === "string") return _arrayLikeToArray(o, minLen); var n = Object.prototype.toString.call(o).slice(8, -1); if (n === "Object" && o.constructor) n = o.constructor.name; if (n === "Map" || n === "Set") return Array.from(o); if (n === "Arguments" || /^(?:Ui|I)nt(?:8|16|32)(?:Clamped)?Array$/.test(n)) return _arrayLikeToArray(o, minLen); }
 
@@ -45,7 +45,7 @@ function _defineProperties(target, props) { for (var i = 0; i < props.length; i+
 function _createClass(Constructor, protoProps, staticProps) { if (protoProps) _defineProperties(Constructor.prototype, protoProps); if (staticProps) _defineProperties(Constructor, staticProps); return Constructor; }
 
 /*:
- * @plugindesc Live Map Editor - 1.12.01
+ * @plugindesc Live Map Editor - 1.12.02
  *
  * <pluginName:CycloneMapEditor>
  * @author Hudell
@@ -68,45 +68,28 @@ function _createClass(Constructor, protoProps, staticProps) { if (protoProps) _d
  * Terms of Use
  * ===========================================================================
  * 1. For support, feature requests or bug reports, you may contact me through
- *  any of the following channels (in order of preference):
+ *  any of the following channels:
  *
  *   1.a. Opening an issue on the plugin's GitHub repository:
  *      https://github.com/Hudell/cyclone-engine
- *   1.b. Tagging me on threads on Rpg Maker related Forums, such as:
- *      rpgmakerweb.com (English)
- *      centrorpg.com (Portuguese)
- *      condadobraveheart.com (Portuguese)
- *   1.c. Opening threads on the plugin's itch.io page
- *   1.d. Tagging my user on Rpg Maker related sub-reddits, such as r/rpgmaker
+ *   1.b. Opening threads on the plugin's itch.io page
+ *   1.c. Tagging my user on Rpg Maker related sub-reddits, such as r/rpgmaker
  *
- * 2. Do not send me Direct Messages asking for support or bug reports.
- * You may only send me direct messages when none of the above platforms are
- * appropiate for it, or when you want to share pictures of cute dogs.
+ * 2. This plugin is released under the Apache License 2.0 (Apache-2.0).
  *
- * 3. A special exception is created for patreon users who get access to my
- * priority support discord server.
- *
- * 4. Sending plugin related questions on channels related to any of my other
- * projects (such as my game's Discord server) may result in an immediate ban
- * from such platforms and I may also choose to ignore your future requests.
- *
- * 5. This plugin is released under the Apache License 2.0 (Apache-2.0).
- *
- * 6. You can send me your own changes to this plugin if you wish to see them
+ * 3. You can send me your own changes to this plugin if you wish to see them
  * included in an update, by registering a Pull Request on the plugin's GitHub
  * repository.
  *
- * 7. This plugin is provided as is. While I'll often read feedback and offer
+ * 4. This plugin is provided as is. While I'll often read feedback and offer
  * updates to my plugins, I am in no obligation to do so.
  *
- * 8. I'm not responsible for anything created with this plugin.
- * ===========================================================================
- * Did you know?
- * Early map makers used to include fake towns on their maps to identify
- * copies of their work.
+ * 5. I'm not responsible for anything created with this plugin.
  * ===========================================================================
  * Change Log
  * ===========================================================================
+ * 2022-07-29 - Version 1.12.02
+ *   * Added support for custom event hitboxes
  * 2021-01-27 - Version 1.12.00
  *   * Added option to generate 48x48 tilesets when using other sizes.
  * 2020-11-05 - Version 1.11.00
@@ -923,38 +906,46 @@ function _createClass(Constructor, protoProps, staticProps) { if (protoProps) _d
     }, {
       key: "getParam",
       value: function getParam(_ref8) {
-        var t = _ref8.value,
-            e = _ref8.defaultValue,
-            r = _ref8.type;
-        if (r.endsWith("[]")) return this.parseArrayParam({
-          value: t,
-          type: r
-        });
-        if (r.startsWith("struct<")) return this.parseStructParam({
-          value: t,
-          defaultValue: e,
-          type: r
-        });
-        if (void 0 === t) return e;
+        var t = _ref8.key,
+            e = _ref8.value,
+            r = _ref8.defaultValue,
+            s = _ref8.type;
 
-        switch (r) {
-          case "int":
-            return this.getIntParam({
-              value: t,
-              defaultValue: e
-            });
+        try {
+          if (s.endsWith("[]")) return this.parseArrayParam({
+            key: t,
+            value: e,
+            type: s
+          });
+          if (s.startsWith("struct<")) return this.parseStructParam({
+            key: t,
+            value: e,
+            defaultValue: r,
+            type: s
+          });
+          if (void 0 === e) return r;
 
-          case "float":
-            return this.getFloatParam({
-              value: t,
-              defaultValue: e
-            });
+          switch (s) {
+            case "int":
+              return this.getIntParam({
+                value: e,
+                defaultValue: r
+              });
 
-          case "boolean":
-            return "boolean" == typeof t ? t : this.isTrue(String(t).trim());
+            case "float":
+              return this.getFloatParam({
+                value: e,
+                defaultValue: r
+              });
 
-          default:
-            return t;
+            case "boolean":
+              return "boolean" == typeof e ? e : this.isTrue(String(e).trim());
+
+            default:
+              return e;
+          }
+        } catch (e) {
+          throw t && console.error(t), e;
         }
       }
     }, {
@@ -967,6 +958,7 @@ function _createClass(Constructor, protoProps, staticProps) { if (protoProps) _d
       value: function defaultValueForType(t) {
         switch (t) {
           case "int":
+          case "float":
             return 0;
 
           case "boolean":
@@ -999,6 +991,7 @@ function _createClass(Constructor, protoProps, staticProps) { if (protoProps) _d
           o = (_value = (this.getPluginParam(a) || {}).value) !== null && _value !== void 0 ? _value : i;
         }
         return this.getParam({
+          key: t,
           value: o,
           defaultValue: i,
           type: n
@@ -1044,47 +1037,57 @@ function _createClass(Constructor, protoProps, staticProps) { if (protoProps) _d
         if (s) return s[r];
       }
     }, {
-      key: "parseStructParam",
-      value: function parseStructParam(_ref10) {
-        var t = _ref10.value,
-            e = _ref10.defaultValue,
-            r = _ref10.type;
-        var s;
-        if (t) try {
-          s = JSON.parse(t);
-        } catch (e) {
-          console.error("Cyclone Engine failed to parse param structure: ", t), console.error(e);
-        }
-        s || (s = JSON.parse(e));
-        var a = this.getRegexMatch(r, /struct<(.*)>/i, 1);
-        if (!a) return console.error("Unknown plugin param type: ".concat(r)), s;
-        var n = this.structs.get(a);
-        if (!n) return console.error("Unknown param structure type: ".concat(a)), s;
-
-        for (var _t9 in n) {
-          if (!n.hasOwnProperty(_t9)) continue;
-          var _e6 = n[_t9];
-          "string" == typeof _e6 && (_e6 = {
-            type: _e6,
-            defaultValue: this.defaultValueForType(_e6)
-          }), s[_t9] = this.getParam({
-            value: s[_t9],
-            defaultValue: _e6.defaultValue,
-            type: _e6.type
+      key: "parseStructData",
+      value: function parseStructData(t, e) {
+        for (var r in t) {
+          if (!t.hasOwnProperty(r)) continue;
+          var s = t[r];
+          "string" == typeof s && (s = {
+            type: s,
+            defaultValue: this.defaultValueForType(s)
+          }), e[r] = this.getParam({
+            key: r,
+            value: e[r],
+            defaultValue: s.defaultValue,
+            type: s.type
           });
         }
 
-        return s;
+        return e;
+      }
+    }, {
+      key: "parseStructParam",
+      value: function parseStructParam(_ref10) {
+        var t = _ref10.key,
+            e = _ref10.value,
+            r = _ref10.defaultValue,
+            s = _ref10.type;
+        var a;
+        if (e) try {
+          a = JSON.parse(e);
+        } catch (r) {
+          console.error("Cyclone Engine failed to parse param structure: ", t, e), console.error(r);
+        }
+        if (!a) try {
+          a = JSON.parse(r);
+        } catch (e) {
+          throw console.error("Cyclone Engine failed to parse default value: ", t, r), e;
+        }
+        var n = this.getRegexMatch(s, /struct<(.*)>/i, 1);
+        if (!n) return console.error("Unknown plugin param type: ".concat(s, " (").concat(t || "", ")")), a;
+        var i = this.structs.get(n);
+        return i ? this.parseStructData(i, a) : (console.error("Unknown param structure type: ".concat(n, " (").concat(t || "", ")")), a);
       }
     }, {
       key: "parseList",
       value: function parseList(t, e) {
-        var r = t;
-        r.startsWith("[") && (r = r.substr(1)), r.endsWith("]") && (r = r.substr(0, r.length - 1));
-        var s = r.split(",");
-        return e ? s.map(function (t) {
+        var r = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : ",";
+        var s = t;
+        s.startsWith("[") && (s = s.substr(1)), s.endsWith("]") && (s = s.substr(0, s.length - 1));
+        var a = s.split(r || ",");
+        return e ? a.map(function (t) {
           return e(t);
-        }) : s;
+        }) : a;
       }
     }, {
       key: "parseArray",
@@ -1106,11 +1109,12 @@ function _createClass(Constructor, protoProps, staticProps) { if (protoProps) _d
       value: function registerCommand(t, e, r) {
         var _this4 = this;
 
+        var s = arguments.length > 3 && arguments[3] !== undefined ? arguments[3] : [];
         return "function" == typeof e ? PluginManager.registerCommand(this.getPluginFileName(), t, e) : PluginManager.registerCommand(this.getPluginFileName(), t, function (t) {
           var s = new Map();
 
-          for (var _e7 in t) {
-            t.hasOwnProperty(_e7) && s.set(_e7, t[_e7]);
+          for (var _e6 in t) {
+            t.hasOwnProperty(_e6) && s.set(_e6, t[_e6]);
           }
 
           var a = _this4.loadParamMap(e, s);
@@ -1558,8 +1562,7 @@ function _createClass(Constructor, protoProps, staticProps) { if (protoProps) _d
         });
       },
       _decompress: function _decompress(o, n, e) {
-        var t,
-            i,
+        var i,
             s,
             p,
             u,
@@ -1586,7 +1589,7 @@ function _createClass(Constructor, protoProps, staticProps) { if (protoProps) _d
           u = A.val & A.position, A.position >>= 1, 0 == A.position && (A.position = n, A.val = e(A.index++)), p |= (u > 0 ? 1 : 0) * a, a <<= 1;
         }
 
-        switch (t = p) {
+        switch (p) {
           case 0:
             for (p = 0, c = Math.pow(2, 8), a = 1; a != c;) {
               u = A.val & A.position, A.position >>= 1, 0 == A.position && (A.position = n, A.val = e(A.index++)), p |= (u > 0 ? 1 : 0) * a, a <<= 1;
@@ -7915,6 +7918,7 @@ function _createClass(Constructor, protoProps, staticProps) { if (protoProps) _d
       value: function drawEventsCollision() {
         var drawWidth = $gameMap.tileWidth();
         var drawHeight = $gameMap.tileHeight();
+        var cycloneMovement = window.CycloneMovement && window.CycloneMovement.params.applyToEvents;
 
         var _iterator18 = _createForOfIteratorHelper($gameMap._events),
             _step18;
@@ -7928,6 +7932,11 @@ function _createClass(Constructor, protoProps, staticProps) { if (protoProps) _d
             }
 
             if (event._priorityType !== 1 || event._through || event._erased) {
+              continue;
+            }
+
+            if (cycloneMovement) {
+              this.drawCycloneMovementCollision(event, '#FF00FF66');
               continue;
             }
 
@@ -7974,11 +7983,15 @@ function _createClass(Constructor, protoProps, staticProps) { if (protoProps) _d
     }, {
       key: "drawCycloneMovementPlayerCollision",
       value: function drawCycloneMovementPlayerCollision() {
-        var _$gamePlayer = $gamePlayer,
-            top = _$gamePlayer.top,
-            left = _$gamePlayer.left,
-            width = _$gamePlayer.width,
-            height = _$gamePlayer.height;
+        this.drawCycloneMovementCollision($gamePlayer, '#0000FF66');
+      }
+    }, {
+      key: "drawCycloneMovementCollision",
+      value: function drawCycloneMovementCollision(object, color) {
+        var top = object.top,
+            left = object.left,
+            width = object.width,
+            height = object.height;
         var x = left * $gameMap.tileWidth();
         var y = top * $gameMap.tileHeight();
         var drawWidth = width * $gameMap.tileWidth();
@@ -7990,7 +8003,7 @@ function _createClass(Constructor, protoProps, staticProps) { if (protoProps) _d
           return;
         }
 
-        this.contents.fillRect(drawX, drawY, drawWidth, drawHeight, '#0000FF66');
+        this.contents.fillRect(drawX, drawY, drawWidth, drawHeight, color);
       }
     }, {
       key: "update",

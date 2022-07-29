@@ -343,6 +343,10 @@ export const addPixelMovementToClass = (classRef) => {
 
       // if we're entering a new right tile
       if (lastXDestination > lastX) {
+        if (!$gameMap.isValid(lastXDestination, y)) {
+          return false;
+        }
+
         // check if the current right-most tile allows moving right
         if (!this.isPositionPassable(lastX, y, 6)) {
           return false;
@@ -446,6 +450,10 @@ export const addPixelMovementToClass = (classRef) => {
 
       // if we're entering a new bottom tile
       if (lastYDestination > lastY) {
+        if (!$gameMap.isValid(x, lastYDestination)) {
+          return false;
+        }
+
         // check if the current bottom tile allows moving down
         if (!this.isPositionPassable(x, lastY, 2)) {
           return false;

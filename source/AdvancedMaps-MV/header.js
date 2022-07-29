@@ -20,7 +20,7 @@
  *  "8a,   ,aa   `8b,d8'   "8a,   ,aa 88 "8a,   ,a8" 88       88 "8b,   ,aa
  *   `"Ybbd8"'     Y88'     `"Ybbd8"' 88  `"YbbdP"'  88       88  `"Ybbd8"'
  *                 d8'
- *                d8'
+ *                d8'                                                       MV
  * Advanced Map Features                                             by Hudell
  * ===========================================================================
  * Terms of Use

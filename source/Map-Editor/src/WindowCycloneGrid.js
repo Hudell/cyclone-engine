@@ -296,11 +296,18 @@ class WindowCycloneGrid extends Window_Base {
     const drawWidth = $gameMap.tileWidth();
     const drawHeight = $gameMap.tileHeight();
 
+    const cycloneMovement = window.CycloneMovement && window.CycloneMovement.params.applyToEvents;
+
     for (const event of $gameMap._events) {
       if (!event) {
         continue;
       }
       if (event._priorityType !== 1 || event._through || event._erased) {
+        continue;
+      }
+
+      if (cycloneMovement) {
+        this.drawCycloneMovementCollision(event, '#FF00FF66');
         continue;
       }
 
@@ -337,7 +344,11 @@ class WindowCycloneGrid extends Window_Base {
   }
 
   drawCycloneMovementPlayerCollision() {
-    const { top, left, width, height } = $gamePlayer;
+    this.drawCycloneMovementCollision($gamePlayer, '#0000FF66');
+  }
+
+  drawCycloneMovementCollision(object, color) {
+    const { top, left, width, height } = object;
 
     const x = left * $gameMap.tileWidth();
     const y = top * $gameMap.tileHeight();
@@ -350,7 +361,7 @@ class WindowCycloneGrid extends Window_Base {
       return;
     }
 
-    this.contents.fillRect(drawX, drawY, drawWidth, drawHeight, '#0000FF66');
+    this.contents.fillRect(drawX, drawY, drawWidth, drawHeight, color);
   }
 
   update() {

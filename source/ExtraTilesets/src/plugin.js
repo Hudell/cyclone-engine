@@ -1,4 +1,5 @@
-import { CyclonePatcher } from '../../Core/patcher';
+import '../../Core/patcher.min';
+
 import { LZString } from '../../Libs/lz-string.min';
 import { loadMapEditorData } from '../../Utils/loadMapEditorData';
 
