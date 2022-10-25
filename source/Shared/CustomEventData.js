@@ -71,7 +71,7 @@ export class CustomEventData {
 
   changePage(pageIndex) {
     this._pageIndex = pageIndex;
-    while (this.pages.length < pageIndex) {
+    while (this.pages.length <= pageIndex) {
       this.pages.push(new CustomEventDataPage());
     }
   }

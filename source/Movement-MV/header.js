@@ -1,5 +1,5 @@
 /*:
- * @plugindesc Adds new movement features to the game v1.01.02
+ * @plugindesc Adds new movement features to the game v1.01.03
  *
  * <pluginName:CycloneMovement>
  * @author Hudell
@@ -43,6 +43,9 @@
  * * ===========================================================================
  * Change Log
  * ===========================================================================
+ * 2022-09-15 - Version 1.03.00
+ *   * Added option to disable player movement by input
+ *
  * 2022-07-29 - Version 1.02.00
  *   * Prevent character from avoiding an object in the opposite direction
  *   of the diagonal direction the player is pressing. (Fixes sprite flicker)
@@ -146,7 +149,14 @@
  * @off Don't Disable
  * @desc
  * @default false
-  *
+ *
+ * @param inputSwitch
+ * @text Player movement Switch
+ * @description The player will only be able to move when this switch is turned on
+ * @parent Player
+ * @type switch
+ * @default 0
+ *
  * @param maxOffset
  * @text Max Slide Distance
  * @parent Player

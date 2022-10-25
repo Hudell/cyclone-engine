@@ -52,6 +52,7 @@ class CycloneMovement extends CyclonePlugin {
         defaultValue: true,
       },
       disableMouseMovement: 'boolean',
+      inputSwitch: 'int',
       maxOffset: {
         type: 'float',
         defaultValue: 0.75,

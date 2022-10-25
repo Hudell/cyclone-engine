@@ -27,6 +27,7 @@ globals:
   Point: false
   Sprite: false
   TilingSprite: false
+  Stage: false
 
   PluginManager: false
   ImageManager: false
@@ -46,6 +47,7 @@ globals:
   Sprite_Balloon: false
   Sprite_Animation: false
   Sprite_Character: false
+  Sprite_Button: false
 
   Game_Player: false
   Game_Event: false
@@ -96,6 +98,7 @@ globals:
   CycloneEvents: true
   CycloneAurora: true
   CycloneAsync: true
+  CycloneNewFolder7: true
 rules:
   indent:
     - warn

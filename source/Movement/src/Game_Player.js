@@ -69,6 +69,10 @@ CycloneMovement.patchClass(Game_Player, $super => class {
       return;
     }
 
+    if (CycloneMovement.params.inputSwitch > 0 && !$gameSwitches.value(CycloneMovement.params.inputSwitch)) {
+      return;
+    }
+
     let direction = Input.dir4;
     let diagonalDirection = Input.dir8;
     let alternativeD = direction;

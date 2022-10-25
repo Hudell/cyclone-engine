@@ -61,7 +61,7 @@ CycloneMovement.patchClass(Game_Event, $super => class {
 
   getHitboxValue(meta, tagName, defaultValue, tileSize) {
     if (meta[tagName] && meta[tagName] !== '0') {
-      return Math.floor(meta[tagName] / tileSize * 8) / 8;
+      return Math.floor(parseInt(meta[tagName]) / tileSize * 8) / 8;
     }
 
     if (meta[tagName] === '0' || meta[tagName] === 0) {

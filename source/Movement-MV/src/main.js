@@ -16,4 +16,4 @@ import '../../Movement/src/Game_Party';
 import '../../Movement/src/Scene_Map';
 import '../../Movement/src/DataManager';
 
-
+import './Game_Temp';

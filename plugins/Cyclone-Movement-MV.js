@@ -31,7 +31,7 @@ function _defineProperties(target, props) { for (var i = 0; i < props.length; i+
 function _createClass(Constructor, protoProps, staticProps) { if (protoProps) _defineProperties(Constructor.prototype, protoProps); if (staticProps) _defineProperties(Constructor, staticProps); return Constructor; }
 
 /*:
- * @plugindesc Adds new movement features to the game v1.01.02
+ * @plugindesc Adds new movement features to the game v1.01.03
  *
  * <pluginName:CycloneMovement>
  * @author Hudell
@@ -75,6 +75,9 @@ function _createClass(Constructor, protoProps, staticProps) { if (protoProps) _d
  * * ===========================================================================
  * Change Log
  * ===========================================================================
+ * 2022-09-15 - Version 1.03.00
+ *   * Added option to disable player movement by input
+ *
  * 2022-07-29 - Version 1.02.00
  *   * Prevent character from avoiding an object in the opposite direction
  *   of the diagonal direction the player is pressing. (Fixes sprite flicker)
@@ -178,7 +181,14 @@ function _createClass(Constructor, protoProps, staticProps) { if (protoProps) _d
  * @off Don't Disable
  * @desc
  * @default false
-  *
+ *
+ * @param inputSwitch
+ * @text Player movement Switch
+ * @description The player will only be able to move when this switch is turned on
+ * @parent Player
+ * @type switch
+ * @default 0
+ *
  * @param maxOffset
  * @text Max Slide Distance
  * @parent Player
@@ -2547,20 +2557,20 @@ function _createClass(Constructor, protoProps, staticProps) { if (protoProps) _d
   var currentMapCollisionTable = false;
 
   var CycloneMovement$1 = /*#__PURE__*/function (_CyclonePlugin) {
-    _inherits(CycloneMovement$1, _CyclonePlugin);
+    _inherits(CycloneMovement, _CyclonePlugin);
 
-    var _super2 = _createSuper(CycloneMovement$1);
+    var _super2 = _createSuper(CycloneMovement);
 
-    function CycloneMovement$1() {
-      _classCallCheck(this, CycloneMovement$1);
+    function CycloneMovement() {
+      _classCallCheck(this, CycloneMovement);
 
       return _super2.apply(this, arguments);
     }
 
-    _createClass(CycloneMovement$1, null, [{
+    _createClass(CycloneMovement, null, [{
       key: "register",
       value: function register() {
-        _get(_getPrototypeOf(CycloneMovement$1), "initialize", this).call(this, 'CycloneMovement');
+        _get(_getPrototypeOf(CycloneMovement), "initialize", this).call(this, 'CycloneMovement');
 
         this.structs.set('CycloneHitbox', {
           x: {
@@ -2581,7 +2591,7 @@ function _createClass(Constructor, protoProps, staticProps) { if (protoProps) _d
           }
         });
 
-        _get(_getPrototypeOf(CycloneMovement$1), "register", this).call(this, {
+        _get(_getPrototypeOf(CycloneMovement), "register", this).call(this, {
           stepCount: {
             type: 'int',
             defaultValue: 1
@@ -2605,6 +2615,7 @@ function _createClass(Constructor, protoProps, staticProps) { if (protoProps) _d
             defaultValue: true
           },
           disableMouseMovement: 'boolean',
+          inputSwitch: 'int',
           maxOffset: {
             type: 'float',
             defaultValue: 0.75
@@ -3174,7 +3185,7 @@ function _createClass(Constructor, protoProps, staticProps) { if (protoProps) _d
       }
     }]);
 
-    return CycloneMovement$1;
+    return CycloneMovement;
   }(CyclonePlugin);
 
   globalThis.CycloneMovement = CycloneMovement$1;
@@ -3360,6 +3371,10 @@ function _createClass(Constructor, protoProps, staticProps) { if (protoProps) _d
         key: "moveByInput",
         value: function moveByInput() {
           if (this.isMoving() || !this.canMove()) {
+            return;
+          }
+
+          if (CycloneMovement.params.inputSwitch > 0 && !$gameSwitches.value(CycloneMovement.params.inputSwitch)) {
             return;
           }
 
@@ -4512,7 +4527,7 @@ function _createClass(Constructor, protoProps, staticProps) { if (protoProps) _d
         key: "getHitboxValue",
         value: function getHitboxValue(meta, tagName, defaultValue, tileSize) {
           if (meta[tagName] && meta[tagName] !== '0') {
-            return Math.floor(meta[tagName] / tileSize * 8) / 8;
+            return Math.floor(parseInt(meta[tagName]) / tileSize * 8) / 8;
           }
 
           if (meta[tagName] === '0' || meta[tagName] === 0) {
@@ -4894,6 +4909,32 @@ function _createClass(Constructor, protoProps, staticProps) { if (protoProps) _d
       }]);
 
       return _class14;
+    }();
+  });
+  CycloneMovement.patchClass(Game_Temp, function ($super) {
+    return /*#__PURE__*/function () {
+      function _class15() {
+        _classCallCheck(this, _class15);
+      }
+
+      _createClass(_class15, [{
+        key: "setDestination",
+        value: function setDestination() {
+          var _$super$setDestinatio;
+
+          if (CycloneMovement.disableMouseMovement) {
+            return;
+          }
+
+          for (var _len8 = arguments.length, args = new Array(_len8), _key8 = 0; _key8 < _len8; _key8++) {
+            args[_key8] = arguments[_key8];
+          }
+
+          (_$super$setDestinatio = $super.setDestination).call.apply(_$super$setDestinatio, [this].concat(args));
+        }
+      }]);
+
+      return _class15;
     }();
   });
 })();
