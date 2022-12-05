@@ -390,7 +390,7 @@
  *
  * @param position
  * @text Position
- * @type Struct<LayerPosition>
+ * @type struct<LayerPosition>
  * @desc The top left position of this layer.
  * @default {}
  *
