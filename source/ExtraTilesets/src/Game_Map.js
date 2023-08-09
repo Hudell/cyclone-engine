@@ -9,6 +9,7 @@ CycloneExtraTilesets.patchClass(Game_Map, $super => class {
 
   buildTilesetFlags() {
     if (!this._extraTilesetId || this._extraTilesetId === this._tilesetId) {
+      this._allFlags = undefined;
       return;
     }
 
